@@ -40,8 +40,15 @@ const HOLDER_ID = 'settHolder';
 /** Krunker's own class for a section header. Also what our categories use. */
 const HEADER_CLASS = 'setHed';
 
-/** Retries while the settings window is still opening. About a second. */
-const RETRY_LIMIT = 4;
+/**
+ * Retries while the settings window is still opening, about a second's worth.
+ *
+ * Short and many rather than few and long. At 250ms apart, a tab whose panel
+ * was not ready on the first attempt took a quarter of a second to grow its
+ * index, which is long enough to watch happen.
+ */
+const RETRY_LIMIT = 20;
+const RETRY_MS = 50;
 
 /**
  * Everything in a section header that is not its name.
@@ -235,6 +242,22 @@ export function createSectionNav(): SectionNav {
     nav.style.top = `${(panel.top - origin.top) / scale + Math.max(0, holderTopInset)}px`;
   }
 
+  /**
+   * Show the index exactly when the panel it belongs to is on screen.
+   *
+   * Called from everything that could change the answer — the guard, the
+   * resize observer, and each section switch — because it used to be set in
+   * one place only. A tab change hides the panel for a moment while it is
+   * rebuilt, the index was hidden with it, and nothing ever came back to
+   * un-hide it: it stayed gone until something unrelated happened to fire.
+   */
+  function refreshVisibility(): void {
+    if (!nav) return;
+    const holder = document.getElementById(HOLDER_ID);
+    const shown = !!holder && holder.isConnected && holder.offsetParent !== null;
+    nav.style.display = shown ? '' : 'none';
+  }
+
   function fit(): void {
     if (!nav || !scroller) return;
     // A window still opening measures zero, and writing max-height:0 then
@@ -262,6 +285,7 @@ export function createSectionNav(): SectionNav {
     if (scroller) scroller.scrollTop = 0;
     fit();
     place();
+    refreshVisibility();
   }
 
   /**
@@ -286,7 +310,7 @@ export function createSectionNav(): SectionNav {
       detach();
       return;
     }
-    if (nav) nav.style.display = holder.offsetParent === null ? 'none' : '';
+    refreshVisibility();
 
     /**
      * Rebuild when the panel underneath has been replaced.
@@ -397,6 +421,7 @@ export function createSectionNav(): SectionNav {
     resize = new ResizeObserver(() => {
       fit();
       place();
+      refreshVisibility();
     });
     resize.observe(scroller);
 
@@ -416,7 +441,7 @@ export function createSectionNav(): SectionNav {
   function retrySoon(): void {
     if (retries <= 0) return;
     retries -= 1;
-    setTimeout(sync, 250);
+    setTimeout(sync, RETRY_MS);
   }
 
   defineStyle(STYLE_IDS.sectionNav, SHEETS.sectionNav);

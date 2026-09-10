@@ -23,6 +23,10 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
         kind: 'fixed',
         text: 'The settings index keeps up with the tab you are on. Switching to the Client tab left the previous tab’s sections listed down the side, and every section on that tab showing at once.',
       },
+      {
+        kind: 'fixed',
+        text: 'The index appears with the tab instead of a moment after it, and no longer sometimes fails to appear at all.',
+      },
     ],
   },
   {
