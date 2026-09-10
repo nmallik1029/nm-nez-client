@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.13',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The bottom of the menu is now one bar across the full width: the match you are in and your region, FPS and ping on one line, a rule under it, and the five play buttons spread evenly beneath. Your class card sits above it rather than overlapping.',
+      },
+      {
+        kind: 'added',
+        text: 'NM/NEZ and the version sit at the top of the left menu.',
+      },
+      {
+        kind: 'changed',
+        text: 'Alt Manager has moved to the top left, beside Login or Register, so the client’s own buttons are together.',
+      },
+      {
+        kind: 'changed',
+        text: 'Login or Register is drawn as a button, and the flat black strip behind the top bar is gone so the menu’s own shading shows through.',
+      },
+    ],
+  },
+  {
     version: '0.1.12',
     date: '2026-09-10',
     changes: [

@@ -1,3 +1,5 @@
+import { BRANDING } from '../shared/branding';
+import { CHANGELOG } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { toggleStyle } from './style';
 
@@ -20,14 +22,35 @@ import { toggleStyle } from './style';
  */
 
 const SCRIM_ID = UI_IDS.menuScrim;
+const MARK_ID = UI_IDS.menuMark;
+/** Same source the in-game watermark uses, so the two cannot disagree. */
+const VERSION = CHANGELOG[0]?.version ?? '';
+/** Krunker's own left menu list; the wordmark goes in at the top of it. */
+const NAV_ID = 'menuItemContainer';
 const ALT_ID = UI_IDS.altManagerButton;
 /** Krunker's menu root. Static markup, so it survives its own re-renders. */
 const HOLDER_ID = 'menuHolder';
 /** Where the class card keeps Loadout and Customize; Alt Manager's home. */
 const CLASS_ROW_ID = UI_IDS.classButtonRow;
 const CLASS_CONTAINER_ID = 'menuClassContainer';
-/** The top bar's right-hand group: notifications, settings, more Krunker. */
-const HEADER_RIGHT_SELECTOR = '.headerBarRight';
+/**
+ * Where Alt Manager goes: the left end of the top bar, beside Login or
+ * Register, so the client's own controls sit together rather than being
+ * mixed in with Krunker's nav on the right.
+ *
+ * The signed-out bar is the usual case. Signed in, Krunker renders a
+ * different bar, so the header itself is the fallback and the button lands at
+ * its left end either way.
+ */
+const HEADER_LEFT_SELECTORS = ['#signedOutHeaderBar', '#playerHeaderEl'];
+
+function headerHome(): Element | null {
+  for (const selector of HEADER_LEFT_SELECTORS) {
+    const el = document.querySelector(selector);
+    if (el) return el;
+  }
+  return null;
+}
 
 let enabled = false;
 let observer: MutationObserver | null = null;
@@ -71,7 +94,7 @@ function placeAltManager(): void {
   });
 
   if (enabled) {
-    const header = document.querySelector(HEADER_RIGHT_SELECTOR);
+    const header = headerHome();
     if (!header || alt.parentElement === header) return;
     // menu-buttons copies Krunker's 449px button rule onto this element as an
     // inline style. The sheet overrides what matters with !important, but
@@ -92,8 +115,53 @@ function placeAltManager(): void {
   if (container && alt.parentElement !== container) container.appendChild(alt);
 }
 
+/**
+ * Client wordmark and version above Krunker's menu list.
+ *
+ * Goes inside the list rather than before it: the list is positioned by
+ * Krunker's own (Svelte-hashed) CSS, so a sibling inserted ahead of it lands
+ * at the top-left of the containing block instead of above the rail. As its
+ * first child it simply flows with the rows.
+ *
+ * The changelog row also inserts itself at the front, so on a rebuild the two
+ * can briefly swap. Both re-run from the same observer and settle with the
+ * wordmark on top.
+ */
+function placeMark(): void {
+  const existing = document.getElementById(MARK_ID);
+
+  if (!enabled) {
+    existing?.remove();
+    return;
+  }
+
+  const nav = document.getElementById(NAV_ID);
+  if (!nav) return;
+  if (existing?.parentElement === nav && nav.firstChild === existing) return;
+
+  const mark = existing ?? document.createElement('div');
+  if (!existing) {
+    mark.id = MARK_ID;
+    const name = document.createElement('b');
+    // The slash is the one piece of colour in the wordmark, and GameFont has
+    // a slash where it has no ampersand.
+    const [before, after] = BRANDING.productName.split('/');
+    name.append(before ?? BRANDING.productName);
+    if (after !== undefined) {
+      const slash = document.createElement('i');
+      slash.textContent = '/';
+      name.append(slash, after);
+    }
+    const version = document.createElement('span');
+    version.textContent = VERSION;
+    mark.append(name, version);
+  }
+  nav.insertBefore(mark, nav.firstChild);
+}
+
 function apply(): void {
   placeScrim();
+  placeMark();
   placeAltManager();
 }
 

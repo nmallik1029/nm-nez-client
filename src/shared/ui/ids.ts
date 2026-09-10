@@ -40,6 +40,8 @@ export const UI_IDS = {
    * shadow.
    */
   menuScrim: 'kc-menu-scrim',
+  /** Client wordmark and version at the top of Krunker's left menu. */
+  menuMark: 'kc-menu-mark',
 } as const;
 
 /**
