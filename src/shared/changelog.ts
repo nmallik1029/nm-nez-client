@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.6',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The new section list appeared in the top left corner of the screen, over the menu, instead of inside the settings window.',
+      },
+      {
+        kind: 'changed',
+        text: 'Quieter settings rows. Each category is a heading and a rule now rather than a raised box, controls are no longer each in their own outlined card, and rows have more room.',
+      },
+    ],
+  },
+  {
     version: '0.1.5',
     date: '2026-09-10',
     changes: [
