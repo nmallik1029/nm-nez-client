@@ -35,7 +35,26 @@ export const KRUNKER_DOM_IDS = {
   hudPing: 'pingText',
   menuPing: 'menuPingText',
   chatList: 'chatList',
+  /** The positioned wrapper around chat; `chatList` inside it is not placed. */
+  chatHolder: 'chatHolder',
+  /** Wraps the whole UI and carries the menu/match flag below. */
+  uiBase: 'uiBase',
+  /**
+   * The menu's bottom block: map name, Invite, Join and the five big buttons.
+   * Measured to work out how far chat has to lift to clear it.
+   */
+  menuBottomBlock: 'subLogoButtons',
 } as const;
+
+/**
+ * The class Krunker puts on `#uiBase` while the menu is up, and takes off
+ * once you are in a match.
+ *
+ * Worth knowing about generally: it is the only flag I have found that is a
+ * class on a static element rather than something that gets rebuilt, so it is
+ * the one thing a stylesheet can key "only on the menu" off.
+ */
+export const KRUNKER_MENU_CLASS = 'onMenu';
 
 /** Krunker markup the chat features depend on. */
 export const KRUNKER_CHAT = {

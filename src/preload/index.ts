@@ -13,6 +13,7 @@ import { installChangelogItem, showPatchNotes } from './changelog';
 import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
+import { installChatPlacement } from './chat-place';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
@@ -172,6 +173,10 @@ async function bootstrap(): Promise<void> {
       merged: cfg.features.betterChat,
       historyLimit: cfg.features.chatHistoryLimit,
     });
+
+    // Not part of initChat: this is about where the menu puts chat, which is
+    // true whether or not the chat features are on.
+    installChatPlacement();
 
     void applyThemes();
     void runUserscripts();

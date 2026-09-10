@@ -1,4 +1,4 @@
-import { KRUNKER_DOM_IDS } from '../../krunker/constants';
+import { KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_IDS } from './ids';
 import { SCAN_THUMB, SCAN_TIMING } from './tokens';
 
@@ -262,6 +262,28 @@ const chatTags = `
 
 /** Krunker hides the inactive channel. Overriding display shows both. */
 const chatMerge = `#${KRUNKER_DOM_IDS.chatList} > * { display: block !important; }`;
+
+/**
+ * Chat, lifted clear of the menu's own bottom row.
+ *
+ * Krunker pins chat to `bottom:20px` and then draws the map name, Invite,
+ * Join and the five big buttons over the bottom 180px of the same screen, so
+ * on the menu the last few messages are behind Quick Match. In a match that
+ * corner is empty and the game's own position is right, which is why this is
+ * scoped rather than global.
+ *
+ * `#uiBase.onMenu` is Krunker's own flag for which of the two it is. It is a
+ * class on a static element, so it survives the menu rebuilding itself.
+ *
+ * The lift is a variable because the button block scales with the UI; see
+ * `preload/chat-place.ts` for where the number comes from.
+ */
+const chatPlace = `
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatHolder}{
+  bottom:var(--nm-chat-lift) !important}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}{
+  max-height:var(--nm-chat-menu-height) !important}
+`;
 
 /**
  * Client settings, rendered inside Krunker's own settings window.
@@ -715,21 +737,8 @@ const update = `
  * rule you write against it, and every entry on it is a bug that shipped.
  */
 const menuSkin = `
-/* One node, three gradients, no hit-testing, painted below the whole menu. */
-#${UI_IDS.menuScrim}{position:absolute;inset:0;pointer-events:none;
-  z-index:var(--nm-menu-z-scrim);
-  background-image:
-    linear-gradient(180deg,var(--nm-menu-scrim),var(--nm-menu-scrim-0)),
-    linear-gradient(90deg,var(--nm-menu-scrim),var(--nm-menu-scrim-soft) 46%,var(--nm-menu-scrim-0)),
-    linear-gradient(0deg,var(--nm-menu-scrim) 38%,var(--nm-menu-scrim-mid) 70%,var(--nm-menu-scrim-0));
-  background-repeat:no-repeat;
-  background-size:100% 17%,21% 100%,100% 40%;
-  background-position:top,left,bottom}
-
 /* ---- top bar ---- */
 #signupRewardsButton{display:none !important}
-/* The scrim is the ground now; a flat black bar on top of it reads as a seam. */
-#playerHeaderEl{background:none !important}
 #signedOutHeaderBar [class*="ph-icon"]{display:none !important}
 #signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.altManagerButton}{
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
@@ -991,7 +1000,10 @@ const menuSkin = `
    inline style so it matches the class card. In the header that is absurd, and
    an inline width only loses to !important. */
 #playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;
-  margin-left:0 !important;color:var(--nm-menu-ash) !important;
+  /* It is a child of .headerBarRight now, which is a flex row that stretches
+     its items. Without this the 34px height loses to the 61px bar. */
+  align-self:center !important;flex:0 0 auto !important;
+  margin:0 12px 0 0 !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transform:none !important}
 #playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
   transform:none !important;filter:none !important}
@@ -1237,6 +1249,7 @@ export const SHEETS = {
   menuButtons,
   chatTags,
   chatMerge,
+  chatPlace,
   settings,
   sectionNav,
   scan,

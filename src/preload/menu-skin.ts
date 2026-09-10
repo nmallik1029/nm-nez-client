@@ -4,24 +4,19 @@ import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { toggleStyle } from './style';
 
 /**
- * The main-menu skin: one stylesheet, one backdrop element, one moved button.
+ * The main-menu skin: one stylesheet and a handful of moved elements.
  *
  * Almost all of it is CSS, which is the whole design of this module. A skin
  * that is a stylesheet toggles in one assignment, costs nothing per frame, and
  * cannot leave the menu in a half-applied state — which matters on a client
- * whose entire reason to exist is frame pacing. The two things CSS genuinely
- * cannot do are the parts that live here:
+ * whose entire reason to exist is frame pacing. What lives here is the work
+ * CSS genuinely cannot do: Alt Manager, the wordmark, the match-actions line
+ * and the footer links are DOM moves, not restyles.
  *
- *   - the backdrop, because Krunker has no element in the right place to hang
- *     three gradients on, and
- *   - Alt Manager, because moving it into the header is a DOM move, not a
- *     restyle.
- *
- * Both are reversible, so turning the skin off puts the menu back exactly as
- * the game shipped it rather than leaving debris behind.
+ * All of them are reversible, so turning the skin off puts the menu back
+ * exactly as the game shipped it rather than leaving debris behind.
  */
 
-const SCRIM_ID = UI_IDS.menuScrim;
 const MARK_ID = UI_IDS.menuMark;
 /** Same source the in-game watermark uses, so the two cannot disagree. */
 const VERSION = CHANGELOG[0]?.version ?? '';
@@ -83,52 +78,51 @@ const MODAL_ROOTS = [
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
-/** Krunker's menu root. Static markup, so it survives its own re-renders. */
-const HOLDER_ID = 'menuHolder';
+/** The backdrop older builds drew, kept only so it can be cleaned up. */
+const SCRIM_ID_LEGACY = 'kc-menu-scrim';
 /** Where the class card keeps Loadout and Customize; Alt Manager's home. */
 const CLASS_ROW_ID = UI_IDS.classButtonRow;
 const CLASS_CONTAINER_ID = 'menuClassContainer';
 /**
- * Where Alt Manager goes: the left end of the top bar, beside Login or
- * Register, so the client's own controls sit together rather than being
- * mixed in with Krunker's nav on the right.
+ * Where Alt Manager goes: the front of Krunker's own nav group, just left of
+ * Inbox.
  *
- * The signed-out bar is the usual case. Signed in, Krunker renders a
- * different bar, so the header itself is the fallback and the button lands at
- * its left end either way.
+ * It used to aim for the left end of the whole bar, taking the first of
+ * `#signedOutHeaderBar` then `#playerHeaderEl` that existed. Signed out that
+ * lands inside the login bar and looks right, which is why it seemed fine.
+ * Signed in it is not: Krunker leaves `#signedOutHeaderBar` in the document
+ * and hides it, so "the first one that exists" picks a hidden element and the
+ * button goes in there and is never seen again.
+ *
+ * `.headerBarRight` is present signed in and signed out and is never the
+ * hidden one, so there is no login state left to get wrong. Appending to
+ * `#playerHeaderEl` would be visible too, but that row is
+ * `justify-content:space-between` and a third child drags the nav in off the
+ * right edge — measured at 1385px to 732px on a 1920 viewport.
  */
-const HEADER_LEFT_SELECTORS = ['#signedOutHeaderBar', '#playerHeaderEl'];
+const HEADER_NAV_SELECTOR = '.headerBarRight';
 
 function headerHome(): Element | null {
-  for (const selector of HEADER_LEFT_SELECTORS) {
-    const el = document.querySelector(selector);
-    if (el) return el;
-  }
-  return null;
+  return document.querySelector(HEADER_NAV_SELECTOR);
 }
 
 let enabled = false;
 let observer: MutationObserver | null = null;
 
-/** Put the backdrop in, or take it out. */
-function placeScrim(): void {
-  const existing = document.getElementById(SCRIM_ID);
-
-  if (!enabled) {
-    existing?.remove();
-    return;
-  }
-
-  const holder = document.getElementById(HOLDER_ID);
-  if (!holder) return;
-  // Already first child of the right parent; nothing to do on the common pass.
-  if (existing?.parentElement === holder && holder.firstChild === existing) return;
-
-  const scrim = existing ?? document.createElement('div');
-  scrim.id = SCRIM_ID;
-  // First child so it sits under everything the menu draws, and so a
-  // re-insert after a rebuild lands in the same place.
-  holder.insertBefore(scrim, holder.firstChild);
+/**
+ * Take out the backdrop this skin used to draw.
+ *
+ * It was three gradients down the top, left and bottom edges, there to make
+ * the menu legible over a live 3D render. It also dimmed a third of the
+ * screen, which is the part nobody asked for. Krunker's own labels already
+ * carry the text shadow they need, so the render can just be the render.
+ *
+ * A removal rather than a deletion: anyone updating from a build that drew
+ * one still has the element in their DOM, and it has to go on the next pass
+ * whether the skin is on or off.
+ */
+function clearScrim(): void {
+  document.getElementById(SCRIM_ID_LEGACY)?.remove();
 }
 
 /**
@@ -155,7 +149,7 @@ function placeAltManager(): void {
     // inline style. The sheet overrides what matters with !important, but
     // clearing it first keeps devtools honest about where the size comes from.
     alt.style.cssText = '';
-    header.appendChild(alt);
+    header.insertBefore(alt, header.firstChild);
     return;
   }
 
@@ -370,7 +364,7 @@ function placeMatchActions(): void {
 }
 
 function apply(): void {
-  placeScrim();
+  clearScrim();
   placeMark();
   placeAltManager();
   placeMatchActions();

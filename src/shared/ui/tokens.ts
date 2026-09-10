@@ -173,9 +173,20 @@ const KRUNKER = `
  * The `[T]`/`[M]` prefixes on merged chat. Green for team, red for match, which
  * is the association Krunker's own name colours already set up.
  */
+/**
+ * Chat: the two channel colours, and where the menu puts the box.
+ *
+ * `--nm-chat-lift` is how far chat rises off the bottom of the screen to
+ * clear Krunker's own button block. The value here is a fallback measured at
+ * 1920x1080; `preload/chat-place.ts` overwrites it with a real measurement,
+ * because the block scales with the window and a fixed number is right at
+ * exactly one size. If that measurement fails, this still clears the buttons.
+ */
 const CHAT = `
   --nm-chat-team:#4ade80;
   --nm-chat-all:#f87171;
+  --nm-chat-lift:192px;
+  --nm-chat-menu-height:min(340px,32vh);
 `;
 
 /**
@@ -503,17 +514,15 @@ const MENU = `
 `;
 
 /**
- * The backdrop's four stops.
+ * Near-black, at the two opacities the menu still needs it.
  *
- * A ladder rather than one value because the three gradients meet in the
- * corners: the left edge has to fade to nothing by the time it reaches the
- * centre while the bottom is still near-opaque under the play row. Collapsing
- * them puts a visible seam diagonally across the screen.
+ * These were a four-stop ladder for the backdrop that used to sit behind the
+ * whole menu, where the three gradients had to meet in the corners without
+ * seaming. The backdrop is gone; what is left is the fill behind Krunker's
+ * own popups and the transparent end, which several borders fade out to.
  */
 const MENU_SCRIM = `
   --nm-menu-scrim:rgba(12,11,10,.94);
-  --nm-menu-scrim-mid:rgba(12,11,10,.7);
-  --nm-menu-scrim-soft:rgba(12,11,10,.5);
   --nm-menu-scrim-0:rgba(12,11,10,0);
   --nm-menu-cta-shadow:rgba(12,11,10,.9);
 `;
@@ -536,20 +545,6 @@ const MENU_SCRIM = `
 const MENU_TYPE = `
   --nm-menu-font:'GameFont',sans-serif;
   --nm-menu-track-cta:.42em;
-`;
-
-/**
- * The backdrop sits below every layer of the menu it grounds.
- *
- * Negative rather than zero. Krunker's menu mixes positioned and in-flow
- * elements, and a positioned child at z-index 0 paints above the in-flow ones
- * — which would put the scrim over the nav instead of behind it. The negative
- * layer paints after the parent's background and before all of its content,
- * which is exactly what a backdrop is. `#menuHolder` sets its own z-index, so
- * this cannot escape below the menu and swallow the game.
- */
-const MENU_LAYER = `
-  --nm-menu-z-scrim:-1;
 `;
 
 /**
@@ -588,7 +583,6 @@ export const TOKENS_CSS = `:root{${[
   MENU,
   MENU_SCRIM,
   MENU_TYPE,
-  MENU_LAYER,
   MENU_MOTION,
   SHADOW,
   FONT,
