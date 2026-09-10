@@ -16,6 +16,36 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.28',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Alt Manager is back in the top bar when you are signed in. It was being put inside the signed-out bar, which Krunker leaves in the page and hides, so the button went and hid with it.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Chat is no longer stuck behind the play buttons on the menu. It sits above them, and it shrinks to fit rather than climbing up into the menu list, which is what it did if you had the UI scale turned up.',
+      },
+      {
+        kind: 'changed',
+        text: 'The menu no longer dims the top, left and bottom of the screen. The map behind it is just the map.',
+      },
+      {
+        kind: 'changed',
+        text: 'On the NM/NEZ menu style, chat is dressed like the rest of it: one flat panel, hairline border, square corners. Message colours are untouched, so you can still tell team from all.',
+      },
+      {
+        kind: 'changed',
+        text: 'The map name and Invite/Join sit lower, clear of chat.',
+      },
+      {
+        kind: 'changed',
+        text: 'The accent colour is cyan instead of orange. It is one value, so the Ranked button, the toggles, the settings tabs and the slash in NM/NEZ all moved together.',
+      },
+    ],
+  },
+  {
     version: '0.1.27',
     date: '2026-09-10',
     changes: [
