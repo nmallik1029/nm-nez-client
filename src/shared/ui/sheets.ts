@@ -415,7 +415,9 @@ const sectionNav = `
  * Structure is untouched: same elements, same class names, same behaviour, so
  * the game's own controls keep working.
  */
-.kc-has-sectnav .setHed{background:none !important;border:0 !important;
+/* The gap the index leaves above a section it jumps to. scrollIntoView reads
+   this, which is why jump() no longer carries a number of its own. */
+.kc-has-sectnav .setHed{scroll-margin-top:12px;background:none !important;border:0 !important;
   box-shadow:none !important;
   padding:22px 2px 9px !important;margin:0 !important;
   font-size:var(--nm-fs-lg) !important;
@@ -815,6 +817,16 @@ const menuSkin = `
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone) !important}
+/* Clicking Invite swaps the label to "Copied link" and the control shrank as
+   it did. Krunker scales these on press and sizes them from their own text,
+   so both the transform and the type are pinned across every state — a button
+   that changes size when you use it reads as a glitch, not as feedback. */
+#matchInfoHolder .match-action-btn,#matchInfoHolder .match-action-btn:hover,
+#matchInfoHolder .match-action-btn:active,#matchInfoHolder .match-action-btn:focus,
+#matchInfoHolder .match-action-btn:focus-visible{
+  transform:none !important;animation:none !important;
+  font-size:var(--nm-fs-2xs) !important;line-height:1 !important;
+  display:inline-block !important;white-space:nowrap !important}
 #matchInfoHolder .match-action-sep{color:var(--nm-menu-line-hi) !important;text-shadow:none !important}
 
 /* ---- telemetry ---- */

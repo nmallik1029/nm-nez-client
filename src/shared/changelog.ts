@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.18',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Clicking a section in the settings index takes you to that section. It was working out where to scroll to by hand and getting it wrong; the browser does that part now.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Invite and Join no longer shrink when you click them.',
+      },
+    ],
+  },
+  {
     version: '0.1.17',
     date: '2026-09-10',
     changes: [
