@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6d8cff; } a:hover { color: #8fa5ff; }
+    * { box-sizing: border-box; }
+  </style>
+</helmet>
+
+<div style="width: 1100px; height: 660px; position: relative; overflow: hidden; font-family: 'IBM Plex Sans', system-ui, sans-serif; background: #23272c;">
+
+  <!-- Stand-in for the game view behind the menu. Flat blocks, not a photo:
+       the point of this artboard is the client's own chrome on top. -->
+  <div style="position: absolute; inset: 0; background: linear-gradient(180deg, #3a4048 0%, #2b3036 46%, #241f1c 100%);"></div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 210px; background: #3a2b26; opacity: .55;"></div>
+  <div style="position: absolute; left: 60px; bottom: 150px; width: 240px; height: 190px; background: #4a4034; opacity: .5;"></div>
+  <div style="position: absolute; right: 90px; bottom: 190px; width: 300px; height: 230px; background: #35302c; opacity: .5;"></div>
+
+  <!-- Left menu, with the client's changelog row at the top -->
+  <div style="position: absolute; left: 0; top: 26px; width: 290px; display: flex; flex-direction: column; gap: 1px;">
+
+    <!-- The client's own row, marked by the accent rule rather than by colour
+         alone, so it reads as ours without shouting. -->
+    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 20px; border-left: 2px solid {{accent}}; background: rgba(109,140,255,.07);">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+      <span style="font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: #fff;">Changelog</span>
+      <span style="font-size: 9px; font-weight: 600; letter-spacing: .06em; color: #a9c4a6; border: 1px solid #4a5a48; border-radius: 3px; padding: 2px 6px;">0.1.5</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 20px; border-left: 2px solid transparent;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M4 8h16l-1.2 11a2 2 0 0 1-2 1.8H7.2a2 2 0 0 1-2-1.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span style="font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.72);">Store</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 20px; border-left: 2px solid transparent;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M12 14v4M9 21h6"/></svg>
+      <span style="font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.72);">Challenges</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 20px; border-left: 2px solid transparent;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M17 11a3 3 0 1 0-1-5.8"/></svg>
+      <span style="font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.72);">Social</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 11px; padding: 11px 20px; border-left: 2px solid transparent;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>
+      <span style="font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.72);">Community</span>
+    </div>
+  </div>
+
+  <!-- Top-left HUD stack: watermark under the match line -->
+  <div style="position: absolute; left: 20px; top: 0; padding-top: 0;"></div>
+
+  <!-- Centre: the play affordance, deliberately understated -->
+  <div style="position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); text-align: center;">
+    <div style="font-size: 34px; font-weight: 600; letter-spacing: .18em; color: rgba(255,255,255,.92); text-transform: uppercase;">Click to play</div>
+    <div style="margin-top: 12px; height: 1px; width: 200px; margin-left: auto; margin-right: auto; background: rgba(255,255,255,.22);"></div>
+  </div>
+
+  <!-- Frame-time HUD, top right -->
+  <div style="position: absolute; right: 18px; top: 18px; padding: 9px 12px; border-radius: 5px; background: rgba(10,11,13,.72); border: 1px solid rgba(255,255,255,.07); font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.5; color: #e8e9ec; white-space: pre;">
+    <div style="display: flex; gap: 18px;"><span>695 FPS</span><span style="color: #9aa0aa;">1.44 ms</span></div>
+    <div style="display: flex; gap: 18px; color: #9aa0aa;"><span>1%&nbsp;&nbsp;318</span><span>0.1%&nbsp;&nbsp;204</span></div>
+    <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.08); display: flex; gap: 18px;"><span style="color: #a9c4a6;">58 ms</span><span style="color: #9aa0aa;">Dallas</span></div>
+  </div>
+
+  <!-- Bottom bar: now playing + the client's own actions -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 26px; background: linear-gradient(180deg, rgba(12,13,16,0) 0%, rgba(12,13,16,.86) 42%); display: flex; align-items: flex-end; gap: 26px;">
+
+    <div style="flex-grow: 1; min-width: 0;">
+      <div style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #7d838d;">Now playing</div>
+      <div style="font-size: 17px; font-weight: 500; color: #fff; margin-top: 5px;">Free For All &middot; Evacuation</div>
+      <div style="display: flex; gap: 8px; margin-top: 14px;">
+        <sc-for list="{{actions}}" as="a" hint-placeholder-count="5">
+          <div style="padding: 9px 16px; border-radius: 5px; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: {{a.color}}; background: {{a.bg}}; border: 1px solid {{a.border}};">{{a.name}}</div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 260px;">
+      <div style="font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #7d838d;">Triggerman &middot; Assault Rifle</div>
+      <div style="display: flex; gap: 8px; width: 100%;">
+        <div style="flex-grow: 1; text-align: center; padding: 9px 0; border-radius: 5px; font-size: 12px; font-weight: 500; color: #c3c7ce; border: 1px solid #3a3f48; background: rgba(27,29,34,.8);">Loadout</div>
+        <div style="flex-grow: 1; text-align: center; padding: 9px 0; border-radius: 5px; font-size: 12px; font-weight: 500; color: #c3c7ce; border: 1px solid #3a3f48; background: rgba(27,29,34,.8);">Customize</div>
+      </div>
+      <div style="width: 100%; text-align: center; padding: 9px 0; border-radius: 5px; font-size: 12px; font-weight: 500; letter-spacing: .04em; color: #fff; border: 1px solid #5570c8; background: #31417d;">Alt Manager</div>
+    </div>
+  </div>
+
+  <!-- Watermark, bottom left of the HUD stack -->
+  <div style="position: absolute; left: 20px; bottom: 128px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: .08em; color: rgba(255,255,255,.5);">NM/NEZ 0.1.5</div>
+
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#6d8cff","options":["#6d8cff","#7d9d7a","#c9b184","#b47a72"]},"$preview":{"width":1100,"height":660}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#6d8cff';
+
+    const actions = [
+      { name: 'Quick Match', primary: true },
+      { name: 'Ranked' },
+      { name: 'Host' },
+      { name: 'Find Game' },
+      { name: 'Custom' },
+    ].map((a) => ({
+      name: a.name,
+      color: a.primary ? '#fff' : '#c3c7ce',
+      bg: a.primary ? accent : 'rgba(27,29,34,.8)',
+      border: a.primary ? accent : '#3a3f48',
+    }));
+
+    return { accent, actions };
+  }
+}
+</script>
+</body>
+</html>
