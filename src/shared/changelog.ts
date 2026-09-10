@@ -16,6 +16,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.20',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Clicking a section in the settings index no longer scrolls the whole game off the top of the window. 0.1.18 handed the job to the browser, which moved every scrollable thing on the page rather than just the settings.',
+      },
+      {
+        kind: 'changed',
+        text: 'The login, loadout, customize and popup windows are skinned now, not just the settings. They are found by their shape rather than by name, so the ones nobody has listed get caught too.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Invite really does stop shrinking when you click it this time.',
+      },
+    ],
+  },
+  {
     version: '0.1.19',
     date: '2026-09-10',
     changes: [

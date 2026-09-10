@@ -415,9 +415,7 @@ const sectionNav = `
  * Structure is untouched: same elements, same class names, same behaviour, so
  * the game's own controls keep working.
  */
-/* The gap the index leaves above a section it jumps to. scrollIntoView reads
-   this, which is why jump() no longer carries a number of its own. */
-.kc-has-sectnav .setHed{scroll-margin-top:12px;background:none !important;border:0 !important;
+.kc-has-sectnav .setHed{background:none !important;border:0 !important;
   box-shadow:none !important;
   padding:22px 2px 9px !important;margin:0 !important;
   font-size:var(--nm-fs-lg) !important;
@@ -817,16 +815,19 @@ const menuSkin = `
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone) !important}
-/* Clicking Invite swaps the label to "Copied link" and the control shrank as
-   it did. Krunker scales these on press and sizes them from their own text,
-   so both the transform and the type are pinned across every state — a button
-   that changes size when you use it reads as a glitch, not as feedback. */
+/* Clicking Invite swaps the label to "Copied link" and the control shrinks.
+   Pinned by ID, not by class: a first attempt went through .match-action-btn
+   and did nothing, which means the class is not what it is wearing by the
+   time the label has changed. The ids are Krunker's own and do not move.
+   Descendants too, since the swapped-in label is a child. */
+#inviteButton,#menuBtnJoin,#inviteButton *,#menuBtnJoin *,
+#inviteButton:hover,#menuBtnJoin:hover,#inviteButton:active,#menuBtnJoin:active,
 #matchInfoHolder .match-action-btn,#matchInfoHolder .match-action-btn:hover,
-#matchInfoHolder .match-action-btn:active,#matchInfoHolder .match-action-btn:focus,
-#matchInfoHolder .match-action-btn:focus-visible{
-  transform:none !important;animation:none !important;
-  font-size:var(--nm-fs-2xs) !important;line-height:1 !important;
-  display:inline-block !important;white-space:nowrap !important}
+#matchInfoHolder .match-action-btn:active{
+  transform:none !important;animation:none !important;zoom:1 !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-2xs) !important;
+  line-height:1 !important;letter-spacing:var(--nm-track-3xl) !important;
+  text-transform:uppercase !important;white-space:nowrap !important}
 #matchInfoHolder .match-action-sep{color:var(--nm-menu-line-hi) !important;text-shadow:none !important}
 
 /* ---- telemetry ---- */
@@ -932,145 +933,178 @@ const menuSkin = `
 /**
  * Krunker's own windows: settings, login, loadout, customize, and the popups.
  *
- * Everything the menu skin does, applied one level in. These are NOT Svelte —
- * they are Krunker's original markup and their rules all live in main.css,
- * which is why this can be written against real class names instead of hashes.
+ * WHY ALMOST NOTHING HERE NAMES A CONTAINER, which is the lesson that cost a
+ * release: the first version of this sheet scoped every rule to `#menuWindow`
+ * and friends — container ids read out of Krunker's stylesheet and assumed to
+ * cover the rest. The settings window happened to be one of them. The login
+ * modal was not, so it came through completely unstyled.
  *
- * The leverage is that all of those windows share their parts. `#menuWindow`
- * is the panel for the settings, the loadout and the customize screens;
- * `.settName` is a row in any of them; `.switch`, `.sliderM` and `.inputGrey`
- * are the controls everywhere. Restyling the primitives restyles every window
- * at once, which is why almost nothing here names a specific screen.
+ * The scoping was never needed. Krunker's primitives are global classes —
+ * `.button`, `.settName`, `.slider`, `.inputGrey` — and the menu skin's own
+ * rules for the few of them it reuses are all ID-scoped
+ * (`#subLogoButtons > .button`, `#menuClassContainer .button`). An ID beats a
+ * class, so a bare `.button` rule here cannot reach the play row however hard
+ * it tries. Specificity does the scoping, and it does it for every window at
+ * once, including the ones nobody has enumerated.
  *
- * Scoped to the windows on purpose. `.button` is Krunker's button class for
- * the whole game including the play row this skin already styles, so every
- * button rule sits behind a window selector rather than going global.
+ * The panel itself still needs a handle, because a modal's outer box has no
+ * shared class at all. `menu-skin.ts` tags those by shape rather than by name
+ * — positioned, visible, horizontally centred, big enough to be a window —
+ * and this styles `.kc-menu-modal`.
  *
  * Before editing, read "Restyling Krunker" at the bottom of
- * `krunker/constants.ts`. The ID-beats-class rule bites hardest in here.
+ * `krunker/constants.ts`.
  */
 const krunkerWindows = `
 /* ---- the panel, and what it sits on ---- */
-#windowHolder.popupWin,#popupBack{background:var(--nm-menu-scrim) !important}
-#menuWindow,#menuWindow.dark{background:var(--nm-menu-panel) !important;
+#windowHolder.popupWin,#popupBack,#guidePopupH{background:var(--nm-menu-scrim) !important}
+#menuWindow,#menuWindow.dark,#popupContent,#policePopC,#guidePopup,.kc-menu-modal{
+  background:var(--nm-menu-panel) !important;
   border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
   box-shadow:none !important;color:var(--nm-menu-bone) !important}
 #menuWindow.dark div{color:inherit}
-#popupContent,#policePopC,#guidePopup{background:var(--nm-menu-panel) !important;
-  border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
-  box-shadow:none !important;color:var(--nm-menu-bone) !important}
-#guidePopupH{background:var(--nm-menu-scrim) !important}
+/* A modal's own title bar and banner rows carry their own fills. */
+.kc-menu-modal [style*="background"]{border-radius:0 !important}
 
 /* ---- tab strip ---- */
 #settingsTabLayout{background:none !important;border-radius:0 !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
-#menuWindow .settingTab{background:none !important;border-radius:0 !important;
+.settingTab{background:none !important;border-radius:0 !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important;
   border-bottom:var(--nm-bw-thick) solid var(--nm-menu-scrim-0) !important;
   transition:color var(--nm-fast),border-color var(--nm-fast)}
-#menuWindow .settingTab:hover{color:var(--nm-menu-bone) !important;
+.settingTab:hover{color:var(--nm-menu-bone) !important;
   border-bottom-color:var(--nm-menu-line-hi) !important}
-#menuWindow .settingTab.tabA{background:none !important;color:var(--nm-menu-bone) !important;
+.settingTab.tabA{background:none !important;color:var(--nm-menu-bone) !important;
   border-bottom-color:var(--nm-menu-ember) !important}
 
 /* ---- section headings ---- */
-/* Krunker draws these as a raised grey box with a 4px border. A label over a
-   rule reads as structure rather than as one more control. */
-#menuWindow .setHed,#menuWindow .setHedS{background:none !important;border:0 !important;
+/* Krunker draws these as a raised grey box with a four-pixel border. A label
+   over a rule reads as structure rather than as one more control. */
+.setHed,.setHedS{background:none !important;border:0 !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
   color:var(--nm-menu-ash-dim) !important;text-shadow:none !important;
   padding:0 0 8px !important;margin:26px 0 12px !important}
-#menuWindow .setHed:hover,#menuWindow .setHedS:hover{background:none !important;
-  color:var(--nm-menu-ash) !important}
-#menuWindow .setBodH{background:none !important;border-radius:0 !important;
+.setHed:hover,.setHedS:hover{background:none !important;color:var(--nm-menu-ash) !important}
+.setHed .material-icons,.setHedS .material-icons{text-transform:none !important}
+.setBodH{background:none !important;border-radius:0 !important;
   margin-left:0 !important;padding-left:0 !important;padding-right:0 !important;
   width:100% !important}
 
 /* ---- rows ---- */
-#menuWindow .settName,#menuWindow .settNameSmall{font-family:var(--nm-menu-font) !important;
+.settName,.settNameSmall{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-lg) !important;letter-spacing:var(--nm-track-xs) !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
-#menuWindow .settNameIn:hover{background:var(--nm-menu-wash) !important;
+.settNameIn:hover{background:var(--nm-menu-wash) !important;
   color:var(--nm-menu-bone) !important;border-radius:0 !important}
 
 /* ---- toggles ---- */
 /* Krunker's blue is the last saturated colour in these windows once the greys
    are ours, and marking state is the accent's job. */
-#menuWindow .slider,#menuWindow .sliderSml,#menuWindow .sliderCent,
-#popupContent .slider,#popupContent .sliderSml{background:var(--nm-menu-line-hi) !important;
+.slider,.sliderSml,.sliderCent{background:var(--nm-menu-line-hi) !important;
   border-radius:0 !important}
-#menuWindow .slider:before,#menuWindow .sliderSml:before,#menuWindow .sliderCent:before,
-#popupContent .slider:before,#popupContent .sliderSml:before{
+.slider:before,.sliderSml:before,.sliderCent:before{
   background:var(--nm-menu-bone) !important;border-radius:0 !important}
-#menuWindow input:checked + .slider,#menuWindow input:checked + .sliderSml,
-#menuWindow input:checked + .sliderCent,
-#popupContent input:checked + .slider{background:var(--nm-menu-ember) !important}
-#menuWindow input:checked + .slider:before,
-#menuWindow input:checked + .sliderSml:before{background:var(--nm-menu-ink) !important}
+input:checked + .slider,input:checked + .sliderSml,input:checked + .sliderCent{
+  background:var(--nm-menu-ember) !important}
+input:checked + .slider:before,input:checked + .sliderSml:before,
+input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
 
 /* ---- ranges and their value boxes ---- */
-#menuWindow .sliderM{background:var(--nm-menu-line-hi) !important;border-radius:0 !important;
+.sliderM{background:var(--nm-menu-line-hi) !important;border-radius:0 !important;
   height:4px !important}
-#menuWindow .sliderM::-webkit-slider-thumb{background:var(--nm-menu-bone) !important;
+.sliderM::-webkit-slider-thumb{background:var(--nm-menu-bone) !important;
   border-radius:0 !important;width:5px !important;height:18px !important}
-#menuWindow .sliderM::-moz-range-thumb{background:var(--nm-menu-bone) !important;
+.sliderM::-moz-range-thumb{background:var(--nm-menu-bone) !important;
   border-radius:0 !important;width:5px !important;height:18px !important;border:0 !important}
-#menuWindow .sliderVal{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+.sliderVal{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
   border-style:solid !important;border-radius:0 !important;
   background:var(--nm-menu-fill) !important;color:var(--nm-menu-bone) !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   text-shadow:none !important}
 
 /* ---- inputs ---- */
-/* These ship light grey, which is a white box sitting in a dark window. */
-#menuWindow .inputGrey,#menuWindow .inputGrey2,#menuWindow input[type="text"],
-#menuWindow input[type="password"],#menuWindow input[type="email"],#menuWindow select,
-#popupContent input[type="text"],#popupContent input[type="password"],
-#popupContent input[type="email"],#popupContent select{
+/* These ship light grey, which is a white box sitting in a dark window. Fields
+   stay window-scoped: the game's chat box is an input too. */
+.inputGrey,.inputGrey2,
+#menuWindow input[type="text"],#menuWindow input[type="password"],
+#menuWindow input[type="email"],#menuWindow select,
+#popupContent input,#popupContent select,
+.kc-menu-modal input[type="text"],.kc-menu-modal input[type="password"],
+.kc-menu-modal input[type="email"],.kc-menu-modal select{
   background:var(--nm-menu-fill) !important;color:var(--nm-menu-bone) !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   text-shadow:none !important}
-#menuWindow input::placeholder,#popupContent input::placeholder{
-  color:var(--nm-menu-ash-dim) !important}
-#menuWindow input:focus,#popupContent input:focus{
+#menuWindow input::placeholder,#popupContent input::placeholder,
+.kc-menu-modal input::placeholder{color:var(--nm-menu-ash-dim) !important}
+#menuWindow input:focus,#popupContent input:focus,.kc-menu-modal input:focus{
   border-color:var(--nm-menu-bone) !important;outline:none !important}
 
 /* ---- the small coloured action buttons ---- */
-/* Import / Export / Reset / Manage Ads ship in four different hues. */
-#menuWindow .settingsBtn{background:var(--nm-menu-fill) !important;
+/* Import / Export / Reset ship in three different hues. */
+.settingsBtn{background:var(--nm-menu-fill) !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
   text-transform:uppercase !important;text-shadow:none !important;
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
-#menuWindow .settingsBtn:hover{color:var(--nm-menu-bone) !important;
+.settingsBtn:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
-/* Import, Export and Reset sat a size below the preset dropdown beside them.
-   One height across the strip, taken from the dropdown, which was right. */
+/* One height across the header strip, taken from the preset dropdown. */
 #menuWindow .settingsBtn,#menuWindow select,#menuWindow .kc-menu-setctl{
   height:30px !important;min-height:30px !important;box-sizing:border-box !important;
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   padding:0 12px !important;width:auto !important;min-width:78px !important;
   vertical-align:middle !important;margin:0 3px !important}
-/* The Advanced switch: Krunker's blue, on a control the sheet cannot name
-   because its markup is written by their script. menu-skin.ts tags it. */
-#menuWindow .kc-menu-setctl{background:var(--nm-menu-fill) !important;
+/* The Advanced switch, which has no class this sheet can name because its
+   markup is written by Krunker's script. menu-skin.ts tags it. */
+.kc-menu-setctl{background:var(--nm-menu-fill) !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
   text-transform:uppercase !important;text-shadow:none !important;gap:8px !important}
-#menuWindow .kc-menu-setctl:hover{color:var(--nm-menu-bone) !important;
+.kc-menu-setctl:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
 
+/* ---- buttons ---- */
+/* Global on purpose. The menu skin's own button rules are all ID-scoped, so
+   they outrank this and the play row is untouched — see the note at the top. */
+.button{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+  border-radius:0 !important;background:var(--nm-menu-fill) !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
+.button:hover{transform:none !important;color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+.button:active{transform:none !important}
+/* Krunker marks the action it wants you to take with a saturated fill — the
+   green Login, Register here, Equip. Same rank, the skin's own accent. */
+.button.buttonG,.button.buttonGreen,.termsBtn{
+  border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ember) !important;
+  background:var(--nm-menu-ember-wash) !important}
+.button.buttonG:hover,.button.buttonGreen:hover,.termsBtn:hover{
+  background:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important;
+  opacity:1 !important}
+
+/* ---- window furniture ---- */
+table.twoFATable td{background:var(--nm-menu-fill) !important;
+  border-radius:0 !important;color:var(--nm-menu-bone) !important}
+table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
+.instructionsTabs{background:none !important;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
+.instructionsTab{color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important}
+.instructionsTab:hover{color:var(--nm-menu-bone) !important}
+
 /* ---- the section index, once the skin is on ---- */
-/* It is drawn in Krunker's greys by its own sheet, because without the skin
-   it sits on the game's grey panel. With the skin the panel is ours. */
+/* Drawn in Krunker's greys by its own sheet, which is right without the skin
+   because it sits on the game's grey panel. With the skin that panel is ours. */
 #menuWindow #${UI_IDS.sectionNav}{border-right-color:var(--nm-menu-line) !important;
   font-family:var(--nm-menu-font) !important}
 #menuWindow .kc-sectnav-item{font-size:var(--nm-fs-md) !important;
@@ -1082,37 +1116,6 @@ const krunkerWindows = `
 #menuWindow .kc-sectnav-item.kc-sectnav-on{color:var(--nm-menu-bone) !important;
   background:var(--nm-menu-wash) !important;
   border-left-color:var(--nm-menu-ember) !important}
-
-/* ---- buttons inside a window ---- */
-#menuWindow .button,#popupContent .button,#policePopC .button,.metaPop .button,
-.confPop .button,.clientExitPop .button{
-  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
-  background:var(--nm-menu-fill) !important;color:var(--nm-menu-ash) !important;
-  text-shadow:none !important;
-  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
-#menuWindow .button:hover,#popupContent .button:hover,#policePopC .button:hover,
-.metaPop .button:hover,.confPop .button:hover,.clientExitPop .button:hover{
-  transform:none !important;color:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
-#menuWindow .button:active,#popupContent .button:active{transform:none !important}
-/* Krunker marks the one action it wants you to take with a saturated fill.
-   Keeping that rank, in the skin's own accent. */
-#menuWindow .button.buttonG,#popupContent .button.buttonG{
-  border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ember) !important;
-  background:var(--nm-menu-ember-wash) !important}
-#menuWindow .button.buttonG:hover,#popupContent .button.buttonG:hover{
-  background:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important}
-
-/* ---- window furniture ---- */
-#menuWindow table.twoFATable td{background:var(--nm-menu-fill) !important;
-  border-radius:0 !important;color:var(--nm-menu-bone) !important}
-#menuWindow table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
-#menuWindow .instructionsTabs{background:none !important;
-  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
-#menuWindow .instructionsTab{color:var(--nm-menu-ash) !important;text-shadow:none !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
-  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important}
-#menuWindow .instructionsTab:hover{color:var(--nm-menu-bone) !important}
 `;
 
 export const SHEETS = {

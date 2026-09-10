@@ -58,6 +58,24 @@ const SETTINGS_HIDDEN = ['manage ads'];
 const SETTINGS_RESTYLED = ['advanced'];
 /** Marks a header control the sheet then paints like the rest. */
 const SETTINGS_CONTROL_CLASS = 'kc-menu-setctl';
+
+/** Marks a window panel the sheet paints. See `tagModals`. */
+const MODAL_CLASS = 'kc-menu-modal';
+/**
+ * Where a modal can be, shallow on purpose.
+ *
+ * Krunker opens its windows near the top of the tree, and the alternative is
+ * walking every div in the document on each mutation, which is not a thing to
+ * do on a client whose whole point is frame time.
+ */
+const MODAL_ROOTS = [
+  'body > div',
+  '#uiBase > div',
+  '#uiBase > div > div',
+  '#windowHolder > div',
+  '#popupHolder > div',
+  '#menuWindowHider > div',
+];
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
@@ -273,12 +291,58 @@ function placeSettingsChrome(): void {
   }
 }
 
+/**
+ * Find Krunker's windows by their shape rather than by their name.
+ *
+ * The first version of the window sheet scoped every rule to a container id
+ * taken from Krunker's stylesheet — `#menuWindow` and a handful of popups. The
+ * settings window happened to be on that list; the login modal was not, and
+ * came through completely unstyled. Guessing at ids for markup written by
+ * someone else's script is not a strategy that finishes.
+ *
+ * Krunker centres every one of these the same way: absolutely positioned,
+ * `left:50%` with a `translate(-50%,-50%)`. The transform is not readable back
+ * from computed style — it comes out as a matrix with the percentages already
+ * resolved — so this measures the result instead. A positioned, visible box
+ * that is horizontally centred in the viewport and large enough to be a window
+ * is one, whatever it is called.
+ */
+function looksLikeModal(el: HTMLElement): boolean {
+  const style = getComputedStyle(el);
+  if (style.position !== 'absolute' && style.position !== 'fixed') return false;
+  if (style.display === 'none' || style.visibility === 'hidden') return false;
+
+  const box = el.getBoundingClientRect();
+  // Wide enough to be a panel, narrow enough not to be a full-screen scrim.
+  if (box.width < 320 || box.width > window.innerWidth - 80) return false;
+  if (box.height < 160) return false;
+
+  const centre = box.left + box.width / 2;
+  return Math.abs(centre - window.innerWidth / 2) < 6;
+}
+
+function tagModals(): void {
+  if (!enabled) {
+    for (const el of document.querySelectorAll<HTMLElement>(`.${MODAL_CLASS}`)) {
+      el.classList.remove(MODAL_CLASS);
+    }
+    return;
+  }
+
+  for (const el of document.querySelectorAll<HTMLElement>(MODAL_ROOTS.join(','))) {
+    // The menu itself is centred and large; it is not a window.
+    if (el.id === 'menuHolder' || el.id === 'uiBase') continue;
+    el.classList.toggle(MODAL_CLASS, looksLikeModal(el));
+  }
+}
+
 function apply(): void {
   placeScrim();
   placeMark();
   placeAltManager();
   placeFooterLinks();
   placeSettingsChrome();
+  tagModals();
 }
 
 /**

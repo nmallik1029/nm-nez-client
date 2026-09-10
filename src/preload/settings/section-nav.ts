@@ -43,6 +43,9 @@ const COLLAPSED_CLASS = 'kc-setbod-collapsed';
 /** Retries while the settings window is still opening. About a second. */
 const RETRY_LIMIT = 4;
 
+/** Breathing room left above a section the index jumps to. */
+const LANDING_GAP = 12;
+
 /**
  * Everything in a section header that is not its name.
  *
@@ -365,20 +368,26 @@ export function createSectionNav(): SectionNav {
     tops = measure(headersIn(holderEl));
 
     /**
-     * Ask the browser to bring the header up, rather than working out where
-     * that is.
+     * Move the scroller by the gap between where the header is and where it
+     * should be. Relative, so no box model comes into it.
      *
-     * This used to compute a scroll offset by hand — the header's rect
-     * measured against the scroller's rect plus its scrollTop — and then
-     * scrollTo that. Every term in that has to be right about which box is
-     * which: getBoundingClientRect is a border box, scrollTop counts from the
-     * padding box, and #menuWindow carries 20px of padding, so the arithmetic
-     * and the browser disagreed by the size of whatever was between them.
+     * Two wrong answers came before this one, and both are worth keeping:
      *
-     * scrollIntoView cannot be wrong about any of it, and the gap above the
-     * landing is CSS (scroll-margin-top) rather than a magic number here.
+     *  - An absolute scrollTo, computed as the header's rect against the
+     *    scroller's rect plus its scrollTop. Every term there has to agree
+     *    about which box is which — rects are border boxes, scrollTop counts
+     *    from the padding box, and #menuWindow carries 20px of padding — so it
+     *    landed short by whatever sat between them.
+     *  - scrollIntoView, which is right about all of that and still wrong
+     *    here: it scrolls EVERY scrollable ancestor, so it took the document
+     *    with it and pushed the whole game off the top of the window.
+     *
+     * scrollBy on the scroller itself can do neither. Both rects are read in
+     * viewport coordinates in the same frame, so their difference is exactly
+     * how far this one box has to move, and nothing else is touched.
      */
-    header.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const delta = header.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollBy({ top: delta - LANDING_GAP, behavior: 'smooth' });
 
     // Hold the index still for the length of the animation. Without this it is
     // only repositioned when a scroll event happens to arrive, which is less
