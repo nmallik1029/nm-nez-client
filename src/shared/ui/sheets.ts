@@ -348,55 +348,84 @@ const settings = `
  * appear to shift.
  */
 const sectionNav = `
-/* The holder reserves a left column; the nav floats back into it. Padding
-   rather than a flex or grid rewrite, because the rows inside are Krunker's
-   and rearranging their container is how this breaks on their next update. */
-.kc-has-sectnav{padding-left:190px !important}
-#${UI_IDS.sectionNav}{position:sticky;top:0;float:left;
-  width:172px;margin-left:-190px;
-  max-height:78vh;overflow-y:auto;overscroll-behavior:contain;
+/* The holder reserves a left column and the index is positioned into it.
+   Padding rather than a flex or grid rewrite, because the rows inside are
+   Krunker's and rearranging their container is how this breaks on their next
+   update. */
+.kc-has-sectnav{position:relative;padding-left:190px !important}
+/*
+ * Held in place by script, not by position:sticky.
+ *
+ * Sticky fails silently the moment any ancestor between the element and the
+ * scrolling box has overflow:hidden — that ancestor becomes the sticky
+ * context and the element just scrolls away. Krunker's settings window has
+ * one, so the index rode down the page with the rows. top is set from the
+ * scroll offset each frame instead, which cannot be defeated by a container
+ * we do not own, and stays absolutely positioned inside the holder so it can
+ * never leave the window the way it did before.
+ */
+#${UI_IDS.sectionNav}{position:absolute;left:0;top:0;
+  width:172px;
+  overflow-y:auto;overscroll-behavior:contain;
   padding:2px 12px 2px 0;box-sizing:border-box;
-  border-right:var(--nm-bw) solid var(--nm-border);
+  border-right:var(--nm-bw) solid var(--nm-kr-rule);
   font-family:var(--nm-font);font-size:var(--nm-fs-md);
   /* Above the rows, so a wide row can't paint over the index. */
   z-index:var(--nm-z-raise)}
 /* No scrollbar of its own: one panel should not show two. */
 #${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
-.kc-sectnav-item{padding:8px 12px;margin:0 0 1px;border-radius:var(--nm-radius-sm);
-  color:var(--nm-text-dim);cursor:pointer;white-space:nowrap;overflow:hidden;
+/*
+ * Krunker's greys, not ours. This sits ON the game's settings panel, which is
+ * a mid grey — reaching for --nm-surface here paints a near-black block on it.
+ */
+.kc-sectnav-item{padding:8px 12px;margin:0 0 1px;
+  color:var(--nm-kr-text-dim);cursor:pointer;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;line-height:var(--nm-lh-tight);
   border-left:var(--nm-bw-thick) solid transparent;
   transition:color var(--nm-fast),background var(--nm-fast)}
-.kc-sectnav-item:hover{color:var(--nm-text-mid);background:var(--nm-surface)}
+.kc-sectnav-item:hover{color:var(--nm-kr-text);background:var(--nm-kr-fill)}
 /* The marker is a left rule rather than a filled pill: the rows to the right
    are already busy, and a solid block here would compete with them. */
-.kc-sectnav-item.kc-sectnav-on{color:var(--nm-text-hi);background:var(--nm-surface);
-  border-left-color:var(--nm-accent)}
+.kc-sectnav-item.kc-sectnav-on{color:var(--nm-kr-text);background:var(--nm-kr-fill);
+  border-left-color:var(--nm-kr-accent)}
 
 /*
  * Quieter settings rows.
  *
  * Krunker draws every category as a raised card with a heavy header bar and
  * boxes every control, which at this density reads as noise — the screenshot
- * that prompted this has eleven outlined boxes stacked down one column. This
- * flattens the cards to a hairline rule per section and lets the rows breathe,
- * without touching their structure: same elements, same classes, same
- * behaviour, so the game's own controls keep working.
+ * that prompted this had eleven outlined boxes stacked down one column. Cards
+ * flatten to a heading and a rule, and rows are separated by a hairline
+ * instead of by an outline each.
+ *
+ * Structure is untouched: same elements, same class names, same behaviour, so
+ * the game's own controls keep working.
  */
 .kc-has-sectnav .setHed{background:none !important;border:0 !important;
   box-shadow:none !important;
-  padding:22px 2px 10px !important;margin:0 !important;
-  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-xs) !important;
-  color:var(--nm-text-hi) !important;
-  border-bottom:var(--nm-bw) solid var(--nm-border) !important}
+  padding:22px 2px 9px !important;margin:0 !important;
+  font-size:var(--nm-fs-lg) !important;
+  letter-spacing:var(--nm-track-2xl) !important;
+  text-transform:uppercase !important;
+  color:var(--nm-kr-text-faint) !important;
+  border-bottom:var(--nm-bw-thick) solid var(--nm-kr-rule) !important}
+/*
+ * The collapse chevron is a material-icons ligature, and its text content is
+ * the ligature NAME. Uppercasing it stops the ligature resolving and the row
+ * renders the words "keyboard_arrow_down" instead of an arrow, so the
+ * transform has to be taken back off the icon.
+ */
+.kc-has-sectnav .setHed .material-icons{text-transform:none !important;
+  letter-spacing:normal !important}
 .kc-has-sectnav .setBodH{background:none !important;border:0 !important;
-  box-shadow:none !important;padding:2px 0 !important;margin:0 !important}
+  box-shadow:none !important;padding:0 !important;margin:0 !important}
+/* A hairline per row. Stripes were the first attempt and they were wrong
+   twice over: a second pattern competing with the rules, in a tone taken from
+   our own palette rather than the panel they were painted on. */
 .kc-has-sectnav .setting{border:0 !important;background:none !important;
-  padding:9px 2px !important}
-/* Zebra instead of borders: it separates rows without adding another outline. */
-.kc-has-sectnav .setBodH > .setting:nth-child(even){background:var(--nm-surface) !important;
-  border-radius:var(--nm-radius-sm) !important;padding-left:10px !important;
-  padding-right:10px !important}
+  padding:11px 2px !important;
+  border-bottom:var(--nm-bw) solid var(--nm-kr-rule-soft) !important}
+.kc-has-sectnav .setBodH > .setting:last-child{border-bottom:0 !important}
 `;
 
 /**

@@ -69,6 +69,27 @@ export function activeIndex(tops: readonly number[], scrollTop: number, lookahea
   return active;
 }
 
+/**
+ * True when the scroller cannot go any further down.
+ *
+ * Without this the last sections are unreachable by the highlight: clicking
+ * "Shortcuts" scrolls as far as it can, which stops short of that section's
+ * own offset, so the reading line is still inside the section above and the
+ * highlight snaps back to it the moment the scroll settles. At the bottom the
+ * answer is always the last section, whatever the arithmetic says.
+ *
+ * The slack absorbs fractional scroll heights, which browsers report on
+ * fractional device pixel ratios and at non-integer zoom.
+ */
+export function isAtEnd(
+  scrollTop: number,
+  clientHeight: number,
+  scrollHeight: number,
+  slack = 2,
+): boolean {
+  return scrollTop + clientHeight >= scrollHeight - slack;
+}
+
 /** The nearest scrollable ancestor, `start` included. */
 function scrollContainer(start: HTMLElement): HTMLElement | null {
   let el: HTMLElement | null = start;
@@ -156,8 +177,47 @@ export function createSectionNav(): SectionNav {
       tops = measure(headersIn(holderEl));
     }
 
-    const index = activeIndex(tops, scroller.scrollTop);
+    pin();
+
+    const index = isAtEnd(scroller.scrollTop, scroller.clientHeight, scroller.scrollHeight)
+      ? items.length - 1
+      : activeIndex(tops, scroller.scrollTop);
     items.forEach((item, i) => item.classList.toggle('kc-sectnav-on', i === index));
+  }
+
+  /**
+   * Hold the index at the top of whatever part of the holder is on screen.
+   *
+   * `position:sticky` did this until it didn't: it fails silently as soon as
+   * any ancestor between the element and the scrolling box has
+   * `overflow:hidden`, because that ancestor becomes the sticky context. The
+   * settings window has one, so the index scrolled away with the rows.
+   *
+   * Doing it here works whichever element turns out to scroll. When the holder
+   * IS the scroller its own `scrollTop` is the answer; when something above it
+   * scrolls, the answer is how far that has scrolled past the holder's top.
+   * Both are the same expression once the holder's offset inside the scrolled
+   * content is known, and both clamp inside the holder, so the index cannot
+   * ride out of the window.
+   */
+  function pin(): void {
+    if (!nav || !scroller || !holderEl) return;
+
+    const holderOffset =
+      holderEl === scroller
+        ? 0
+        : holderEl.getBoundingClientRect().top -
+          scroller.getBoundingClientRect().top +
+          scroller.scrollTop;
+
+    // Only as tall as the visible part of the panel, so a long index scrolls
+    // inside itself instead of running past the bottom of the window.
+    const visible = scroller.clientHeight;
+    nav.style.maxHeight = `${visible}px`;
+
+    const limit = Math.max(0, holderEl.clientHeight - nav.offsetHeight);
+    const y = Math.min(Math.max(scroller.scrollTop - holderOffset, 0), limit);
+    nav.style.top = `${Math.round(y)}px`;
   }
 
   function schedulePaint(): void {

@@ -148,6 +148,28 @@ const GAME_STATUS = `
 `;
 
 /**
+ * Krunker's own greys, for anything we draw ONTO one of its surfaces.
+ *
+ * The settings panel is the game's element, not ours: its background is that
+ * mid grey, and a rule or a tint we add there has to sit on it. Reaching for
+ * `--nm-surface` instead — a near-black tuned for our own floating panels —
+ * paints dark stripes on light grey, which is exactly the bug this group was
+ * added to fix.
+ *
+ * Read off the running game rather than guessed. They are close enough to be
+ * worth re-checking against a screenshot if Krunker reskins.
+ */
+const KRUNKER = `
+  --nm-kr-rule:#4a4a4a;
+  --nm-kr-rule-soft:#464646;
+  --nm-kr-fill:#464646;
+  --nm-kr-text:#fff;
+  --nm-kr-text-dim:#b4b4b4;
+  --nm-kr-text-faint:#9a9a9a;
+  --nm-kr-accent:#2f8ff5;
+`;
+
+/**
  * The `[T]`/`[M]` prefixes on merged chat. Green for team, red for match, which
  * is the association Krunker's own name colours already set up.
  */
@@ -457,6 +479,7 @@ export const TOKENS_CSS = `:root{${[
   POPOVER,
   GAME,
   GAME_STATUS,
+  KRUNKER,
   CHAT,
   WATERMARK,
   QUEUE_BUTTON,
