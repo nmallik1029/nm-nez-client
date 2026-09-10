@@ -16,7 +16,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
-    version: '0.1.30',
+    version: '0.1.31',
     date: '2026-09-10',
     changes: [
       {
@@ -26,6 +26,16 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       {
         kind: 'changed',
         text: 'Alt Manager moved back under Loadout and Customize to make room for it. Same one click, just on the class card instead of the top bar.',
+      },
+    ],
+  },
+  {
+    version: '0.1.30',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The character preview on the menu no longer sits over the middle of its own card. It moves right, so the weapon points out across empty space instead of the whole model reading as shifted left. NM/NEZ menu style only.',
       },
     ],
   },
