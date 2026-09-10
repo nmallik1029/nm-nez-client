@@ -1,7 +1,7 @@
 {
   "name": "nmnez",
   "private": true,
-  "version": "0.1.23",
+  "version": "0.1.24",
   "description": "Performance-focused Krunker client for Windows",
   "license": "GPL-3.0-or-later",
   "main": "dist/main/index.js",
