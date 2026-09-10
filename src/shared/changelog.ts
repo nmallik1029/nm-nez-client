@@ -21,7 +21,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'changed',
-        text: 'Invite and Join sit on the same line as the mode and map, to their right, instead of orphaned underneath.',
+        text: 'Invite and Join sit on the same line as the mode and map, to their right, instead of orphaned underneath. They are set a size larger and spaced evenly either side of the divider between them.',
       },
       {
         kind: 'fixed',

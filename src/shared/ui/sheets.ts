@@ -854,11 +854,26 @@ const menuSkin = `
    colour and opacity are constant through the whole cycle. So the fix is to
    stop resting so dim. Full strength at rest, white on hover. */
 #matchInfoHolder .match-action-btn{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-3xl) !important;
+  font-size:var(--nm-fs-md) !important;letter-spacing:var(--nm-track-3xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone-hi) !important}
-#matchInfoHolder .match-action-sep{opacity:1 !important}
+#matchInfoHolder .match-action-sep{opacity:1 !important;
+  font-size:var(--nm-fs-md) !important}
+/*
+ * The width floor belongs to Invite alone — its label becomes "Copied URL"
+ * and back, and without a floor the separator and Join move each way.
+ *
+ * Right-aligned, not left. The slack has to go somewhere, and on the right it
+ * sat between Invite and the separator while Join sat hard against it, so the
+ * pair read as lopsided. On the left it falls into the gap that was already
+ * there after the map name, and both words end up the separator's own
+ * distance from it.
+ *
+ * In LAYOUT pixels: the label measures about 85 on screen at this size, and
+ * the whole UI is scaled 0.869, so it needs ~98 of these.
+ */
+#inviteButton{min-width:104px !important;text-align:right !important}
 /* Clicking Invite swaps its label to "Copied URL" and back a moment later,
    and the row twitched each way.
    Measured on the running client rather than guessed at, twice: the font
@@ -875,15 +890,8 @@ const menuSkin = `
      reads as a control that has been switched off. Full strength; the colour
      already carries how quiet they are meant to be. */
   opacity:1 !important;
-  /* Wide enough for "Copied URL" so the row does not reflow when the label
-     changes.
-     In LAYOUT pixels, which is the trap here: the label measures 71.7px on
-     screen, but the whole UI is scaled 0.869, so it needs 82.5 of these. A
-     floor of 74 looked generous against the measured number and was actually
-     short, and the row still moved. */
-  min-width:88px !important;text-align:left !important;
   transform:none !important;animation:none !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-2xs) !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   line-height:1 !important;letter-spacing:var(--nm-track-3xl) !important;
   text-transform:uppercase !important;white-space:nowrap !important}
 #matchInfoHolder .match-action-sep{color:var(--nm-menu-line-hi) !important;text-shadow:none !important}
