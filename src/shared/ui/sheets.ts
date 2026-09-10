@@ -431,10 +431,18 @@ const sectionNav = `
 /* A hairline per row. Stripes were the first attempt and they were wrong
    twice over: a second pattern competing with the rules, in a tone taken from
    our own palette rather than the panel they were painted on. */
-.kc-has-sectnav .setting{border:0 !important;background:none !important;
+/*
+ * Rows are .settName on Krunker's own tabs and "setting settName" on ours, so
+ * both are named. Targeting only .setting — which is what this did — meant none
+ * of the flattening applied to the game's own tabs at all, which is why they
+ * still looked untouched.
+ */
+.kc-has-sectnav .setting,
+.kc-has-sectnav .settName{border:0 !important;background:none !important;
   padding:11px 2px !important;
   border-bottom:var(--nm-bw) solid var(--nm-kr-rule-soft) !important}
-.kc-has-sectnav .setBodH > .setting:last-child{border-bottom:0 !important}
+.kc-has-sectnav .setBodH > .setting:last-child,
+.kc-has-sectnav .setBodH > .settName:last-child{border-bottom:0 !important}
 /*
  * A step down from Krunker's own row size.
  *
@@ -444,7 +452,24 @@ const sectionNav = `
  * Krunker sizes these by id, which outranks any class selector of ours.
  */
 .kc-has-sectnav .setting,
-.kc-has-sectnav .setting .setting-title{font-size:var(--nm-fs-3xl) !important}
+.kc-has-sectnav .settName,
+.kc-has-sectnav .setting .setting-title,
+.kc-has-sectnav .settName .setting-title{font-size:var(--nm-fs-3xl) !important}
+
+/*
+ * Krunker's preset tiles: Default / Pro / Performance / Custom.
+ *
+ * They sit at the top of every tab and overwrite every setting in one click,
+ * directly above the thing you opened the window for. The same four names are
+ * still in the #settingsPreset dropdown in the header, so nothing is lost —
+ * only the four large boxes in the way of the settings.
+ *
+ * A class, in the end. An earlier attempt went looking for them by their
+ * labels and found the dropdown's option elements instead, because a tile's
+ * text is its name AND its description ("DefaultKrunkers default Settings")
+ * and so never matches a bare preset name.
+ */
+.setSugBox2{display:none !important}
 `;
 
 /**
