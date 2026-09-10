@@ -43,6 +43,32 @@ const COLLAPSED_CLASS = 'kc-setbod-collapsed';
 /** Retries while the settings window is still opening. About a second. */
 const RETRY_LIMIT = 4;
 
+/** Breathing room left above a section the index jumps to. Layout pixels. */
+const LANDING_GAP = 12;
+
+/**
+ * Visual pixels per layout pixel inside the settings window.
+ *
+ * THIS IS THE ONE. Krunker scales its entire UI with a transform on #uiBase —
+ * matrix(0.869) at the default UI scale, and it moves with the UI Scale
+ * setting. getBoundingClientRect reports POST-transform pixels; scrollTop,
+ * scrollBy and a translateY all take PRE-transform ones. Mixing the two is
+ * why four separate attempts at this index landed short by a constant
+ * fraction of however far they travelled — measured on the running client,
+ * every jump ended up 13.1% of its own distance below where it was aimed,
+ * and 1 - 0.869 = 0.131.
+ *
+ * Every place below that reads a rect and writes a scroll or a transform
+ * divides by this.
+ */
+function uiScale(el: HTMLElement): number {
+  const layout = el.offsetHeight;
+  if (layout <= 0) return 1;
+  const scale = el.getBoundingClientRect().height / layout;
+  // A window still opening measures zero; 1 is the harmless answer.
+  return scale > 0.01 ? scale : 1;
+}
+
 /**
  * Everything in a section header that is not its name.
  *
@@ -222,8 +248,14 @@ export function createSectionNav(): SectionNav {
    */
   function measure(headers: HTMLElement[]): number[] {
     if (!scroller) return [];
-    const base = scroller.getBoundingClientRect().top - scroller.scrollTop;
-    return headers.map((h) => Math.round(h.getBoundingClientRect().top - base));
+    const scale = uiScale(scroller);
+    const top = scroller.getBoundingClientRect().top;
+    const { scrollTop } = scroller;
+    // Rect difference is visual, scrollTop is layout, so the first is
+    // converted before the two are added.
+    return headers.map((h) =>
+      Math.round(scrollTop + (h.getBoundingClientRect().top - top) / scale),
+    );
   }
 
   function paint(): void {
@@ -280,14 +312,17 @@ export function createSectionNav(): SectionNav {
     // it this way rather than remembering an offset means an outside change —
     // a re-render, a resize, Krunker moving the panel — is absorbed instead of
     // drifting.
-    const layoutTop = nav.getBoundingClientRect().top - appliedY;
+    // Everything here is read from rects, so it is all in visual pixels; the
+    // transform we write is not, hence the scale at the end.
+    const scale = uiScale(scroller);
+    const layoutTop = nav.getBoundingClientRect().top - appliedY * scale;
 
     const viewportTop = scroller.getBoundingClientRect().top;
     const holderBottom = holderEl.getBoundingClientRect().bottom;
-    const lowest = Math.max(layoutTop, holderBottom - navHeight);
+    const lowest = Math.max(layoutTop, holderBottom - navHeight * scale);
 
     const target = Math.min(Math.max(viewportTop, layoutTop), lowest);
-    const next = Math.round(target - layoutTop);
+    const next = Math.round((target - layoutTop) / scale);
 
     // Only write when it actually moves. This runs every frame for the length
     // of a jump, and an unchanged style write still costs a style recalc.
@@ -365,20 +400,27 @@ export function createSectionNav(): SectionNav {
     tops = measure(headersIn(holderEl));
 
     /**
-     * Ask the browser to bring the header up, rather than working out where
-     * that is.
+     * Move the scroller by the gap between where the header is and where it
+     * should be. Relative, so no box model comes into it.
      *
-     * This used to compute a scroll offset by hand — the header's rect
-     * measured against the scroller's rect plus its scrollTop — and then
-     * scrollTo that. Every term in that has to be right about which box is
-     * which: getBoundingClientRect is a border box, scrollTop counts from the
-     * padding box, and #menuWindow carries 20px of padding, so the arithmetic
-     * and the browser disagreed by the size of whatever was between them.
+     * Two wrong answers came before this one, and both are worth keeping:
      *
-     * scrollIntoView cannot be wrong about any of it, and the gap above the
-     * landing is CSS (scroll-margin-top) rather than a magic number here.
+     *  - An absolute scrollTo, computed as the header's rect against the
+     *    scroller's rect plus its scrollTop. Every term there has to agree
+     *    about which box is which — rects are border boxes, scrollTop counts
+     *    from the padding box, and #menuWindow carries 20px of padding — so it
+     *    landed short by whatever sat between them.
+     *  - scrollIntoView, which is right about all of that and still wrong
+     *    here: it scrolls EVERY scrollable ancestor, so it took the document
+     *    with it and pushed the whole game off the top of the window.
+     *
+     * scrollBy on the scroller itself can do neither. Both rects are read in
+     * viewport coordinates in the same frame, so their difference is exactly
+     * how far this one box has to move, and nothing else is touched.
      */
-    header.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const scale = uiScale(scroller);
+    const visual = header.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+    scroller.scrollBy({ top: visual / scale - LANDING_GAP, behavior: 'smooth' });
 
     // Hold the index still for the length of the animation. Without this it is
     // only repositioned when a scroll event happens to arrive, which is less
