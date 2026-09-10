@@ -493,6 +493,7 @@ const MENU = `
   --nm-menu-ash:#9a9285;
   --nm-menu-ash-dim:#6e675d;
   --nm-menu-ember:#e4552e;
+  --nm-menu-panel:#15130f;
   --nm-menu-fill:rgba(12,11,10,.42);
   --nm-menu-wash:rgba(242,238,230,.09);
   --nm-menu-ember-wash:rgba(228,85,46,.12);
@@ -528,7 +529,7 @@ const MENU_SCRIM = `
  * the shared scale would invite someone to reach for it elsewhere.
  */
 const MENU_TYPE = `
-  --nm-menu-font:'Bahnschrift','DIN Alternate','Segoe UI',system-ui,sans-serif;
+  --nm-menu-font:Consolas,'Cascadia Mono',ui-monospace,monospace;
   --nm-menu-track-cta:.42em;
 `;
 

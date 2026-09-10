@@ -762,7 +762,7 @@ const menuSkin = `
   100%{opacity:1;width:7px;height:7px;margin-top:-4px;
     border-top-width:var(--nm-bw-thick);transform:rotate(45deg)}}
 #menuItemContainer .menuItemTitle{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-xl) !important;
+  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-sm) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone) !important}
@@ -917,6 +917,161 @@ const menuSkin = `
 .headerBarRight .kc-menu-headerlink:hover{color:var(--nm-menu-bone) !important}
 `;
 
+/**
+ * Krunker's own windows: settings, login, loadout, customize, and the popups.
+ *
+ * Everything the menu skin does, applied one level in. These are NOT Svelte —
+ * they are Krunker's original markup and their rules all live in main.css,
+ * which is why this can be written against real class names instead of hashes.
+ *
+ * The leverage is that all of those windows share their parts. `#menuWindow`
+ * is the panel for the settings, the loadout and the customize screens;
+ * `.settName` is a row in any of them; `.switch`, `.sliderM` and `.inputGrey`
+ * are the controls everywhere. Restyling the primitives restyles every window
+ * at once, which is why almost nothing here names a specific screen.
+ *
+ * Scoped to the windows on purpose. `.button` is Krunker's button class for
+ * the whole game including the play row this skin already styles, so every
+ * button rule sits behind a window selector rather than going global.
+ *
+ * Before editing, read "Restyling Krunker" at the bottom of
+ * `krunker/constants.ts`. The ID-beats-class rule bites hardest in here.
+ */
+const krunkerWindows = `
+/* ---- the panel, and what it sits on ---- */
+#windowHolder.popupWin,#popupBack{background:var(--nm-menu-scrim) !important}
+#menuWindow,#menuWindow.dark{background:var(--nm-menu-panel) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
+  box-shadow:none !important;color:var(--nm-menu-bone) !important}
+#menuWindow.dark div{color:inherit}
+#popupContent,#policePopC,#guidePopup{background:var(--nm-menu-panel) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
+  box-shadow:none !important;color:var(--nm-menu-bone) !important}
+#guidePopupH{background:var(--nm-menu-scrim) !important}
+
+/* ---- tab strip ---- */
+#settingsTabLayout{background:none !important;border-radius:0 !important;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
+#menuWindow .settingTab{background:none !important;border-radius:0 !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  border-bottom:var(--nm-bw-thick) solid var(--nm-menu-scrim-0) !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast)}
+#menuWindow .settingTab:hover{color:var(--nm-menu-bone) !important;
+  border-bottom-color:var(--nm-menu-line-hi) !important}
+#menuWindow .settingTab.tabA{background:none !important;color:var(--nm-menu-bone) !important;
+  border-bottom-color:var(--nm-menu-ember) !important}
+
+/* ---- section headings ---- */
+/* Krunker draws these as a raised grey box with a 4px border. A label over a
+   rule reads as structure rather than as one more control. */
+#menuWindow .setHed,#menuWindow .setHedS{background:none !important;border:0 !important;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+  color:var(--nm-menu-ash-dim) !important;text-shadow:none !important;
+  padding:0 0 8px !important;margin:26px 0 12px !important}
+#menuWindow .setHed:hover,#menuWindow .setHedS:hover{background:none !important;
+  color:var(--nm-menu-ash) !important}
+#menuWindow .setBodH{background:none !important;border-radius:0 !important;
+  margin-left:0 !important;padding-left:0 !important;padding-right:0 !important;
+  width:100% !important}
+
+/* ---- rows ---- */
+#menuWindow .settName,#menuWindow .settNameSmall{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-lg) !important;letter-spacing:var(--nm-track-xs) !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
+#menuWindow .settNameIn:hover{background:var(--nm-menu-wash) !important;
+  color:var(--nm-menu-bone) !important;border-radius:0 !important}
+
+/* ---- toggles ---- */
+/* Krunker's blue is the last saturated colour in these windows once the greys
+   are ours, and marking state is the accent's job. */
+#menuWindow .slider,#menuWindow .sliderSml,#menuWindow .sliderCent,
+#popupContent .slider,#popupContent .sliderSml{background:var(--nm-menu-line-hi) !important;
+  border-radius:0 !important}
+#menuWindow .slider:before,#menuWindow .sliderSml:before,#menuWindow .sliderCent:before,
+#popupContent .slider:before,#popupContent .sliderSml:before{
+  background:var(--nm-menu-bone) !important;border-radius:0 !important}
+#menuWindow input:checked + .slider,#menuWindow input:checked + .sliderSml,
+#menuWindow input:checked + .sliderCent,
+#popupContent input:checked + .slider{background:var(--nm-menu-ember) !important}
+#menuWindow input:checked + .slider:before,
+#menuWindow input:checked + .sliderSml:before{background:var(--nm-menu-ink) !important}
+
+/* ---- ranges and their value boxes ---- */
+#menuWindow .sliderM{background:var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  height:4px !important}
+#menuWindow .sliderM::-webkit-slider-thumb{background:var(--nm-menu-bone) !important;
+  border-radius:0 !important;width:5px !important;height:18px !important}
+#menuWindow .sliderM::-moz-range-thumb{background:var(--nm-menu-bone) !important;
+  border-radius:0 !important;width:5px !important;height:18px !important;border:0 !important}
+#menuWindow .sliderVal{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+  border-style:solid !important;border-radius:0 !important;
+  background:var(--nm-menu-fill) !important;color:var(--nm-menu-bone) !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  text-shadow:none !important}
+
+/* ---- inputs ---- */
+/* These ship light grey, which is a white box sitting in a dark window. */
+#menuWindow .inputGrey,#menuWindow .inputGrey2,#menuWindow input[type="text"],
+#menuWindow input[type="password"],#menuWindow input[type="email"],#menuWindow select,
+#popupContent input[type="text"],#popupContent input[type="password"],
+#popupContent input[type="email"],#popupContent select{
+  background:var(--nm-menu-fill) !important;color:var(--nm-menu-bone) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  text-shadow:none !important}
+#menuWindow input::placeholder,#popupContent input::placeholder{
+  color:var(--nm-menu-ash-dim) !important}
+#menuWindow input:focus,#popupContent input:focus{
+  border-color:var(--nm-menu-bone) !important;outline:none !important}
+
+/* ---- the small coloured action buttons ---- */
+/* Import / Export / Reset / Manage Ads ship in four different hues. */
+#menuWindow .settingsBtn{background:var(--nm-menu-fill) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
+  text-transform:uppercase !important;text-shadow:none !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
+#menuWindow .settingsBtn:hover{color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+
+/* ---- buttons inside a window ---- */
+#menuWindow .button,#popupContent .button,#policePopC .button,.metaPop .button,
+.confPop .button,.clientExitPop .button{
+  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  background:var(--nm-menu-fill) !important;color:var(--nm-menu-ash) !important;
+  text-shadow:none !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
+#menuWindow .button:hover,#popupContent .button:hover,#policePopC .button:hover,
+.metaPop .button:hover,.confPop .button:hover,.clientExitPop .button:hover{
+  transform:none !important;color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+#menuWindow .button:active,#popupContent .button:active{transform:none !important}
+/* Krunker marks the one action it wants you to take with a saturated fill.
+   Keeping that rank, in the skin's own accent. */
+#menuWindow .button.buttonG,#popupContent .button.buttonG{
+  border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ember) !important;
+  background:var(--nm-menu-ember-wash) !important}
+#menuWindow .button.buttonG:hover,#popupContent .button.buttonG:hover{
+  background:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important}
+
+/* ---- window furniture ---- */
+#menuWindow table.twoFATable td{background:var(--nm-menu-fill) !important;
+  border-radius:0 !important;color:var(--nm-menu-bone) !important}
+#menuWindow table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
+#menuWindow .instructionsTabs{background:none !important;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
+#menuWindow .instructionsTab{color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
+  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important}
+#menuWindow .instructionsTab:hover{color:var(--nm-menu-bone) !important}
+`;
+
 export const SHEETS = {
   toast,
   tooltip,
@@ -933,4 +1088,5 @@ export const SHEETS = {
   scan,
   update,
   menuSkin,
+  krunkerWindows,
 } as const;

@@ -69,4 +69,5 @@ export const STYLE_IDS = {
   chatMerge: 'kc-chat-merge',
   update: 'kc-update-css',
   menuSkin: 'kc-menu-skin-css',
+  krunkerWindows: 'kc-krunker-windows-css',
 } as const;

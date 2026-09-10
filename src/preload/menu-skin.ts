@@ -243,6 +243,11 @@ function apply(): void {
 export function setMenuSkin(on: boolean): void {
   enabled = on;
   toggleStyle(STYLE_IDS.menuSkin, SHEETS.menuSkin, on);
+  // Krunker's own windows ride the same switch. They are a separate sheet
+  // only because they are a separate surface to read, not a separate setting:
+  // a menu in one palette opening a settings window in another is worse than
+  // either on its own.
+  toggleStyle(STYLE_IDS.krunkerWindows, SHEETS.krunkerWindows, on);
   apply();
 }
 

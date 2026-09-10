@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.17',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Krunker’s own windows now match the menu. Settings, login, loadout, customize and the popups all get the same palette, the same one accent, hairlines instead of heavy borders, and dark inputs instead of white boxes.',
+      },
+      {
+        kind: 'changed',
+        text: 'The menu is set in Consolas.',
+      },
+    ],
+  },
+  {
     version: '0.1.16',
     date: '2026-09-10',
     changes: [
