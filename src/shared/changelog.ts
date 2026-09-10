@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.28',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Your KR, level, kills and wallet keep their own colours again. The skin was recolouring the whole top bar rather than just the buttons at either end of it, so the whole row came out grey.',
+      },
+      {
+        kind: 'changed',
+        text: 'The character preview sits further right, closer to the weapon name under it.',
+      },
+    ],
+  },
+  {
     version: '0.1.27',
     date: '2026-09-10',
     changes: [

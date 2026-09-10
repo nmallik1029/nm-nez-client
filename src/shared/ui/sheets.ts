@@ -744,16 +744,27 @@ const menuSkin = `
 #signedOutHeaderBar [class*="ph-login-wrap"]:hover,
 #playerHeaderEl #${UI_IDS.altManagerButton}:hover{border-color:var(--nm-menu-bone) !important;
   background:var(--nm-menu-wash) !important}
-#playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
+/*
+ * Scoped to the two groups this skin actually restyles, NOT to the header as
+ * a whole.
+ *
+ * #playerHeaderEl is the entire top bar, and once you are signed in that
+ * includes the currency row — KR, level, kills, wallet — whose icons and
+ * figures carry Krunker's own colours. Recolouring by header rather than by
+ * group greyed all of it out. Nothing here reaches past the signed-out bar
+ * and the nav group on the right.
+ */
+#signedOutHeaderBar .ph-label,.headerBarRight .nav-label{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
-#playerHeaderEl .ph-item:hover .ph-label,#playerHeaderEl .nav-item:hover .nav-label{
+#signedOutHeaderBar .ph-item:hover .ph-label,.headerBarRight .nav-item:hover .nav-label{
   color:var(--nm-menu-bone) !important}
 /* Icon text is the ligature name, so uppercase must never reach it. */
-#playerHeaderEl .ph-icon,#playerHeaderEl .nav-mat-icon{text-transform:none !important;
+#signedOutHeaderBar .ph-icon,.headerBarRight .nav-mat-icon{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
-#playerHeaderEl .verticalSeparator{background:var(--nm-menu-line-hi) !important;opacity:1 !important}
+#signedOutHeaderBar .verticalSeparator,.headerBarRight .verticalSeparator{
+  background:var(--nm-menu-line-hi) !important;opacity:1 !important}
 /* Notifications, and the separators that only existed to fence it off. */
 #playerHeaderEl .headerBarRight [class*="nav-notif-section"],
 #playerHeaderEl .headerBarRight .verticalSeparator{display:none !important}
@@ -967,6 +978,18 @@ const menuSkin = `
   font-weight:400 !important;text-shadow:none !important}
 
 /* ---- class card ---- */
+/*
+ * Nudge the character further right.
+ *
+ * Krunker positions the preview with margin-right:-113px on the canvas — a
+ * negative margin, so the canvas hangs off the right of its container and the
+ * model rides with it. The model's place inside the canvas is the 3D camera's
+ * business and not something CSS can reach, so moving the canvas is the whole
+ * lever. This is that number, further out.
+ *
+ * The container is scale(0.7), so 62px here lands as about 43 on screen.
+ */
+#menuClassContainer #classPreviewCanvas{margin-right:-175px !important}
 /* The weapon is the headline and the class is its subtitle, so the class goes
    under it. Already a flex column, so reversing changes order and nothing else. */
 #menuClassContainerInfo{flex-direction:column-reverse !important}
