@@ -93,15 +93,7 @@ export interface FeatureConfig {
    * exactly as the game ships it, with no reload.
    */
   menuSkin: boolean;
-  /**
-   * Strip Krunker's in-game HUD back: no panels behind the ammo, timer,
-   * leaderboard or player block, bare FPS and ping figures, flatter chat.
-   *
-   * Off by default, like the menu skin and for the same reason. This one is a
-   * user's own theme rather than ours, kept as a .css file so it reads as the
-   * thing it is.
-   */
-  hudStyle: boolean;
+
   /**
    * Messages to keep. Krunker prunes old ones hard, so this puts them back and
    * trims to this number instead. 0 leaves the game's behaviour alone.
@@ -258,7 +250,6 @@ export const DEFAULT_CONFIG: AppConfig = {
     betterChat: true,
     hideMenuPromos: true,
     menuSkin: false,
-    hudStyle: false,
     chatHistoryLimit: 200,
     activeTheme: '',
   },

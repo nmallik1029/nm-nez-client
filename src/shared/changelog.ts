@@ -20,8 +20,8 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     date: '2026-09-10',
     changes: [
       {
-        kind: 'added',
-        text: 'HUD style, in Settings under Themes beside Menu style: Krunker (original) or Minimal. Minimal takes the panels out from behind the ammo, timer, leaderboard and player block, shows your FPS and ping as bare figures, and flattens the chat box. In-game only — it leaves the menu alone.',
+        kind: 'changed',
+        text: 'Picking NM/NEZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match — the menu is untouched by it.',
       },
     ],
   },

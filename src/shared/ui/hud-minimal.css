@@ -1,157 +1,132 @@
 /*
- * Minimal HUD — a user-supplied theme, in-game only.
+ * Minimal HUD — a user-supplied theme, in a match only.
  *
- * Kept as CSS rather than folded into sheets.ts because it is somebody's own
- * look, not part of this client's design system. The record of what was
- * stripped out of the original, and why, is in preload/hud-skin.ts — over
- * there it is comments in a .ts file, which the bundler drops, rather than
- * comments in a stylesheet, which get injected into the page verbatim.
+ * Every selector below is prefixed `#uiBase:not(.onMenu):not(.onCompMenu)`,
+ * and that prefix is the point. Krunker stamps its own state onto #uiBase —
+ * onMenu, onGame, onSpect, onEndScrn — so "not the menu" becomes something
+ * the stylesheet says out loud, rather than a property maintained by being
+ * careful about which selectors get added to it later.
+ *
+ * It matters because three of these aim at elements that exist in both
+ * places: the chat box is on the menu as well as in a match, so #chatList,
+ * #chatInput and #chatInputHolder would have restyled it there. Reading the
+ * original and deleting whatever looked menu-shaped did not catch those.
+ *
+ * The record of what was cut from the original, and why, is in
+ * preload/hud-skin.ts — comments in a .ts file get dropped by the bundler,
+ * where comments in a stylesheet are injected into the page verbatim.
  */
 
-:root {
-  --buttonColor: #ffffff;
-  --usernameColor: rgb(255, 255, 255);
-  --healthBarColor: white;
-}
-
-/* ---- readouts: swap Krunker's boxed pair for the bare numbers ---- */
-#fpsDisplay,
-#pingDisplay {
+#uiBase:not(.onMenu):not(.onCompMenu) #fpsDisplay,
+#uiBase:not(.onMenu):not(.onCompMenu) #pingDisplay {
   visibility: hidden;
 }
 
-#ingameFPS,
-#pingText {
-  visibility: visible;
-  color: white !important;
+#uiBase:not(.onMenu):not(.onCompMenu) #ingameFPS,
+#uiBase:not(.onMenu):not(.onCompMenu) #pingText {
+  visibility: visible; color: white !important;
 }
 
-.debugInfo {
-  position: fixed;
-  left: 156px;
-  top: 18px;
-  text-align: left;
+#uiBase:not(.onMenu):not(.onCompMenu) .debugInfo {
+  position: fixed; left: 156px; top: 18px; text-align: left;
 }
 
-/* ---- strip the panels behind the HUD ---- */
-.weapItem,
-.weapItemInner,
-#ammoHolder,
-.greyInner,
-#leaderContainer,
-#leaderboardHolder,
-.statIcon,
-.killStreakItem,
-.killStreakItemInner,
-#timerInner,
-#timerHolder,
-#teamScores,
-.nHealthBarSeg,
-#bottomLeftPlayerRight,
-#bottomLeftPlayerLeft,
-#bottomLeftPlayer,
-#chatInputHolder,
-.greyInlineInnerMid {
+#uiBase:not(.onMenu):not(.onCompMenu) .weapItem,
+#uiBase:not(.onMenu):not(.onCompMenu) .weapItemInner,
+#uiBase:not(.onMenu):not(.onCompMenu) #ammoHolder,
+#uiBase:not(.onMenu):not(.onCompMenu) .greyInner,
+#uiBase:not(.onMenu):not(.onCompMenu) #leaderContainer,
+#uiBase:not(.onMenu):not(.onCompMenu) #leaderboardHolder,
+#uiBase:not(.onMenu):not(.onCompMenu) .statIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItem,
+#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItemInner,
+#uiBase:not(.onMenu):not(.onCompMenu) #timerInner,
+#uiBase:not(.onMenu):not(.onCompMenu) #timerHolder,
+#uiBase:not(.onMenu):not(.onCompMenu) #teamScores,
+#uiBase:not(.onMenu):not(.onCompMenu) .nHealthBarSeg,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerRight,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerLeft,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayer,
+#uiBase:not(.onMenu):not(.onCompMenu) #chatInputHolder,
+#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInnerMid {
   background: 0 !important;
 }
 
-/* In-game only. The menu entries from this list are gone — see the note. */
-.weapKey,
-.weapSkin,
-#ammoMax,
-#ammoIcon,
-#timerIcon,
-#bottomLeftChallIcon,
-#bottomLeftTeamName,
-#bottomLeftTeamType {
+#uiBase:not(.onMenu):not(.onCompMenu) .weapKey,
+#uiBase:not(.onMenu):not(.onCompMenu) .weapSkin,
+#uiBase:not(.onMenu):not(.onCompMenu) #ammoMax,
+#uiBase:not(.onMenu):not(.onCompMenu) #ammoIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) #timerIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftChallIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamName,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamType {
   display: none !important;
 }
 
-.greyInner #ammoVal,
-.weapItemInner,
-.statIcon,
-#leaderContainer,
-.killStreakItemInner {
+#uiBase:not(.onMenu):not(.onCompMenu) .greyInner #ammoVal,
+#uiBase:not(.onMenu):not(.onCompMenu) .weapItemInner,
+#uiBase:not(.onMenu):not(.onCompMenu) .statIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) #leaderContainer,
+#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItemInner {
   padding: 0;
 }
 
-#timerInner {
-  margin: 0 !important;
-  padding: 0 !important;
+#uiBase:not(.onMenu):not(.onCompMenu) #timerInner {
+  margin: 0 !important; padding: 0 !important;
 }
 
-.greyInlineInner {
+#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInner {
   display: none;
 }
 
-.greyInlineInnerMid {
-  margin: 0;
-  padding: 0;
+#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInnerMid {
+  margin: 0; padding: 0;
 }
 
-/* ---- chat ---- */
-#chatInputHolder {
+#uiBase:not(.onMenu):not(.onCompMenu) #chatInputHolder {
   grid-template-columns: auto;
 }
 
-#chatList {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 0;
-  padding-left: 5px;
+#uiBase:not(.onMenu):not(.onCompMenu) #chatList {
+  background: rgba(0, 0, 0, 0.15); border-radius: 0; padding-left: 5px;
 }
 
-#chatInput {
-  background: rgba(0, 0, 0, 0.275);
-  border: 2px solid transparent;
-  width: 100%;
-  border-radius: 0;
+#uiBase:not(.onMenu):not(.onCompMenu) #chatInput {
+  background: rgba(0, 0, 0, 0.275); border: 2px solid transparent; width: 100%; border-radius: 0;
 }
 
-/* ---- bottom-left player block ---- */
-#topLeftBottom {
+#uiBase:not(.onMenu):not(.onCompMenu) #topLeftBottom {
   transform: translate(5px, 1px);
 }
 
-#bottomLeftPlayer,
-#bottomLeftPlayerLeft,
-#bottomLeftTeamType {
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayer,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerLeft,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamType {
   background-color: transparent;
 }
 
-#bottomLeftTeamName {
-  color: #fff;
-  background-color: transparent;
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamName {
+  color: #fff; background-color: transparent;
 }
 
-#bottomLeftHealthBar {
-  background-color: transparent !important;
-  margin-top: 41px !important;
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftHealthBar {
+  background-color: transparent !important; margin-top: 41px !important;
 }
 
-#bottomLeftChallIcon,
-#bottomLeftTeamHolder {
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftChallIcon,
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamHolder {
   display: none;
 }
 
-#bottomLeftHealth {
-  color: #fff;
-  font-size: 22px;
-  position: absolute;
-  bottom: 60px;
-  left: 100px;
-  display: inline-block;
-  padding-right: 7px;
-  padding-left: 10px;
-  border-radius: 5px;
-  will-change: transform;
+#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftHealth {
+  color: #fff; font-size: 22px; position: absolute; bottom: 60px; left: 100px; display: inline-block; padding-right: 7px; padding-left: 10px; border-radius: 5px; will-change: transform;
 }
 
-.nHealthBarSeg {
+#uiBase:not(.onMenu):not(.onCompMenu) .nHealthBarSeg {
   height: 30px !important;
 }
 
-/* ---- other clients' watermarks, if one has been left behind ---- */
-#PC7WaterMark1,
-div#PC7WaterMark2 {
+#uiBase:not(.onMenu):not(.onCompMenu) #PC7WaterMark1,
+#uiBase:not(.onMenu):not(.onCompMenu) div#PC7WaterMark2 {
   display: none !important;
 }

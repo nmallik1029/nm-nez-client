@@ -998,25 +998,8 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         ['krunker', 'Krunker (original)'],
         ['nmnez', 'NM/NEZ'],
       ],
-      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NEZ restyles the menu and the windows it opens: one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, and one settings section on screen at a time. Switches straight away, either way.',
+      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NEZ restyles the menu and the windows it opens — one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, one settings section on screen at a time — and strips the panels out from behind the in-game HUD to match. Switches straight away, either way.',
       onChange: (value) => deps.onChange('features', 'menuSkin', value === 'nmnez'),
-    });
-
-    /**
-     * The in-game HUD, as a second choice beside the menu one.
-     *
-     * Separate from Menu style because they are separate surfaces: plenty of
-     * people want the game's own menu and a stripped HUD, or the reverse.
-     */
-    const hudRow = selectRow({
-      label: 'HUD style',
-      value: deps.config.features.hudStyle ? 'minimal' : 'krunker',
-      options: [
-        ['krunker', 'Krunker (original)'],
-        ['minimal', 'Minimal'],
-      ],
-      hint: 'Minimal strips the panels out from behind the ammo, timer, leaderboard and player block, shows your FPS and ping as bare figures, and flattens the chat box. In-game only — it does not touch the menu. Switches straight away.',
-      onChange: (value) => deps.onChange('features', 'hudStyle', value === 'minimal'),
     });
 
     if (themes.length === 0) {
@@ -1030,12 +1013,11 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         'Drop a .css file into the themes folder, via the Themes button above. It turns up here straight away.',
       );
       row.appendChild(title);
-      return [styleRow, hudRow, row];
+      return [styleRow, row];
     }
 
     return [
       styleRow,
-      hudRow,
       selectRow({
         label: 'Theme',
         value: deps.getActiveTheme(),

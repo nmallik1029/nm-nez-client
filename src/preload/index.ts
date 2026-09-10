@@ -15,7 +15,6 @@ import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
-import { setHudStyle } from './hud-skin';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
 import { installRankedLaunchButton } from './ranked-button';
@@ -169,7 +168,6 @@ async function bootstrap(): Promise<void> {
     // After installMenuButtons, which is what creates the Alt Manager button
     // the skin then moves into the header.
     installMenuSkin(cfg.features.menuSkin);
-    setHudStyle(cfg.features.hudStyle);
 
     initChat({
       merged: cfg.features.betterChat,
@@ -229,9 +227,6 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
     } else if (key === 'hideMenuPromos') {
       // Just a stylesheet, so it toggles without a reload.
       setMenuPromoHiding(value === true);
-    } else if (key === 'hudStyle') {
-      // Pure CSS, so there is nothing to restore on the way out.
-      setHudStyle(value === true);
     } else if (key === 'menuSkin') {
       // A stylesheet and two element moves, both reversible, so this one
       // toggles live as well.
