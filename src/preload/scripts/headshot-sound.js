@@ -5,12 +5,21 @@
  * for any kill, and silences the real one so a headshot kill dings once
  * rather than twice.
  *
- * KCC does this by reading the game's websocket frames and watching for the
- * kill event. That is more precise and needs machinery a script does not
- * have, so this takes Glorp's route instead: the killfeed is in the chat
- * list, and a kill of yours is a line whose first coloured name is "You".
- * Checking the first one is what separates your kill from your death, since
- * the killer's name always comes first.
+ * The kill is read off the HUD's own kill counter, `#killsVal`. Both clients
+ * this idea comes from do it differently and neither route works here:
+ *
+ *  - Glorp watches the killfeed in the chat list. That only carries kill
+ *    lines when "show old scoreboard" is on, which is off by default, so on
+ *    a default profile it never fires. Confirmed in a live match: a bot hit
+ *    a 10 kill streak and chat showed the streak announcement and nothing
+ *    else.
+ *  - KCC reads the game's websocket frames, which is reliable but needs
+ *    frame decoding a script has no business carrying.
+ *
+ * The counter has neither problem. Confirmed in the same match that Krunker
+ * keeps it up to date even while the counter is hidden: deaths went 1 to 2
+ * with `#deathCount` at `display:none` throughout. So this works whatever
+ * the player has switched on in the HUD.
  *
  * Runs through `new Function`, so a top-level return is how it hands back
  * its teardown. Everything it touches is put back on the way out.
@@ -20,46 +29,37 @@
 var HEADSHOT = 'headshot_0';
 /** Krunker's own ding is the only one called without a volume. */
 var NATIVE_CALL_ARGS = 1;
+/** How often to check the counter element is still the one we are watching. */
+var REATTACH_MS = 2000;
 
 var originalPlay = null;
 var observer = null;
-var waitTimer = null;
+var watched = null;
+var lastKills = null;
+var timer = null;
 
-/** Play the ding ourselves, with a volume so our own wrapper lets it past. */
 function ding() {
   var sound = window.SOUND;
   if (sound && typeof sound.play === 'function') sound.play(HEADSHOT, 1, false);
 }
 
 /**
- * Is this chat line you killing someone?
+ * React to the counter changing.
  *
- * A killfeed line carries a weapon image; an ordinary message does not. The
- * names in it are coloured spans, and the first is always the killer, so
- * "You" first means the kill is yours and "You" later means you were the one
- * killed.
+ * Only an increase is a kill. It going down is a new match or a round reset,
+ * which re-baselines rather than dinging, and the very first reading only
+ * sets the baseline — joining a match already on 12 kills is not 12 kills
+ * just now.
  */
-function isOwnKill(node) {
-  if (!node || node.nodeType !== 1) return false;
+function onCount() {
+  if (!watched) return;
+  var value = parseInt(watched.textContent, 10);
+  if (isNaN(value)) return;
 
-  var message = node.querySelector('span.chatMsg');
-  if (!message || !message.querySelector('img')) return false;
-
-  var names = message.querySelectorAll('span[style*="color"]');
-  if (names.length === 0) return false;
-  return names[0].textContent.trim() === 'You';
-}
-
-function onChatMutations(mutations) {
-  for (var i = 0; i < mutations.length; i += 1) {
-    var added = mutations[i].addedNodes;
-    for (var j = 0; j < added.length; j += 1) {
-      if (isOwnKill(added[j])) {
-        ding();
-        return;
-      }
-    }
-  }
+  var previous = lastKills;
+  lastKills = value;
+  if (previous === null || value <= previous) return;
+  ding();
 }
 
 /**
@@ -80,42 +80,45 @@ function hookSound() {
   return true;
 }
 
-function watchChat() {
-  if (observer) return true;
-  var list = document.getElementById('chatList');
-  if (!list) return false;
+/**
+ * Point the observer at the current counter.
+ *
+ * Re-checked on a timer rather than attached once, because Krunker rebuilds
+ * chunks of its HUD and an observer left on a detached node goes quiet
+ * without ever erroring.
+ */
+function watchCounter() {
+  var el = document.getElementById('killsVal');
+  if (!el || el === watched) return el !== null;
 
-  observer = new MutationObserver(onChatMutations);
-  observer.observe(list, { childList: true });
+  if (observer) observer.disconnect();
+  watched = el;
+  lastKills = null;
+  observer = new MutationObserver(onCount);
+  observer.observe(el, { childList: true, characterData: true, subtree: true });
+  // Take the baseline now so the first real change is a change.
+  onCount();
   return true;
 }
 
-// Neither the sound manager nor the chat list exists when a script first
-// runs; both are built by the game. Poll until they turn up, then stop.
-function attach() {
-  var soundReady = hookSound();
-  var chatReady = watchChat();
-  if (soundReady && chatReady && waitTimer !== null) {
-    clearInterval(waitTimer);
-    waitTimer = null;
-  }
-}
-
-attach();
-if (waitTimer === null && (!originalPlay || !observer)) {
-  waitTimer = setInterval(attach, 500);
-}
+hookSound();
+watchCounter();
+timer = setInterval(function () {
+  hookSound();
+  watchCounter();
+}, REATTACH_MS);
 
 return function stop() {
-  if (waitTimer !== null) {
-    clearInterval(waitTimer);
-    waitTimer = null;
+  if (timer !== null) {
+    clearInterval(timer);
+    timer = null;
   }
   if (observer) {
     observer.disconnect();
     observer = null;
   }
-  // Only put ours back if nothing else has wrapped it since.
+  watched = null;
+  lastKills = null;
   if (originalPlay && window.SOUND) {
     window.SOUND.play = originalPlay;
     originalPlay = null;

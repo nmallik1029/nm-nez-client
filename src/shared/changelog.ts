@@ -35,7 +35,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'fixed',
-        text: 'The NM/NEZ look no longer switches itself off in a comp lobby. Every HUD rule was excluding Krunker’s comp menu state along with its main menu, so hosting or joining a comp game dropped the theme until the round started. It now covers a match, the comp lobby, spectate and the end screen — everything but the main menu.',
+        text: 'The NM/NZ look no longer switches itself off in a comp lobby. Every HUD rule was excluding Krunker’s comp menu state along with its main menu, so hosting or joining a comp game dropped the theme until the round started. It now covers a match, the comp lobby, spectate and the end screen — everything but the main menu.',
       },
     ],
   },
@@ -59,7 +59,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'fixed',
-        text: 'The character preview on the menu no longer sits over the middle of its own card. It moves right, so the weapon points out across empty space instead of the whole model reading as shifted left. NM/NEZ menu style only.',
+        text: 'The character preview on the menu no longer sits over the middle of its own card. It moves right, so the weapon points out across empty space instead of the whole model reading as shifted left. NM/NZ menu style only.',
       },
     ],
   },
@@ -69,7 +69,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'changed',
-        text: 'Picking NM/NEZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match — the menu is untouched by it.',
+        text: 'Picking NM/NZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match — the menu is untouched by it.',
       },
     ],
   },
@@ -91,7 +91,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'changed',
-        text: 'On the NM/NEZ menu style, chat is dressed like the rest of it: one flat panel, hairline border, square corners. Message colours are untouched, so you can still tell team from all.',
+        text: 'On the NM/NZ menu style, chat is dressed like the rest of it: one flat panel, hairline border, square corners. Message colours are untouched, so you can still tell team from all.',
       },
       {
         kind: 'changed',
@@ -99,7 +99,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'changed',
-        text: 'The accent colour is cyan instead of orange. It is one value, so the Ranked button, the toggles, the settings tabs and the slash in NM/NEZ all moved together.',
+        text: 'The accent colour is cyan instead of orange. It is one value, so the Ranked button, the toggles, the settings tabs and the slash in NM/NZ all moved together.',
       },
     ],
   },
@@ -109,7 +109,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'added',
-        text: 'Menu style, in Settings under Themes: Krunker (original) or NM/NEZ. Original is what a fresh install gets — the game’s own look is what you came for, and it is not this client’s place to rearrange it before you have asked.',
+        text: 'Menu style, in Settings under Themes: Krunker (original) or NM/NZ. Original is what a fresh install gets — the game’s own look is what you came for, and it is not this client’s place to rearrange it before you have asked.',
       },
       {
         kind: 'changed',
@@ -339,7 +339,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'added',
-        text: 'NM/NEZ and the version sit at the top of the left menu.',
+        text: 'NM/NZ and the version sit at the top of the left menu.',
       },
       {
         kind: 'changed',

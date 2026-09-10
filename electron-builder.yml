@@ -9,11 +9,11 @@
 # release orphans anyone's existing pins.
 #
 # productName: this is BRANDING.fileSafeName, not BRANDING.productName. The
-# display name "NM/NEZ" has a slash in it, and electron-builder feeds
+# display name "NM/NZ" has a slash in it, and electron-builder feeds
 # productName straight into artifactName and the default NSIS install path,
 # where a slash reads as a directory separator.
 appId: com.nmnez.client
-productName: NM-NEZ
+productName: NM-NZ
 
 directories:
   output: out

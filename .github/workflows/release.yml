@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           gh release edit "$GITHUB_REF_NAME" \
-            --title "NM/NEZ ${GITHUB_REF_NAME#v}" \
+            --title "NM/NZ ${GITHUB_REF_NAME#v}" \
             --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

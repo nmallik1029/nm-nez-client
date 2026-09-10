@@ -1,4 +1,4 @@
-# NM/NEZ
+# NM/NZ
 
 A Krunker client for Windows, built around one thing: the game should feel exactly as
 responsive as your hardware says it is. Everything else here is quality of life on top of
@@ -278,7 +278,7 @@ exist. Leaving DOM out fixes that and stops main-process code reaching for `wind
 **Every user-visible string comes from
 [`src/shared/branding.ts`](src/shared/branding.ts).** Rename there and nowhere else. The
 display name has a slash in it, so anything that becomes a path or an installer artifact
-uses `fileSafeName` (`NM-NEZ`) instead.
+uses `fileSafeName` (`NM-NZ`) instead.
 
 The one exception is the app icon, which is a binary and lives in
 [`build/`](build/README.md). Drop an `icon.ico` in there and it covers the exe, the

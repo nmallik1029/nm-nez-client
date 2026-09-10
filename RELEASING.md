@@ -34,7 +34,7 @@ git push --follow-tags
 ```
 
 That's it. The `Release` workflow picks up the tag, builds on Windows,
-publishes a GitHub release titled `NM/NEZ 0.1.4` with your changelog as the
+publishes a GitHub release titled `NM/NZ 0.1.4` with your changelog as the
 notes, and uploads the installer plus `latest.yml`.
 
 Anyone running an installed client gets a prompt within about eight seconds of
@@ -103,13 +103,13 @@ otherwise, which is why the changelog gets its own commit in step 4.
 ## Checking it worked
 
 - Actions tab: a `Release` run for your tag, green.
-- Releases: `NM/NEZ 0.1.4`, not a draft, with **four** assets. `latest.yml` is
+- Releases: `NM/NZ 0.1.4`, not a draft, with **four** assets. `latest.yml` is
   the one that matters; without it no installed client can find the update.
 - Your own client should prompt you on next launch.
 
 ## Who actually gets the update
 
-Only people who installed via **`NM-NEZ-x.y.z-Setup.exe`**. The portable exe
+Only people who installed via **`NM-NZ-x.y.z-Setup.exe`**. The portable exe
 has no install directory to replace, so it cannot update itself, and the
 settings tab tells those users as much.
 
