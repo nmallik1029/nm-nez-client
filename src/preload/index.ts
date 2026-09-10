@@ -18,7 +18,7 @@ import { watchSessionEnd } from './accounts/login';
 import { installRankedLaunchButton } from './ranked-button';
 import { installRealPing } from './ping';
 import { hookKrunkerSettings, type SettingsTab } from './settings/krunker-tab';
-import { installPalette } from './style';
+import { installTokens } from './style';
 import { activeTheme, knownThemes, setActiveTheme, setThemes } from './themes';
 import { showToast } from './toast';
 import { installWatermark } from './watermark';
@@ -42,11 +42,11 @@ const log = (...args: unknown[]): void => console.log(BRANDING.logPrefix, ...arg
 // inject that tab ourselves, but other parts of the game still read the flag.
 (window as unknown as { OffCliV: boolean }).OffCliV = true;
 
-// Colour tokens go in first and synchronously, before anything that references
+// Design tokens go in first and synchronously, before anything that references
 // them. Doing it inside bootstrap would be too late: that function starts with
-// an await, so another surface could define its stylesheet ahead of the
-// palette and land above it in the cascade.
-installPalette();
+// an await, so another surface could define its stylesheet ahead of the tokens
+// and land above them in the cascade.
+installTokens();
 
 let hud: PerfHud | null = null;
 let settingsTab: SettingsTab | null = null;

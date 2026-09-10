@@ -1,3 +1,4 @@
+import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { defineStyle } from './style';
 
 /**
@@ -7,14 +8,6 @@ import { defineStyle } from './style';
  * internal that moves around between updates. Our own element is a few lines
  * and can't break when the game changes.
  */
-const CSS = `
-#kc-toast{position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(8px);
-  z-index:2147483200;padding:8px 15px;border-radius:var(--nm-radius);
-  background:var(--nm-toast-bg);border:1px solid var(--nm-toast-border);color:var(--nm-text);
-  font-family:var(--nm-font);font-size:13px;line-height:1.2;
-  pointer-events:none;opacity:0;transition:opacity .16s,transform .16s}
-#kc-toast.kc-show{opacity:1;transform:translateX(-50%) translateY(0)}
-`;
 
 let element: HTMLDivElement | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -23,10 +16,10 @@ function ensure(): HTMLDivElement | null {
   if (element) return element;
   if (!document.documentElement) return null;
 
-  defineStyle('kc-toast-css', CSS);
+  defineStyle(STYLE_IDS.toast, SHEETS.toast);
 
   element = document.createElement('div');
-  element.id = 'kc-toast';
+  element.id = UI_IDS.toast;
 
   document.documentElement.append(element);
   return element;

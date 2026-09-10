@@ -4,7 +4,7 @@ import { KRUNKER_URLS } from '../krunker/constants';
 import { iconOption } from './app-icon';
 import { BRANDING } from '../shared/branding';
 import type { AppConfig, FixConfig } from '../shared/config';
-import { GAME_WINDOW_BACKGROUND } from '../shared/palette';
+import { GAME_WINDOW_BACKGROUND } from '../shared/ui';
 import type { ConfigStore } from './config/store';
 
 export interface MainWindowDeps {

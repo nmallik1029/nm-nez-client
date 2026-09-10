@@ -1,3 +1,4 @@
+import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 
 /**
@@ -38,28 +39,10 @@ import { defineStyle } from '../style';
  * the pair is supposed to fill anyway.
  */
 
-const ROW_ID = 'kc-class-buttons';
-const ALT_ID = 'kc-alt-manager-button';
-const STYLE_ID = 'kc-class-buttons-css';
+const ROW_ID = UI_IDS.classButtonRow;
+const ALT_ID = UI_IDS.altManagerButton;
 /** The ID rule that carries these buttons' width and display mode. */
 const BUTTON_SELECTOR = '#customizeButton';
-
-const CSS = `
-/* Block with an explicit width and auto left margin, reproducing the right
-   alignment the game's text-align:right wrapper gave the stacked buttons. */
-#${ROW_ID}{display:flex;gap:8px;margin:8px 0 0 auto}
-#${ROW_ID} > *{flex:1 1 0;width:auto !important;min-width:0;margin:0}
-/* Krunker sizes these for a full-width button. At half the width the label
-   plus its icon no longer fits, so both come down proportionally. */
-#${ROW_ID} .button{font-size:21px;padding-left:8px;padding-right:8px;
-  justify-content:center;white-space:nowrap}
-#${ROW_ID} .material-icons{font-size:24px !important;margin-left:4px !important}
-/* No height here: the shared .button class already supplies the
-   padding and line box that make the other two 44px tall, and an explicit
-   height fights it. */
-#${ALT_ID}{margin:8px 0 0 auto;cursor:pointer;white-space:nowrap;
-  justify-content:center}
-`;
 
 /** Find one of the game's buttons by the window index its onclick opens. */
 function findByWindowIndex(container: Element, index: number): HTMLElement | null {
@@ -109,7 +92,7 @@ function place(deps: MenuButtonDeps): void {
   // Menu isn't what we expect. Leave it be rather than half-rebuild it.
   if (!loadout || !customize) return;
 
-  defineStyle(STYLE_ID, CSS);
+  defineStyle(STYLE_IDS.menuButtons, SHEETS.menuButtons);
 
   const rule = buttonRule();
 

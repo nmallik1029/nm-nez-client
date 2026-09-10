@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc';
+import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { defineStyle } from './style';
 
 /**
@@ -19,19 +20,9 @@ import { defineStyle } from './style';
  * next deploy.
  */
 
-const BUTTON_ID = 'kc-ranked-launch';
+const BUTTON_ID = UI_IDS.queueButton;
 const FOOTER_SELECTOR = '[class*="footer-controls"]';
 const REGIONS_SELECTOR = '[class*="queue-all-regions-container"]';
-
-const CSS = `
-#${BUTTON_ID}{display:inline-flex;align-items:center;justify-content:center;
-  width:38px;height:38px;margin:0 10px;border-radius:var(--nm-radius);cursor:pointer;
-  background:var(--nm-queue-bg);border:2px solid var(--nm-queue-border);box-sizing:border-box;
-  transition:background .12s,transform .12s}
-#${BUTTON_ID}:hover{background:var(--nm-queue-bg-hover);transform:translateY(-1px)}
-#${BUTTON_ID} svg{width:19px;height:19px;fill:none;stroke:var(--nm-queue-icon);stroke-width:2.2;
-  stroke-linecap:round;stroke-linejoin:round}
-`;
 
 function buildButton(): HTMLElement {
   const button = document.createElement('div');
@@ -55,7 +46,7 @@ function place(): void {
   if (!footer) return;
   if (footer.querySelector(`#${BUTTON_ID}`)) return;
 
-  defineStyle(`${BUTTON_ID}-css`, CSS);
+  defineStyle(STYLE_IDS.queueButton, SHEETS.queueButton);
   const button = buildButton();
   const regions = footer.querySelector(REGIONS_SELECTOR);
 

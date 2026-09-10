@@ -93,19 +93,28 @@ instead of failing with a confusing error. Restart the client to switch again.
 - **CSS themes.** Any `.css` in `swap/themes/`. Edit one in a text editor and it lands in
   the game when you save; the folder is watched.
 
-  Every colour the client draws is a `--nm-*` custom property on `:root`, and a theme is
-  loaded last, so overriding a token re-skins everything that uses it without having to
-  match a single one of our selectors:
+  Everything the client's look is made of — colour, type, spacing, radius, border
+  weight, motion, stacking order — is a `--nm-*` custom property on `:root`, and a theme
+  is loaded last, so overriding a token re-skins everything that uses it without having
+  to match a single one of our selectors:
 
   ```css
   :root {
-    --nm-accent: #ff4d6d;      /* selected chips, map tiles, keybind capture */
-    --nm-surface: #12121a;     /* settings-tab cards */
-    --nm-game-bg: #14100f;     /* alt manager, changelog */
+    --nm-accent: #ff4d6d;   /* selected chips, map tiles, keybind capture */
+    --nm-surface: #12121a;  /* settings-tab cards */
+    --nm-radius: 0;         /* square corners everywhere */
+    --nm-fs-md: 15px;       /* the workhorse size: rows, buttons, tooltips */
   }
   ```
 
-  The full list is `src/shared/palette.ts`, grouped by surface.
+  The full list is `src/shared/ui/tokens.ts`, grouped by surface.
+
+  **Designing against the running client.** `npm run tokens:dev` writes every token to
+  `swap/themes/dev-tokens.css` at its current value. Select it in the settings tab, then
+  edit it beside the game: each save lands immediately, so the whole look can be worked
+  out live rather than through a rebuild. Paste what you keep back into `tokens.ts`.
+  (The standalone queue window is a separate document with no theme loader, so its
+  `--nm-rq-*` group is reference only.)
 - **Userscripts.** Any `.js` in `swap/scripts/`. Off by default, and worth keeping that
   way unless you wrote them.
 

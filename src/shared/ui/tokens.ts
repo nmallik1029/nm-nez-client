@@ -1,30 +1,36 @@
 /**
- * Every colour the client draws, in one place.
+ * Every value the client's look is made of. Change it here or nowhere.
  *
  * This is emitted as a `:root` custom-property block and injected ahead of
- * every other client stylesheet, so each surface says `var(--nm-accent)`
- * rather than carrying its own copy of a hex. Before this existed the same
- * accent blue was written as three different literals in three files and
- * changing the client's look meant a grep across nine of them.
+ * every stylesheet in `sheets.ts`, so a rule says `var(--nm-accent)` rather
+ * than carrying its own copy of a hex. Before this existed the same accent
+ * blue was written as three different literals in three files, and changing
+ * how the client looked meant a grep across nine of them.
  *
- * Two rules keep it that way:
+ * Three rules keep it that way, all three enforced by `tokens.test.ts`:
  *
- *  - No colour literal anywhere else. `palette.test.ts` fails the build if one
- *    turns up in a stylesheet outside this file, and fails on a `var(--nm-*)`
- *    that no token defines, which is otherwise a silent no-op at runtime.
- *  - Tokens are colours, not composites. Shadow and outline *geometry* stays
- *    with the rule that uses it, because `0 3px 10px` reads as nothing here
- *    and as something obvious next to the element it lifts.
+ *  - No colour, font size, z-index, border weight or transition duration
+ *    anywhere else. The test fails on one, and names the file it found it in.
+ *  - No `var(--nm-*)` that nothing defines. That is a silent no-op at runtime
+ *    — the property is simply dropped — so it has to be caught here.
+ *  - No token nothing uses, so this file can't quietly fill up with values
+ *    that stopped meaning anything two refactors ago.
  *
- * Themes ride on this. A `.css` in `swap/themes/` is appended last in
+ * What is deliberately *not* here: one-off geometry. `width:38px` on the queue
+ * button and `min-width:104px` on a keybind chip are facts about those two
+ * elements, not a scale, and hoisting them would make both files harder to
+ * read for no gain. The line is whether changing the value alone would ever
+ * be a design decision.
+ *
+ * Themes ride on all of it. A `.css` in `swap/themes/` is appended last in
  * `document.head` (see `preload/themes.ts`), so it out-cascades this block on
- * equal specificity and a ten-line file re-skins the whole client:
+ * equal specificity and a short file re-skins the whole client:
  *
- *     :root { --nm-accent: #ff4d6d; --nm-surface: #12121a; }
+ *     :root { --nm-accent: #ff4d6d; --nm-fs-md: 15px; --nm-radius: 0; }
  *
  * Lives in `shared/` rather than `preload/` because the standalone ranked
- * queue window is its own document built in the main process, and one palette
- * that both windows read is the entire point.
+ * queue window is its own document built in the main process, and one set of
+ * tokens that both windows read is the entire point.
  */
 
 /**
@@ -196,6 +202,30 @@ const SCAN = `
 export const GAME_WINDOW_BACKGROUND = '#000000';
 
 /**
+ * The match-scan overlay's geometry and timings, as numbers.
+ *
+ * These are the values the animation and the code that drives it have to agree
+ * on: the sweep waits `landingPauseMs` for a line to finish landing and
+ * `expandMs` for the flood to cover the screen before it navigates, and a
+ * rejected line is removed from the DOM after `fallMs` because that is exactly
+ * how long its tumble lasts. Written once, read by both the stylesheet and
+ * `preload/matchmaker/scan.ts`, so a change to one can't leave the other
+ * behind. The durations also appear as `--nm-scan-*` tokens above; these are
+ * the same numbers in the form `setTimeout` can use.
+ */
+export const SCAN_THUMB = { width: 52, height: 34 } as const;
+
+export const SCAN_TIMING = {
+  /** How long a rejected line takes to tumble off. Outlives the tick, so a few overlap. */
+  fallMs: 780,
+  landingPauseMs: 460,
+  /** Duration of the flood that covers the screen. */
+  expandMs: 720,
+  /** Give preloading this long, then start anyway. Not worth stalling the sweep. */
+  preloadBudgetMs: 450,
+} as const;
+
+/**
  * The queue window's backdrop, as a plain string as well as a token.
  *
  * Electron wants a colour for `BrowserWindow.backgroundColor` before any
@@ -257,29 +287,142 @@ const SHADOW = `
 `;
 
 /**
- * Type and shape.
+ * Typefaces.
  *
  * `GameFont` is Krunker's own pixel face, already loaded by the page, so
  * naming it is enough. The display stack adds Impact behind it for the panels
- * that want the game's heavier menu look.
+ * that want the game's heavier menu look, and the mono stack is the HUD's,
+ * where digits have to stop jittering as the numbers change.
  */
-const SHAPE = `
+const FONT = `
   --nm-font:'GameFont',sans-serif;
   --nm-font-display:'GameFont',Impact,'Arial Black',sans-serif;
   --nm-font-mono:ui-monospace,'Cascadia Mono',Consolas,monospace;
+`;
+
+/**
+ * The type scale. Every font size the client draws, and nothing else.
+ *
+ * Named by step rather than by role, because the same size does different jobs
+ * on different surfaces and role names would end up lying. Sizes are the ones
+ * that were already in use — this scale was read off the UI, not imposed on
+ * it, so nothing moved when it landed.
+ *
+ * `--nm-fs-md` is the workhorse: settings rows, buttons, tooltips, chat.
+ * Nudging one step here resizes everything that shares it, which is the whole
+ * reason for the block.
+ */
+const TYPE_SCALE = `
+  --nm-fs-2xs:11px;
+  --nm-fs-xs:12px;
+  --nm-fs-md:13px;
+  --nm-fs-lg:14px;
+  --nm-fs-xl:15px;
+  --nm-fs-2xl:16px;
+  --nm-fs-3xl:17px;
+  --nm-fs-4xl:19px;
+  --nm-fs-5xl:20px;
+  --nm-fs-6xl:21px;
+  --nm-fs-7xl:24px;
+  --nm-fs-8xl:28px;
+  --nm-fs-display:52px;
+`;
+
+/**
+ * Line heights and letter-spacing.
+ *
+ * The wide tracking is Krunker's, not ours: the game sets its menu headings in
+ * spaced-out caps and the panels that sit inside its UI copy that so they
+ * don't read as someone else's work.
+ */
+const TYPE_DETAIL = `
+  --nm-lh-tight:1.2;
+  --nm-lh:1.5;
+  --nm-lh-loose:1.55;
+  --nm-track-xs:.02em;
+  --nm-track-sm:.04em;
+  --nm-track:.06em;
+  --nm-track-lg:.08em;
+  --nm-track-xl:.12em;
+  --nm-track-2xl:.14em;
+  --nm-track-3xl:.2em;
+`;
+
+/**
+ * Gaps between things in a row or a stack.
+ *
+ * Only the three that actually repeat. The one-off paddings stay written out
+ * where they are used: a sixteen-step "scale" of consecutive pixel values is a
+ * lookup table pretending to be a system, and `padding:7px 14px` reads better
+ * than two variables that each mean one number.
+ */
+const SPACE = `
+  --nm-gap-sm:8px;
+  --nm-gap:10px;
+  --nm-gap-lg:14px;
+`;
+
+/**
+ * Corner radius and border weight.
+ *
+ * The two levers that decide how hard-edged the client looks. Setting every
+ * radius to 0 and every border to 2px is most of the way to a panel that
+ * passes for Krunker's own; the reverse gives you a web dashboard.
+ */
+const SHAPE = `
   --nm-radius:6px;
   --nm-radius-sm:5px;
   --nm-radius-xs:4px;
   --nm-radius-2xs:3px;
+  --nm-bw:1px;
+  --nm-bw-thick:2px;
+  --nm-bw-heavy:3px;
 `;
 
 /**
- * The whole palette as one `:root` block.
+ * How long things take.
  *
- * Injected by `preload/palette.ts` for the game window and interpolated into
- * the queue window's own `<style>` by `main/ranked/window.ts`.
+ * `--nm-fast` is the hover-feedback duration on nearly everything. The named
+ * ones below it belong to a specific animation whose timing is tied to what
+ * the JS is doing at the same moment, so they are not interchangeable with it.
  */
-export const PALETTE_CSS = `:root{${[
+const MOTION = `
+  --nm-fast:.12s;
+  --nm-quick:.1s;
+  --nm-med:.16s;
+  --nm-blink:1.4s;
+  --nm-scan-land:420ms;
+  --nm-scan-fade:260ms;
+  --nm-scan-cut:130ms;
+`;
+
+/**
+ * Stacking order.
+ *
+ * Krunker's own UI runs into the tens of thousands, so anything of ours that
+ * has to cover it starts near the 32-bit ceiling. They are laid out as one
+ * ordered list here for the reason you'd expect: written out separately in
+ * five files, the next overlay gets a number picked by guesswork and lands
+ * under something it was supposed to cover.
+ *
+ * Modals are the exception and sit low on purpose — they open over the menu,
+ * not over gameplay, and a toast fired while one is up should still be read.
+ */
+const LAYER = `
+  --nm-z-modal:100000;
+  --nm-z-hud:2147483000;
+  --nm-z-toast:2147483200;
+  --nm-z-scan:2147483260;
+  --nm-z-tooltip:2147483400;
+`;
+
+/**
+ * Every token as one `:root` block.
+ *
+ * Injected first by `preload/style.ts` for the game window, and interpolated
+ * into the queue window's own `<style>` by `main/ranked/window.ts`.
+ */
+export const TOKENS_CSS = `:root{${[
   CLIENT,
   ACCENT,
   STATUS,
@@ -292,5 +435,11 @@ export const PALETTE_CSS = `:root{${[
   SCAN,
   QUEUE_WINDOW,
   SHADOW,
+  FONT,
+  TYPE_SCALE,
+  TYPE_DETAIL,
+  SPACE,
   SHAPE,
+  MOTION,
+  LAYER,
 ].join('')}}`;
