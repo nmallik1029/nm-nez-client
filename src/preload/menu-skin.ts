@@ -27,8 +27,18 @@ const MARK_ID = UI_IDS.menuMark;
 const VERSION = CHANGELOG[0]?.version ?? '';
 /** Krunker's own left menu list; the wordmark goes in at the top of it. */
 const NAV_ID = 'menuItemContainer';
-/** Contact / Terms / Changelog, bottom right, under everything else. */
-const BASE_LINKS_ID = 'baseLinks';
+/**
+ * Contact / Terms / Changelog, bottom right, under everything else.
+ *
+ * NOT `#baseLinks` — that one ships empty and lives inside the ad holder.
+ * These are spans, not anchors:
+ *
+ *   #termsInfo > span.terms x3
+ *
+ * which is why a querySelectorAll('a') over the wrong container found
+ * nothing at all and this silently did nothing on first release.
+ */
+const FOOTER_ID = 'termsInfo';
 /** Footer links that go away. Compared lowercased against link text. */
 const FOOTER_HIDDEN = ['contact', 'terms'];
 /** The one footer link that moves up beside More Krunker instead. */
@@ -187,22 +197,25 @@ function placeMark(): void {
  * hide the wrong two the day Krunker adds a link.
  */
 function placeFooterLinks(): void {
-  const links = document.getElementById(BASE_LINKS_ID);
+  const links = document.getElementById(FOOTER_ID);
   if (!links) return;
 
-  for (const link of [...links.querySelectorAll<HTMLElement>('a')]) {
-    const label = (link.textContent ?? '').trim().toLowerCase();
-    if (!FOOTER_HIDDEN.includes(label)) continue;
+  // Every leaf under the container, whatever tag it turns out to be. Matching
+  // the text rather than a position or a tag is what survives Krunker
+  // reordering these or changing what they are made of.
+  const leaves = [...links.querySelectorAll<HTMLElement>('*')].filter(
+    (el) => el.childElementCount === 0,
+  );
+  const textOf = (el: HTMLElement): string => (el.textContent ?? '').trim().toLowerCase();
+
+  for (const link of leaves) {
+    if (!FOOTER_HIDDEN.includes(textOf(link))) continue;
     if (enabled) link.style.display = 'none';
     else link.style.removeProperty('display');
   }
 
-  const moved = [...document.querySelectorAll<HTMLElement>(`a.${HEADER_LINK_CLASS}`)][0];
-  const source =
-    moved ??
-    [...links.querySelectorAll<HTMLElement>('a')].find(
-      (a) => (a.textContent ?? '').trim().toLowerCase() === FOOTER_MOVED,
-    );
+  const moved = [...document.querySelectorAll<HTMLElement>(`.${HEADER_LINK_CLASS}`)][0];
+  const source = moved ?? leaves.find((el) => textOf(el) === FOOTER_MOVED);
   if (!source) return;
 
   if (enabled) {

@@ -16,6 +16,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.15',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Contact and Terms really are gone from the bottom right now, and Changelog really has moved up beside More Krunker. 0.1.14 claimed to do this and did nothing.',
+      },
+      {
+        kind: 'changed',
+        text: 'The menu items down the left are set larger, and the odd extra gap between two of them is gone.',
+      },
+      {
+        kind: 'changed',
+        text: 'Login or Register has lost its icon, and it and Alt Manager are now exactly the same size.',
+      },
+    ],
+  },
+  {
     version: '0.1.14',
     date: '2026-09-10',
     changes: [
