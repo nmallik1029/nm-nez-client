@@ -71,7 +71,10 @@ const tooltip = `
 const perfHud = `
 #${UI_IDS.perfHud}{position:fixed;z-index:var(--nm-z-hud);display:none;padding:5px 8px;
   border-radius:var(--nm-radius-sm);background:var(--nm-hud-bg);color:var(--nm-text);
-  font:600 var(--nm-fs-2xs)/1.45 var(--nm-font-mono);letter-spacing:var(--nm-track-xs);
+  /* Longhands, not the font shorthand: a raw line-height hidden in a shorthand
+     is the one place the token guard cannot see it. */
+  font-weight:600;font-size:var(--nm-fs-2xs);line-height:var(--nm-lh-mono);
+  font-family:var(--nm-font-mono);letter-spacing:var(--nm-track-xs);
   pointer-events:none;white-space:pre;
   /* Keep the HUD out of page layout entirely. It shouldn't be able to force a
      reflow of the game UI under it. */
@@ -148,7 +151,7 @@ const altModal = `
 #${UI_IDS.altModal} button{font-family:inherit;cursor:pointer;
   border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
   background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);padding:7px 14px;
-  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track)}
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-md)}
 #${UI_IDS.altModal} button:hover{background:var(--nm-game-btn-bg-hover);
   color:var(--nm-game-text)}
 #${UI_IDS.altModal} button.go{border-color:var(--nm-ok-border);color:var(--nm-ok)}
@@ -217,7 +220,7 @@ const changelog = `
  * Centring makes the narrower words sit evenly in the same box.
  */
 #${UI_IDS.changelogModal} .tag{flex:0 0 74px;min-width:0;text-align:center;
-  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track);padding-top:2px}
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);padding-top:2px}
 #${UI_IDS.changelogModal} .tag.added{color:var(--nm-ok)}
 #${UI_IDS.changelogModal} .tag.fixed{color:var(--nm-tag-fixed)}
 #${UI_IDS.changelogModal} .tag.changed{color:var(--nm-tag-changed)}
@@ -469,28 +472,30 @@ const update = `
 #${UI_IDS.updatePanel}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-update);
   background:var(--nm-game-scrim);backdrop-filter:blur(3px);
   display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity .16s}
+  opacity:0;transition:opacity var(--nm-med)}
 #${UI_IDS.updatePanel}-backdrop.kc-in{opacity:1}
 
 #${UI_IDS.updatePanel}{width:min(460px,92vw);background:var(--nm-game-bg);
   border:var(--nm-bw-thick) solid var(--nm-game-border);
   font-family:var(--nm-font-display);color:var(--nm-game-text);
   box-shadow:0 10px 40px var(--nm-shadow-mid);
-  transform:scale(.96);transition:transform .16s}
+  transform:scale(.96);transition:transform var(--nm-med)}
 #${UI_IDS.updatePanel}-backdrop.kc-in #${UI_IDS.updatePanel}{transform:scale(1)}
 
 #${UI_IDS.updatePanel} .hd{padding:15px 20px;background:var(--nm-game-bg-head);
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-xl)}
 #${UI_IDS.updatePanel} .bd{padding:20px}
-#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-xl);line-height:1.55;
+#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-xl);line-height:var(--nm-lh-loose);
   color:var(--nm-game-text-body)}
 #${UI_IDS.updatePanel} .ver{color:var(--nm-ok)}
 #${UI_IDS.updatePanel} .row{display:flex;gap:11px;margin-top:20px}
 #${UI_IDS.updatePanel} button{flex:1;padding:12px 14px;cursor:pointer;font:inherit;
-  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track);
+  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track-md);
+
   color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
-  border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);transition:background .12s}
+  border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);
+  transition:background var(--nm-fast)}
 #${UI_IDS.updatePanel} button:hover{background:var(--nm-upd-btn-bg-hover)}
 #${UI_IDS.updatePanel} button.go{background:var(--nm-upd-go-bg);
   border-color:var(--nm-upd-go-border)}
@@ -499,7 +504,7 @@ const update = `
 #${UI_IDS.updatePanel} .bar{height:8px;background:var(--nm-upd-btn-bg);
   border:var(--nm-bw) solid var(--nm-upd-btn-border);margin-top:16px}
 #${UI_IDS.updatePanel} .bar i{display:block;height:100%;width:0;
-  background:var(--nm-upd-go-border);transition:width .2s}
+  background:var(--nm-upd-go-border);transition:width var(--nm-slow)}
 `;
 
 export const SHEETS = {

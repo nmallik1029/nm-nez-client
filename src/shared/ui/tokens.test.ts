@@ -56,6 +56,22 @@ const BANNED: { what: string; pattern: RegExp; fix: string }[] = [
     pattern: /letter-spacing:\s*[0-9.]+em/g,
     fix: 'use a --nm-track-* step',
   },
+  {
+    // The update panel arrived with .16s, .12s and .2s written out, because
+    // nothing here was looking. One transition that outlasts its neighbours is
+    // the sort of thing you feel and can't find.
+    what: 'transition duration',
+    pattern: /(transition|animation)(-duration)?:[^;}`]*?\b(\d*\.?\d+m?s)/g,
+    fix: 'use --nm-fast, --nm-quick, --nm-med, --nm-slow, or a named --nm-scan-* step',
+  },
+  {
+    // Integers are allowed: `line-height:0` and `line-height:1` are layout
+    // facts (a tag that must not add height, a timer set solid), not steps on
+    // a scale.
+    what: 'line height',
+    pattern: /line-height:\s*\d+\.\d+/g,
+    fix: 'use --nm-lh-tight, --nm-lh or --nm-lh-loose',
+  },
 ];
 
 /** `var(--nm-…)` references. */
