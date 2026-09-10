@@ -14,22 +14,24 @@ import { defineStyle } from '../style';
  * so it works on Krunker's tabs too. Those are the tabs that need it most, and
  * a nav that appears on one tab and not the others reads as broken.
  *
- * Three things about the settings window shape this:
+ * Four things about the settings window shape this, each of them learned the
+ * hard way from the running client rather than from reading Krunker's markup:
  *
  *  - `#settHolder` is rebuilt from scratch on every tab change and on every
  *    keystroke in the search box, so the nav is rebuilt from the DOM each time
  *    rather than held as state. `sync()` is cheap and idempotent.
- *  - Which element scrolls is not ours to decide and has moved before, so it
- *    is found at runtime by walking up from the holder. If nothing scrollable
- *    turns up, the nav simply doesn't appear — a settings panel with no index
- *    is the status quo, a broken one is not.
- *  - The nav goes INSIDE `#settHolder`, never against the scroller's parent.
- *    The scroller can be several levels up — in the live game it resolved to a
- *    page-level wrapper, and positioning against that parent put the nav in
- *    the top-left corner of the page, over Krunker's own menu. A child of the
- *    holder cannot land outside the settings window whatever the scroller
- *    turns out to be. `position: sticky` still pins it, because sticky
- *    resolves against the nearest scrolling ancestor rather than the parent.
+ *  - The window is not laid out when Krunker's hooks fire. `#menuWindow`
+ *    reports a height of zero at that moment, so anything that measures it
+ *    then gets a useless answer. Hence the retries in `sync()`, and hence
+ *    `scrollContainer()` not asking whether a box currently overflows.
+ *  - The nav goes INSIDE `#settHolder`. The scroller is several levels up, and
+ *    an earlier version positioned against ITS parent — which put the whole
+ *    index in the top-left corner of the page, over Krunker's own menu. A
+ *    child of the holder cannot land outside the settings window whatever the
+ *    scroller turns out to be.
+ *  - Nothing about where the index sits is derived from scroll arithmetic any
+ *    more. `pin()` measures. Three versions computed it instead and each was
+ *    wrong about something invisible — see the comment there.
  */
 
 const HOLDER_ID = 'settHolder';
@@ -37,6 +39,9 @@ const HOLDER_ID = 'settHolder';
 const HEADER_CLASS = 'setHed';
 /** Our collapsed-body marker, from the settings sheet. */
 const COLLAPSED_CLASS = 'kc-setbod-collapsed';
+
+/** Retries while the settings window is still opening. About a second. */
+const RETRY_LIMIT = 4;
 
 /**
  * Everything in a section header that is not its name.
@@ -128,14 +133,23 @@ export function isAtEnd(
   return scrollTop + clientHeight >= scrollHeight - slack;
 }
 
-/** The nearest scrollable ancestor, `start` included. */
+/**
+ * The nearest scrolling ancestor, `start` included.
+ *
+ * Deliberately does NOT require the element to be overflowing right now. It
+ * used to, and that made the index fail to appear at all on a cold open: the
+ * settings window is measured while it is still coming up, when `#menuWindow`
+ * reports a height of zero and therefore cannot overflow, so nothing scrollable
+ * was found and the whole thing gave up until the next tab change.
+ *
+ * A box with `overflow-y: auto` is the scroller whether or not today's content
+ * happens to fill it.
+ */
 function scrollContainer(start: HTMLElement): HTMLElement | null {
   let el: HTMLElement | null = start;
   while (el && el !== document.body) {
     const overflow = getComputedStyle(el).overflowY;
-    if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight) {
-      return el;
-    }
+    if (overflow === 'auto' || overflow === 'scroll') return el;
     el = el.parentElement;
   }
   return null;
@@ -163,6 +177,17 @@ export function createSectionNav(): SectionNav {
   let onScroll: (() => void) | null = null;
   let rafId: number | null = null;
   let resize: ResizeObserver | null = null;
+  /**
+   * The transform currently on the index, so `pin()` can recover its layout
+   * position by subtracting it rather than by trusting a remembered offset.
+   */
+  let appliedY = 0;
+  /** rAF handle for the pin loop that runs while a smooth scroll is playing. */
+  let settleId: number | null = null;
+  /** Retries left for a settings window that has not finished opening. */
+  let retries = 0;
+  /** The index's own height, refreshed by fit() rather than read per frame. */
+  let navHeight = 0;
   /** Content height when `tops` was last taken; see paint(). */
   let measuredHeight = 0;
 
@@ -172,8 +197,12 @@ export function createSectionNav(): SectionNav {
     resize?.disconnect();
     resize = null;
     measuredHeight = 0;
+    appliedY = 0;
+    navHeight = 0;
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
+    if (settleId !== null) cancelAnimationFrame(settleId);
+    settleId = null;
     host?.classList.remove('kc-has-sectnav');
     scroller = null;
     host = null;
@@ -224,59 +253,98 @@ export function createSectionNav(): SectionNav {
   }
 
   /**
-   * Hold the index at the top of whatever part of the holder is on screen.
+   * Hold the index against the top of the visible panel.
    *
-   * `position:sticky` did this until it didn't: it fails silently as soon as
-   * any ancestor between the element and the scrolling box has
-   * `overflow:hidden`, because that ancestor becomes the sticky context. The
-   * settings window has one, so the index scrolled away with the rows.
+   * Measured, not derived. Three previous versions computed where the index
+   * ought to go from scroll offsets — `position:sticky`, then `top` from
+   * `scrollTop`, then a transform from `scrollTop` minus the holder's offset —
+   * and each was wrong about something it could not see: an ancestor's
+   * `overflow:hidden`, which element was the containing block, whether the
+   * holder's own box reflected its content's height. Every one of those was a
+   * belief about the surrounding DOM baked into arithmetic.
    *
-   * Doing it here works whichever element turns out to scroll. When the holder
-   * IS the scroller its own `scrollTop` is the answer; when something above it
-   * scrolls, the answer is how far that has scrolled past the holder's top.
-   * Both are the same expression once the holder's offset inside the scrolled
-   * content is known, and both clamp inside the holder, so the index cannot
-   * ride out of the window.
+   * This asks instead. It reads where the index actually is, works out where it
+   * should be, and moves it by the difference. It does not care which element
+   * scrolls, what the holder's overflow is, or what is positioned where — and
+   * because it re-reads every frame, anything that knocks it out of place is
+   * corrected on the next one rather than accumulating.
+   *
+   * The two bounds are the ones that matter: never above its own resting place
+   * (so it does not climb into the tab strip), and never past the bottom of the
+   * holder (so it does not trail below the last setting).
    */
   function pin(): void {
     if (!nav || !scroller || !holderEl) return;
 
-    const holderOffset =
-      holderEl === scroller
-        ? 0
-        : holderEl.getBoundingClientRect().top -
-          scroller.getBoundingClientRect().top +
-          scroller.scrollTop;
+    // Undo the transform we last applied to recover the layout position. Doing
+    // it this way rather than remembering an offset means an outside change —
+    // a re-render, a resize, Krunker moving the panel — is absorbed instead of
+    // drifting.
+    const layoutTop = nav.getBoundingClientRect().top - appliedY;
 
-    // Only as tall as the visible part of the panel, so a long index scrolls
-    // inside itself instead of running past the bottom of the window.
+    const viewportTop = scroller.getBoundingClientRect().top;
+    const holderBottom = holderEl.getBoundingClientRect().bottom;
+    const lowest = Math.max(layoutTop, holderBottom - navHeight);
+
+    const target = Math.min(Math.max(viewportTop, layoutTop), lowest);
+    const next = Math.round(target - layoutTop);
+
+    // Only write when it actually moves. This runs every frame for the length
+    // of a jump, and an unchanged style write still costs a style recalc.
+    if (next === appliedY) return;
+    appliedY = next;
+    nav.style.transform = `translateY(${appliedY}px)`;
+  }
+
+  /**
+   * Size the index to the visible panel, so a long one scrolls inside itself
+   * rather than running past the bottom of the window.
+   *
+   * Separate from `pin()` because that runs every frame during a jump, and
+   * writing a style then reading `offsetHeight` back forces a synchronous
+   * layout each time. This only has to happen when the panel's size changes.
+   */
+  function fit(): void {
+    if (!nav || !scroller) return;
     nav.style.maxHeight = `${scroller.clientHeight}px`;
+    navHeight = nav.offsetHeight;
+  }
 
-    /*
-     * The travel limit comes from the scroller, not from the holder.
-     *
-     * It used to be `holder.clientHeight - nav.offsetHeight`, which sounds
-     * right and is not: `#settHolder` has `overflow: visible`, so its own box
-     * stays short while its rows spill out of it. Measured on the running
-     * client that box was 478px against a 1590px scroll range, so the index
-     * held for 216px and then rode away with everything else — which is
-     * exactly what it looked like.
-     *
-     * The scroller can never be scrolled further than its own range, so this
-     * bound does not normally bite. It is here so a bad measurement can't
-     * translate the index off the end of the content.
-     */
-    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
-    const limit = Math.max(0, maxScroll - holderOffset);
-    const y = Math.min(Math.max(scroller.scrollTop - holderOffset, 0), limit);
+  /**
+   * Keep pinning for the length of a smooth scroll.
+   *
+   * `scroll` events are coalesced and are not guaranteed once per frame, so
+   * during the animation `scrollTo` starts the index is repositioned less often
+   * than the content moves — which looks exactly like the index sliding down
+   * the page as you click an entry. Driving it from rAF instead holds it still
+   * for the whole animation, and stops once the scroll has settled so nothing
+   * runs per-frame while you are only reading.
+   */
+  function pinUntilSettled(): void {
+    if (settleId !== null) cancelAnimationFrame(settleId);
 
-    // A transform, not `top`. `top` needs the holder to be the containing
-    // block, and the rule saying so lost to Krunker's own #settHolder rule on
-    // specificity — so the offset was applied against the window and pushed
-    // the index down the page instead of holding it still. A transform is
-    // measured from the element's own layout position, which nothing above it
-    // can take away.
-    nav.style.transform = `translateY(${Math.round(y)}px)`;
+    let last = Number.NaN;
+    let stillFor = 0;
+    let frames = 0;
+
+    const step = (): void => {
+      settleId = null;
+      if (!scroller || !nav) return;
+
+      pin();
+
+      const now = scroller.scrollTop;
+      stillFor = now === last ? stillFor + 1 : 0;
+      last = now;
+      frames += 1;
+
+      // Settled once it has not moved for a few frames. The frame cap is the
+      // backstop for a scroll that never arrives — a target already in view,
+      // or a browser that ignores the request.
+      if (stillFor < 4 && frames < 120) settleId = requestAnimationFrame(step);
+    };
+
+    settleId = requestAnimationFrame(step);
   }
 
   function schedulePaint(): void {
@@ -298,6 +366,13 @@ export function createSectionNav(): SectionNav {
     const top = tops[index];
     if (top === undefined) return;
     scroller.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
+
+    // Hold the index still for the length of the animation. Without this it is
+    // only repositioned when a scroll event happens to arrive, which is less
+    // often than the content moves — and that reads as the index sliding down
+    // the page every time you click an entry.
+    pinUntilSettled();
+
     items.forEach((item, i) => item.classList.toggle('kc-sectnav-on', i === index));
   }
 
@@ -308,24 +383,44 @@ export function createSectionNav(): SectionNav {
     );
   }
 
+  /**
+   * Try again shortly, for a settings window that has not finished opening.
+   *
+   * `sync()` runs off Krunker's own hooks, which fire before the window has
+   * laid out — measured on the running client, `#menuWindow` reports a height
+   * of zero at that point and the rows are not in yet. One attempt therefore
+   * misses, and with nothing to try again the index simply never appears until
+   * something else happens to trigger a re-render. A handful of retries covers
+   * the opening animation without leaving a timer running afterwards.
+   */
+  function retrySoon(): void {
+    if (retries <= 0) return;
+    retries -= 1;
+    setTimeout(sync, 250);
+  }
+
   function sync(): void {
     const holder = document.getElementById(HOLDER_ID);
     if (!holder) {
       detach();
+      retrySoon();
       return;
     }
 
     const found = scrollContainer(holder);
     const headers = headersIn(holder);
 
-    // One section is not an index, and a panel that can't scroll doesn't need
-    // one either. Either way, leave the settings window exactly as it was.
+    // One section is not an index, and a panel with nothing to scroll does not
+    // need one. Either way, leave the settings window exactly as it was — and
+    // try again shortly, because "not yet" and "never" look the same here.
     if (!found || headers.length < 2) {
       detach();
+      retrySoon();
       return;
     }
 
     detach();
+    retries = 0;
     scroller = found;
     holderEl = holder;
     host = holder;
@@ -340,9 +435,9 @@ export function createSectionNav(): SectionNav {
      * settings window whatever the scroller turns out to be, which is the
      * property worth having when the surrounding DOM is not ours.
      *
-     * Pinning still works: `position: sticky` resolves against the nearest
-     * scrolling ancestor, not against the parent, so it holds whether the
-     * holder scrolls itself or something above it does.
+     * Pinning does not depend on that choice: `pin()` measures where the index
+     * ended up and moves it, so it holds whether the holder scrolls itself or
+     * something above it does.
      */
     holder.classList.add('kc-has-sectnav');
 
@@ -371,6 +466,7 @@ export function createSectionNav(): SectionNav {
 
     tops = measure(headers);
     measuredHeight = scroller.scrollHeight;
+    fit();
     onScroll = schedulePaint;
     scroller.addEventListener('scroll', onScroll, { passive: true });
 
@@ -379,11 +475,22 @@ export function createSectionNav(): SectionNav {
      * if the content height actually moved, so this only has to say "look
      * again" rather than work out what changed.
      */
-    resize = new ResizeObserver(schedulePaint);
+    resize = new ResizeObserver(() => {
+      fit();
+      schedulePaint();
+    });
     resize.observe(scroller);
 
     paint();
   }
 
-  return { sync, destroy: detach };
+  return {
+    sync() {
+      // Armed on every call rather than once, because each hook that calls
+      // sync is a fresh chance for the window to still be opening.
+      retries = RETRY_LIMIT;
+      sync();
+    },
+    destroy: detach,
+  };
 }

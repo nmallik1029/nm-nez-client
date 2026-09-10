@@ -367,9 +367,14 @@ const sectionNav = `
  *    scroll offset pushed it DOWN as you scrolled.
  *
  * A transform is measured from the element's own layout position. There is no
- * containing block to lose and no ancestor property that can switch it off, so
- * this cannot fail the way the other two did. The float keeps it out of the
- * rows' flow; the holder's padding reserves the column it sits in.
+ * containing block to lose and no ancestor property that can switch it off.
+ * The float keeps it out of the rows' flow; the holder's padding reserves the
+ * column it sits in.
+ *
+ * The transform value itself is not computed from scroll offsets either — a
+ * third attempt did that and drifted, because scroll events arrive less often
+ * than frames during an animated jump. pin() reads where the index actually is
+ * and corrects it, every frame, for as long as a scroll is playing.
  */
 #${UI_IDS.sectionNav}{float:left;width:172px;margin-left:-190px;
   overflow-y:auto;overscroll-behavior:contain;
