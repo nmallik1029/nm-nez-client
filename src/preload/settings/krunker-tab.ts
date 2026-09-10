@@ -11,6 +11,7 @@ import {
 import { SHEETS, STYLE_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 import { createKeybindRows, type KeybindRows } from './keybind-rows';
+import { hidePresetTiles } from './presets';
 import { createSectionNav, type SectionNav } from './section-nav';
 import { attachTooltip, hideTooltip } from './tooltip';
 
@@ -364,6 +365,12 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
    */
   function rerender(): void {
     render();
+
+    const holder = document.getElementById('settHolder');
+    // Krunker rebuilds the preset row along with everything else, so it has to
+    // be re-hidden on every render rather than once when the window opens.
+    if (holder) hidePresetTiles(holder);
+
     sectionNav.sync();
   }
 
