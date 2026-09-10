@@ -173,6 +173,7 @@ export function createSectionNav(): SectionNav {
   let scroller: HTMLElement | null = null;
   let host: HTMLElement | null = null;
   let resize: ResizeObserver | null = null;
+  let watch: MutationObserver | null = null;
   let retries = RETRY_LIMIT;
   /** Layout px from the scroller's top edge to where the settings start. */
   let holderTopInset = 0;
@@ -193,6 +194,8 @@ export function createSectionNav(): SectionNav {
   function detach(): void {
     resize?.disconnect();
     resize = null;
+    watch?.disconnect();
+    watch = null;
     host?.classList.remove('kc-has-sectnav');
     // Anything hidden stays hidden without this, and Krunker reuses the nodes.
     for (const group of groups) {
@@ -257,6 +260,29 @@ export function createSectionNav(): SectionNav {
     if (scroller) scroller.scrollTop = 0;
     fit();
     place();
+  }
+
+  /**
+   * Take the index away when the settings are no longer what the window is
+   * showing.
+   *
+   * It lives outside the window — that is what stopped it scrolling — so
+   * nothing takes it down on its own. Krunker reuses the same window for its
+   * changelog and everything else, and switching to one of those does not
+   * always fire a hook that would call sync(), so the index sat on top of the
+   * changelog listing its settings sections.
+   *
+   * Gone from the document means gone. Still there but not laid out means the
+   * window is closed, which is a hide rather than a teardown, so reopening
+   * does not have to rebuild.
+   */
+  function guard(): void {
+    const holder = document.getElementById(HOLDER_ID);
+    if (!holder || !holder.isConnected) {
+      detach();
+      return;
+    }
+    if (nav) nav.style.display = holder.offsetParent === null ? 'none' : '';
   }
 
   function sync(): void {
@@ -345,6 +371,11 @@ export function createSectionNav(): SectionNav {
       place();
     });
     resize.observe(scroller);
+
+    // Krunker swaps this window's contents for its changelog and the rest, and
+    // the index has to go when it does.
+    watch = new MutationObserver(guard);
+    watch.observe(scroller, { childList: true, subtree: true });
   }
 
   /**
