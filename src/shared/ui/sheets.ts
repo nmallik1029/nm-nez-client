@@ -1006,6 +1006,24 @@ const menuSkin = `
 /* The weapon is the headline and the class is its subtitle, so the class goes
    under it. Already a flex column, so reversing changes order and nothing else. */
 #menuClassContainerInfo{flex-direction:column-reverse !important}
+/*
+ * Slide the character render right, off the middle of its own card.
+ *
+ * Krunker parks it with #classPreviewCanvas{margin-right:-113px}. The canvas
+ * sits on its own line above #menuClassContainerInner — that is what the
+ * -100px margin-bottom is for, pulling the card back up under it — so this
+ * margin moves the render and nothing else. In a text-align:right container
+ * a negative right margin hangs the box past the right edge, so a bigger
+ * negative number is further right.
+ *
+ * It reads as left-heavy because the weapon points left: the body is already
+ * near the card's centre, and the barrel is the part that runs off the side.
+ * Moving the whole render right balances that. 87px here is 53px on screen —
+ * #menuClassContainer is scale(0.7) inside #uiBase's 0.869, so lengths in this
+ * subtree land at ~0.61x. The render still clears the right edge of the
+ * viewport with room to spare; the overhang was already clipped there before.
+ */
+#classPreviewCanvas{margin-right:-200px !important}
 #menuClassName{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
   letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
