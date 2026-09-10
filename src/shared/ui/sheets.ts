@@ -696,9 +696,14 @@ const menuSkin = `
 #signupRewardsButton{display:none !important}
 /* The scrim is the ground now; a flat black bar on top of it reads as a seam. */
 #playerHeaderEl{background:none !important}
+#signedOutHeaderBar [class*="ph-icon"]{display:none !important}
 #signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.altManagerButton}{
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
-  height:34px !important;padding:0 14px !important;
+  box-sizing:border-box !important;height:34px !important;min-height:34px !important;
+  max-height:34px !important;padding:0 16px !important;margin:0 !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
+  letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
+  line-height:1 !important;white-space:nowrap !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   background:var(--nm-menu-fill) !important;
   transition:border-color var(--nm-fast),background var(--nm-fast)}
@@ -742,13 +747,16 @@ const menuSkin = `
   100%{opacity:1;width:7px;height:7px;margin-top:-4px;
     border-top-width:var(--nm-bw-thick);transform:rotate(45deg)}}
 #menuItemContainer .menuItemTitle{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-md) !important;letter-spacing:var(--nm-track-xl) !important;
+  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone) !important}
 #menuItemContainer .menuItemIcon{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
-#menuItemContainer .sidebarDivider{background:var(--nm-menu-line) !important;opacity:1 !important}
+#menuItemContainer .sidebarDivider{background:var(--nm-menu-line) !important;opacity:1 !important;
+  height:1px !important;margin:10px 0 !important}
+/* An empty promo row sat between two of the entries and read as a dead gap. */
+#updateAd{display:none !important}
 
 /* ---- client wordmark, above Krunker's menu list ---- */
 #${UI_IDS.menuMark}{display:flex;align-items:baseline;gap:9px;
@@ -873,10 +881,7 @@ const menuSkin = `
    inline style so it matches the class card. In the header that is absurd, and
    an inline width only loses to !important. */
 #playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;
-  margin:0 0 0 var(--nm-gap-lg) !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
-  letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
-  line-height:1 !important;color:var(--nm-menu-ash) !important;
+  margin-left:var(--nm-gap-lg) !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transform:none !important}
 #playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
   transform:none !important;filter:none !important}
