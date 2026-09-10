@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.11',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'The main menu has been restyled. One accent colour instead of five, so Quick Match is obviously the button you press. The screen is grounded, so labels no longer need a heavy outline to be readable over the map. Your FPS and ping are set as numbers with units instead of buried in the text beside them.',
+      },
+      {
+        kind: 'changed',
+        text: 'Alt Manager has moved up to the header, beside Settings and More Krunker.',
+      },
+      {
+        kind: 'changed',
+        text: 'The class card shows your weapon first and the class under it, and the Get Signup Rewards button is gone.',
+      },
+      {
+        kind: 'added',
+        text: 'Restyle the main menu is a toggle in Settings under Interface, on by default. Turning it off gives you Krunker’s own menu back with no reload.',
+      },
+    ],
+  },
+  {
     version: '0.1.10',
     date: '2026-09-10',
     changes: [
