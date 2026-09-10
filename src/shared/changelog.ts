@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.27',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'Menu style, in Settings under Themes: Krunker (original) or NM/NEZ. Original is what a fresh install gets — the game’s own look is what you came for, and it is not this client’s place to rearrange it before you have asked.',
+      },
+      {
+        kind: 'changed',
+        text: 'The menu restyle moved out of Interface and into Themes as that choice, so how the client looks is one question in one place. If you already had it on, it stays on.',
+      },
+    ],
+  },
+  {
     version: '0.1.26',
     date: '2026-09-10',
     changes: [

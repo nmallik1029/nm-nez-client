@@ -77,12 +77,20 @@ export interface FeatureConfig {
    */
   hideMenuPromos: boolean;
   /**
-   * Restyle Krunker's main menu: one accent instead of five button colours, a
-   * gradient backdrop instead of a text shadow on every label, and the frame
-   * rate and ping set as numbers rather than prose.
+   * Restyle Krunker's menu and the windows it opens: one accent instead of
+   * five button colours, a gradient backdrop instead of a text shadow on
+   * every label, the frame rate and ping set as numbers, and one settings
+   * section on screen at a time.
    *
-   * Paint only. It never moves anything the game lays out, so turning it off
-   * puts the menu back exactly as Krunker ships it.
+   * OFF by default, and that is the point. Krunker's own look is what people
+   * came for, and a client that rearranges it before you have agreed is doing
+   * something to you rather than for you. This is offered in Themes, beside
+   * the CSS themes, because "how the client looks" is one question and it
+   * should have one place to answer it.
+   *
+   * Everything it does is reversible: a stylesheet, plus a handful of element
+   * moves that are recorded and put back. Turning it off restores the menu
+   * exactly as the game ships it, with no reload.
    */
   menuSkin: boolean;
   /**
@@ -240,7 +248,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     userscripts: false,
     betterChat: true,
     hideMenuPromos: true,
-    menuSkin: true,
+    menuSkin: false,
     chatHistoryLimit: 200,
     activeTheme: '',
   },
