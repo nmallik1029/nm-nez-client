@@ -16,6 +16,7 @@ import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installNameHighlights } from './name-highlights';
+import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
@@ -108,6 +109,10 @@ async function bootstrap(): Promise<void> {
     setHardpointCounter(cfg.ui.hardpointCounter);
 
     installNameHighlights();
+
+    // The built-in scripts hook things the game builds later, so they wait
+    // for the page like everything else here rather than running at preload.
+    syncScripts(cfg.features.enabledScripts);
 
     settingsTab = hookKrunkerSettings({
       config: cfg,

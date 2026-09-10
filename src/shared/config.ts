@@ -93,6 +93,12 @@ export interface FeatureConfig {
    * exactly as the game ships it, with no reload.
    */
   menuSkin: boolean;
+  /**
+   * Ids of the built-in scripts that are switched on, from the Scripts
+   * window in the top bar. Ids rather than a flag each, so a script that is
+   * removed later just stops being listed instead of leaving a dead setting.
+   */
+  enabledScripts: readonly string[];
 
   /**
    * Messages to keep. Krunker prunes old ones hard, so this puts them back and
@@ -255,6 +261,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     betterChat: true,
     hideMenuPromos: true,
     menuSkin: false,
+    enabledScripts: [],
     chatHistoryLimit: 200,
     activeTheme: '',
   },

@@ -53,4 +53,37 @@ export default tseslint.config(
       },
     },
   },
+  {
+    // The built-in userscripts. These are imported for their text and run in
+    // the page through `new Function`, so they are not modules and not in a
+    // tsconfig project — the type-aware parser has no program for them and
+    // errors out instead of linting.
+    //
+    // Still linted, just without types: they are the one place in the repo
+    // where a typo survives the build, since nothing compiles them.
+    files: ['src/preload/scripts/**/*.js'],
+    ...tseslint.configs.disableTypeChecked,
+    languageOptions: {
+      ...tseslint.configs.disableTypeChecked.languageOptions,
+      // A function body, not a module: `new Function` is what wraps it, and
+      // that is also why a top-level `return` is legal here.
+      sourceType: 'script',
+      // Merged, not replaced. Writing parserOptions out wholesale drops the
+      // ones disableTypeChecked sets and the project-service parse error
+      // comes straight back.
+      parserOptions: {
+        ...tseslint.configs.disableTypeChecked.languageOptions?.parserOptions,
+        projectService: false,
+        project: false,
+        ecmaFeatures: { globalReturn: true },
+      },
+      globals: {
+        MutationObserver: 'readonly',
+        clearInterval: 'readonly',
+        document: 'readonly',
+        setInterval: 'readonly',
+        window: 'readonly',
+      },
+    },
+  },
 );

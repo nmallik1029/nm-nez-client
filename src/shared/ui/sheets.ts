@@ -149,6 +149,27 @@ const scriptsModal = `
   color:var(--nm-game-text-dim);font-size:var(--nm-fs-lg)}
 #${UI_IDS.scriptsModal} .note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
   line-height:var(--nm-lh);margin-top:12px;text-align:center}
+/* One script. Icon, then the name over its description, then the switch. */
+#${UI_IDS.scriptsModal} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;
+  margin-bottom:8px;
+  background:var(--nm-game-row-bg);border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.scriptsModal} .row .ico{flex:0 0 auto;font-size:var(--nm-fs-7xl);
+  color:var(--nm-game-text-dim)}
+#${UI_IDS.scriptsModal} .row.live .ico{color:var(--nm-accent)}
+#${UI_IDS.scriptsModal} .txt{flex:1;min-width:0}
+#${UI_IDS.scriptsModal} .nm{font-size:var(--nm-fs-2xl)}
+#${UI_IDS.scriptsModal} .sub{font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);
+  line-height:var(--nm-lh);margin-top:2px}
+#${UI_IDS.scriptsModal} button{flex:0 0 auto;font-family:inherit;cursor:pointer;
+  min-width:58px;padding:7px 14px;font-size:var(--nm-fs-md);
+  letter-spacing:var(--nm-track-md);
+  border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text)}
+#${UI_IDS.scriptsModal} button:hover{background:var(--nm-game-btn-bg-hover);
+  color:var(--nm-game-text)}
+#${UI_IDS.scriptsModal} button.on{border-color:var(--nm-ok-border);color:var(--nm-ok)}
+#${UI_IDS.scriptsModal} button.on:hover{background:var(--nm-ok-bg-hover);
+  color:var(--nm-ok-text-hi)}
 `;
 
 /**

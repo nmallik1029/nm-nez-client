@@ -10,3 +10,16 @@ declare module '*.css?raw' {
   const css: string;
   export default css;
 }
+
+/**
+ * Userscripts imported for their text.
+ *
+ * A built-in script is a .js file rather than a template literal, because it
+ * is a userscript: the same thing you could drop in the swap folder, kept in
+ * the repo so it ships with an update. Importing the text means it is still
+ * an ordinary file with ordinary syntax highlighting.
+ */
+declare module '*.js?raw' {
+  const source: string;
+  export default source;
+}
