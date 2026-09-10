@@ -352,10 +352,9 @@ const TYPE_SCALE = `
  * spaced-out caps and the panels that sit inside its UI copy that so they
  * don't read as someone else's work.
  *
- * Named in steps like the type scale rather than by role, and every step is a
- * value already in use. The .1em one is the update panel header; it briefly
- * rendered at .12em because the scale had no step for it and the nearest name
- * was taken.
+ * Named in steps like the type scale rather than by role, so the set reads as
+ * one scale rather than six siblings and an odd one out. Every step is a value
+ * already in use.
  */
 const TYPE_DETAIL = `
   --nm-lh-tight:1.2;
@@ -367,10 +366,9 @@ const TYPE_DETAIL = `
   --nm-track-sm:.04em;
   --nm-track-md:.06em;
   --nm-track-lg:.08em;
-  --nm-track-xl:.1em;
-  --nm-track-2xl:.12em;
-  --nm-track-3xl:.14em;
-  --nm-track-4xl:.2em;
+  --nm-track-xl:.12em;
+  --nm-track-2xl:.14em;
+  --nm-track-3xl:.2em;
 `;
 
 /**

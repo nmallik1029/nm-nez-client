@@ -65,7 +65,7 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
 .head{display:flex;align-items:center;justify-content:center;
   padding:12px 16px 10px;border-bottom:var(--nm-bw-thick) solid var(--nm-rq-line);
   background:var(--nm-rq-head)}
-.head .t{font-size:var(--nm-fs-3xl);letter-spacing:var(--nm-track-4xl)}
+.head .t{font-size:var(--nm-fs-3xl);letter-spacing:var(--nm-track-3xl)}
 
 /* The header rule steps with the frame edge, on the same beat. */
 .frame.live .head{animation:headEdge var(--nm-blink) steps(1,end) infinite}
@@ -84,7 +84,7 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
 
 /* Krunker's button look: dark fill, thick border, uppercase. */
 #go{padding:13px 0;width:260px;cursor:pointer;font-family:inherit;
-  font-size:var(--nm-fs-3xl);letter-spacing:var(--nm-track-3xl);
+  font-size:var(--nm-fs-3xl);letter-spacing:var(--nm-track-2xl);
   background:var(--nm-rq-go-fill);border:var(--nm-bw-heavy) solid var(--nm-rq-go);color:var(--nm-rq-go);
   transition:background var(--nm-fast),color var(--nm-fast)}
 #go:hover{background:var(--nm-rq-go-wash);color:var(--nm-rq-go-text)}
@@ -96,7 +96,7 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
 /* Selected regions read brighter rather than bluer. Brightness does the work. */
 .regions{display:flex;gap:var(--nm-gap)}
 .rg{padding:9px 22px;cursor:pointer;font-family:inherit;font-size:var(--nm-fs-md);
-  letter-spacing:var(--nm-track-2xl);background:var(--nm-rq-rg-bg);
+  letter-spacing:var(--nm-track-xl);background:var(--nm-rq-rg-bg);
   border:var(--nm-bw-thick) solid var(--nm-rq-line);color:var(--nm-rq-dim);
   transition:all var(--nm-fast)}
 .rg:hover{border-color:var(--nm-rq-line-hi);color:var(--nm-rq-text-hi)}
