@@ -951,16 +951,25 @@ const menuSkin = `
  * lowers it. Space added above would grow the block upwards and leave the
  * line exactly where it was.
  *
- * padding-top is that upward growth, used deliberately. Chat is placed off
- * the top of this block, in preload/chat-place.ts, so 30px here is 30px of
- * clearance between the chat input and the map name, which were nearly
- * touching. It costs nothing on screen because the space is above the line
- * and behind chat.
+ * Everything here is space, and space is the only lever, because this block
+ * is pinned by its bottom edge. Shrink it anywhere and the whole thing slides
+ * down: the map name, the FPS row, and chat with them, since chat is placed
+ * off the top of this block in preload/chat-place.ts.
+ *
+ * padding-top is the exception. It sits above the first row, so it moves the
+ * block's top edge and nothing else, which makes it the one control over how
+ * far up chat sits. It is also the entire gap between the chat input and the
+ * map name, so it cannot go to zero: at 30 chat covered Community & Events at
+ * the foot of the nav, at 0 it sat on the map name again. 16 clears both.
+ *
+ * Do not reach for a transform on the line itself. Measured: translating
+ * .kc-menu-matchline down 40px moved #subLogoButtons from 916 to -129 and
+ * took the play row off the top of the screen.
  */
 #matchInfoHolder{grid-column:1/-1;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;
-  padding-top:30px !important;
-  padding-bottom:4px !important;margin-bottom:0 !important;gap:14px !important}
+  padding-top:16px !important;
+  padding-bottom:0 !important;margin-bottom:0 !important;gap:4px !important}
 /* Krunker's own margins would show up as gaps between grid cells. */
 #subLogoButtons > .button{margin:0 !important;width:auto !important}
 /* The class card would otherwise sit under the bar now that it reaches the
