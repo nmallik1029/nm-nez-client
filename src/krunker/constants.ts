@@ -37,6 +37,8 @@ export const KRUNKER_DOM_IDS = {
   chatList: 'chatList',
   /** The positioned wrapper around chat; `chatList` inside it is not placed. */
   chatHolder: 'chatHolder',
+  /** The bar under the messages: channel globe, the input, the mic toggle. */
+  chatInputHolder: 'chatInputHolder',
   /** Wraps the whole UI and carries the menu/match flag below. */
   uiBase: 'uiBase',
   /**

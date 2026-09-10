@@ -31,7 +31,28 @@ const MIN_PLAUSIBLE_LIFT_PX = 60;
 let raf = 0;
 
 /**
- * Distance from the bottom of the window to the top of the button block.
+ * How much smaller Krunker is drawing its UI than it has laid it out.
+ *
+ * The game scales the whole interface to the window with a transform, so
+ * `getBoundingClientRect` returns screen pixels while `bottom` is set in the
+ * element's own unscaled ones. Mixing the two silently loses whatever the
+ * scale is — around 15% at 1920x1080, which was enough to leave chat sitting
+ * on the map name instead of above it.
+ *
+ * Read off the button block rather than parsed out of a transform matrix:
+ * the ratio is the same and it does not care how the scale was applied.
+ */
+function uiScale(block: HTMLElement): number {
+  const laidOut = block.offsetHeight;
+  if (laidOut === 0) return 1;
+  const scale = block.getBoundingClientRect().height / laidOut;
+  // A nonsense ratio means something is mid-layout. 1 is wrong but safe.
+  return Number.isFinite(scale) && scale > 0.1 ? scale : 1;
+}
+
+/**
+ * Distance from the bottom of the window to the top of the button block, in
+ * the units `bottom` is actually set in.
  *
  * Null when there is nothing sensible to say, in which case the caller leaves
  * the stylesheet's own fallback in place.
@@ -44,7 +65,7 @@ function measureLift(): number | null {
   // Hidden, or not laid out yet.
   if (rect.height === 0) return null;
 
-  const lift = window.innerHeight - rect.top + GAP_PX;
+  const lift = (window.innerHeight - rect.top) / uiScale(block) + GAP_PX;
   if (!Number.isFinite(lift) || lift < MIN_PLAUSIBLE_LIFT_PX) return null;
   return Math.round(lift);
 }

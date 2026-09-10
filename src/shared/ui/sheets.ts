@@ -1,4 +1,4 @@
-import { KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
+import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_IDS } from './ids';
 import { SCAN_THUMB, SCAN_TIMING } from './tokens';
 
@@ -940,10 +940,27 @@ const menuSkin = `
   transform:none !important;
   display:grid !important;grid-template-columns:repeat(5,1fr);
   gap:var(--nm-gap);padding:0 26px;box-sizing:border-box}
-/* The match info spans the whole bar; the five buttons take a column each. */
+/*
+ * The match info spans the whole bar; the five buttons take a column each.
+ *
+ * The two paddings do different jobs and neither is decoration.
+ *
+ * padding-bottom is the gap down to the play row, and dropping it from 14
+ * to 4 is what moves the map name and Invite/Join down: this block is pinned
+ * by its bottom edge, so space removed below the line is the only thing that
+ * lowers it. Space added above would grow the block upwards and leave the
+ * line exactly where it was.
+ *
+ * padding-top is that upward growth, used deliberately. Chat is placed off
+ * the top of this block, in preload/chat-place.ts, so 30px here is 30px of
+ * clearance between the chat input and the map name, which were nearly
+ * touching. It costs nothing on screen because the space is above the line
+ * and behind chat.
+ */
 #matchInfoHolder{grid-column:1/-1;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;
-  padding-bottom:14px !important;margin-bottom:0 !important;gap:14px !important}
+  padding-top:30px !important;
+  padding-bottom:4px !important;margin-bottom:0 !important;gap:14px !important}
 /* Krunker's own margins would show up as gaps between grid cells. */
 #subLogoButtons > .button{margin:0 !important;width:auto !important}
 /* The class card would otherwise sit under the bar now that it reaches the
@@ -1016,6 +1033,57 @@ const menuSkin = `
   text-decoration:none !important;text-shadow:none !important;
   margin-left:var(--nm-gap-lg);transition:color var(--nm-fast)}
 .headerBarRight .kc-menu-headerlink:hover{color:var(--nm-menu-bone) !important}
+
+/* ---- chat ---- */
+/*
+ * Krunker draws chat as two rounded translucent boxes with grey pills inside
+ * the input bar. Against this menu that reads as a leftover from a different
+ * screen, so it gets the same treatment as everything else here: one flat
+ * panel, hairline border, square corners.
+ *
+ * Menu only, and deliberately. In a match the chat sits over live gameplay
+ * where Krunker's translucency is doing a job, and a solid panel there would
+ * be worse, not better. The onMenu class on #uiBase is the game's own flag
+ * for which of the two you are looking at.
+ *
+ * Message text is left alone. Krunker colours names by team and channel, and
+ * a blanket colour here would flatten all of that into one grey.
+ */
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}{
+  background:var(--nm-menu-panel) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line) !important;
+  /* No bottom edge: the input bar below supplies it, so the two read as one
+     panel with a divider rather than two boxes that happen to touch. */
+  border-bottom:none !important;border-radius:0 !important;
+  padding:10px 12px !important;box-sizing:border-box !important}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatInputHolder}{
+  background:var(--nm-menu-panel) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line) !important;
+  border-radius:0 !important;overflow:hidden !important}
+/* The three grey pills inside the bar. Krunker fills each one; here the panel
+   is the fill and a single rule between them is enough to group them. */
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatInputHolder} .greyInlineInner,
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatInputHolder} .greyInlineInnerMid{
+  background:transparent !important;border-radius:0 !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatInputHolder} .greyInlineInnerMid{
+  border-left:var(--nm-bw) solid var(--nm-menu-line) !important;
+  border-right:var(--nm-bw) solid var(--nm-menu-line) !important}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_CHAT.inputId}{
+  background:transparent !important;border:none !important;border-radius:0 !important;
+  color:var(--nm-menu-bone) !important;text-shadow:none !important;
+  font-family:var(--nm-menu-font) !important}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_CHAT.inputId}::placeholder{
+  color:var(--nm-menu-ash-dim) !important;text-transform:uppercase !important;
+  letter-spacing:var(--nm-track-md) !important}
+/* Krunker's scrollbar is a light grey slab; this one is meant to be found and
+   otherwise ignored. */
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}::-webkit-scrollbar{
+  width:6px}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}::-webkit-scrollbar-track{
+  background:transparent}
+#${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}::-webkit-scrollbar-thumb{
+  background:var(--nm-menu-line-hi);border-radius:0}
 `;
 
 /**
