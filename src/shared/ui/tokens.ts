@@ -519,8 +519,8 @@ const MENU = `
   --nm-menu-ash-dim:#6e675d;
   --nm-menu-ember: #68e42e;
   --nm-menu-panel:#15130f;
-  --nm-menu-fill:rgb(0, 0, 0);
-  --nm-menu-wash:rgba(230, 219, 235, 0.83);
+  --nm-menu-fill:rgba(0, 0, 0, 0.85);
+  --nm-menu-wash:rgba(252, 252, 252, 0.83);
   --nm-menu-ember-wash:rgb(0, 0, 0);
 `;
 

@@ -1060,11 +1060,11 @@ const menuSkin = `
 #subLogoButtons > #menuBtnQuickMatch.button:hover{background:var(--nm-menu-bone-hi) !important;
   border-color:var(--nm-menu-bone-hi) !important;color:var(--nm-menu-ink) !important}
 #subLogoButtons > #menuBtnRanked.button{border-color:var(--nm-menu-ember) !important;
-  color:var(--nm-menu-ember) !important;background:var(--nm-menu-ember-wash) !important}
+  color:var(--nm-menu-ash) !important;background:var(--nm-menu-fill) !important}
 #subLogoButtons > #menuBtnRanked.button:hover{background:var(--nm-menu-ember) !important;
   border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important}
 #menuBtnRanked .menuItemRankedLabel{background:var(--nm-menu-ember) !important;
-  color:var(--nm-menu-ink) !important;border-radius:0 !important;transform:none !important;
+  color:var(--nm-menu-ash) !important;border-radius:0 !important;transform:none !important;
   animation:none !important;font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-lg) !important;
   font-weight:400 !important;text-shadow:none !important}

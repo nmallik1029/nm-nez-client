@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.34',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The client is called NM/NZ now. Same client, shorter name — it is in the window title, the menu wordmark, the in-game watermark and the installer. Your settings, themes, swapped files and Krunker login all carry over untouched.',
+      },
+      {
+        kind: 'changed',
+        text: 'New accent colour through the menu, and the Ranked button sits quieter against it.',
+      },
+    ],
+  },
+  {
     version: '0.1.33',
     date: '2026-09-10',
     changes: [
