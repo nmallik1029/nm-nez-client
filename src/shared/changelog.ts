@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.30',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'A Scripts button in the top bar, next to Settings. It opens an empty window for now — quality-of-life and fun scripts go in there as they are written.',
+      },
+      {
+        kind: 'changed',
+        text: 'Alt Manager moved back under Loadout and Customize to make room for it. Same one click, just on the class card instead of the top bar.',
+      },
+    ],
+  },
+  {
     version: '0.1.29',
     date: '2026-09-10',
     changes: [
