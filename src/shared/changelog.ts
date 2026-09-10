@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.29',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'HUD style, in Settings under Themes beside Menu style: Krunker (original) or Minimal. Minimal takes the panels out from behind the ammo, timer, leaderboard and player block, shows your FPS and ping as bare figures, and flattens the chat box. In-game only — it leaves the menu alone.',
+      },
+    ],
+  },
+  {
     version: '0.1.28',
     date: '2026-09-10',
     changes: [
