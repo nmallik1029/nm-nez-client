@@ -1,5 +1,6 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG } from '../shared/changelog';
+import { defineStyle } from './style';
 
 /**
  * Client name and version in the in-game HUD, under the round timer.
@@ -29,19 +30,12 @@ const VERSION = CHANGELOG[0]?.version ?? '';
  * bigger and goes without.
  */
 const CSS = `
-#${ID}{display:block;color:#fff;font-size:12px;margin-bottom:5px;
-  text-shadow:#202020 -1px -1px 0,#202020 1px -1px 0,#202020 -1px 1px 0,#202020 1px 1px 0}
+#${ID}{display:block;color:var(--nm-watermark-text);font-size:12px;margin-bottom:5px;
+  text-shadow:var(--nm-watermark-outline) -1px -1px 0,var(--nm-watermark-outline) 1px -1px 0,
+    var(--nm-watermark-outline) -1px 1px 0,var(--nm-watermark-outline) 1px 1px 0}
 #topLeftMatchData:has(> #matchInfo.topLeftOld) > #${ID}{
   font-size:15px;margin-bottom:2px;text-shadow:unset}
 `;
-
-function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = CSS;
-  document.head?.appendChild(style);
-}
 
 /** Returns false only while the HUD stack is not in the document yet. */
 function place(): boolean {
@@ -50,7 +44,7 @@ function place(): boolean {
   if (!row || !info || info.parentElement !== row) return false;
   if (document.getElementById(ID)) return true;
 
-  injectStyle();
+  defineStyle(STYLE_ID, CSS);
   const line = document.createElement('div');
   line.id = ID;
   line.textContent = VERSION === '' ? BRANDING.productName : `${BRANDING.productName} ${VERSION}`;

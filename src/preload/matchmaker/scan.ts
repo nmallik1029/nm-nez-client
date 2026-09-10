@@ -11,6 +11,7 @@ import {
   sortLobbies,
   type Lobby,
 } from '../../shared/matchmaker';
+import { defineStyle } from '../style';
 
 /**
  * The match search.
@@ -46,7 +47,7 @@ const THUMB_H = 34;
 
 const CSS = `
 #kc-scan{position:fixed;inset:0;z-index:2147483260;display:none;pointer-events:none;
-  font-family:'GameFont',sans-serif;overflow:hidden}
+  font-family:var(--nm-font);overflow:hidden}
 #kc-scan.on{display:block}
 
 /*
@@ -58,18 +59,21 @@ const CSS = `
  */
 #kc-scan .sc-stage{position:absolute;left:0;right:0;height:0}
 #kc-scan .sc-line{position:absolute;top:0;white-space:nowrap;font-size:28px;
-  letter-spacing:.04em;color:#fff;display:flex;align-items:center;gap:14px;
-  text-shadow:0 3px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}
+  letter-spacing:.04em;color:var(--nm-scan-text);display:flex;align-items:center;gap:14px;
+  text-shadow:0 3px 10px var(--nm-shadow),0 0 2px var(--nm-shadow-strong)}
 
 /* Fixed box whether or not the image has loaded, so text never shifts. */
-#kc-scan .sc-thumb{width:${THUMB_W}px;height:${THUMB_H}px;flex:none;border-radius:4px;
-  object-fit:cover;background:rgba(0,0,0,.45);box-shadow:0 3px 10px rgba(0,0,0,.6)}
+#kc-scan .sc-thumb{width:${THUMB_W}px;height:${THUMB_H}px;flex:none;
+  border-radius:var(--nm-radius-xs);
+  object-fit:cover;background:var(--nm-scan-thumb-bg);
+  box-shadow:0 3px 10px var(--nm-shadow-softer)}
 
 /* Rejected: drift left and down, redden, fade. */
 @keyframes kc-fall{
   0%  {opacity:1;   transform:translate(0,0) rotate(0deg)}
-  15% {opacity:.95; color:#e06060}
-  100%{opacity:0;   transform:translate(-120%,120px) rotate(-10deg); color:#8c3030}
+  15% {opacity:.95; color:var(--nm-scan-reject)}
+  100%{opacity:0;   transform:translate(-120%,120px) rotate(-10deg);
+       color:var(--nm-scan-reject-end)}
 }
 #kc-scan .sc-line.out{animation:kc-fall ${FALL_MS}ms cubic-bezier(.25,.6,.5,1) forwards}
 #kc-scan .sc-line.out .sc-thumb{filter:grayscale(1) brightness(.6)}
@@ -80,12 +84,15 @@ const CSS = `
 
 /* Accepted: colour and glow only. scale() would resample the pixel font. */
 @keyframes kc-land{
-  0%  {color:#fff;    text-shadow:0 3px 10px rgba(0,0,0,.85)}
-  45% {color:#6ef29a; text-shadow:0 0 26px rgba(110,242,154,.75),0 3px 10px rgba(0,0,0,.8)}
-  100%{color:#4ade80; text-shadow:0 0 20px rgba(74,222,128,.55),0 3px 10px rgba(0,0,0,.8)}
+  0%  {color:var(--nm-scan-text);
+       text-shadow:0 3px 10px var(--nm-shadow)}
+  45% {color:var(--nm-scan-accept-peak);
+       text-shadow:0 0 26px var(--nm-scan-glow-peak),0 3px 10px var(--nm-shadow-soft)}
+  100%{color:var(--nm-scan-accept);
+       text-shadow:0 0 20px var(--nm-scan-glow),0 3px 10px var(--nm-shadow-soft)}
 }
 #kc-scan .sc-line.hit{animation:kc-land 420ms ease-out forwards}
-#kc-scan .sc-line.hit .sc-thumb{box-shadow:0 0 22px rgba(74,222,128,.6)}
+#kc-scan .sc-line.hit .sc-thumb{box-shadow:0 0 22px var(--nm-scan-glow-thumb)}
 /* The line steps aside as its map image takes over. */
 #kc-scan .sc-line.fading{transition:opacity 260ms ease-out;opacity:0}
 
@@ -100,7 +107,7 @@ const CSS = `
  * Transform only, so the compositor can do it without relayout every frame.
  */
 #kc-scan .sc-flood{position:absolute;width:10px;height:10px;border-radius:50%;
-  background:#3ddc7f;transform:translate(-50%,-50%) scale(0);opacity:.92}
+  background:var(--nm-scan-flood);transform:translate(-50%,-50%) scale(0);opacity:.92}
 @keyframes kc-flood{
   0%  {transform:translate(-50%,-50%) scale(0);   opacity:.55}
   100%{transform:translate(-50%,-50%) scale(560); opacity:1}
@@ -108,9 +115,9 @@ const CSS = `
 #kc-scan .sc-flood.go{animation:kc-flood ${EXPAND_MS}ms cubic-bezier(.4,0,.7,1) forwards}
 
 #kc-scan .sc-note{position:absolute;white-space:nowrap;font-size:15px;
-  color:rgba(255,255,255,.66);letter-spacing:.04em;
-  text-shadow:0 2px 8px rgba(0,0,0,.85)}
-#kc-scan .sc-note.bad{color:#e79a9a}
+  color:var(--nm-scan-note);letter-spacing:.04em;
+  text-shadow:0 2px 8px var(--nm-shadow)}
+#kc-scan .sc-note.bad{color:var(--nm-danger-soft)}
 
 /*
  * Krunker puts its own prompts exactly where the scan text goes. At 1920x1009,
@@ -210,8 +217,7 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
   let active = false;
 
   function build(): HTMLElement {
-    const style = document.createElement('style');
-    style.textContent = CSS;
+    defineStyle('kc-scan-css', CSS);
 
     const root = document.createElement('div');
     root.id = OVERLAY_ID;
@@ -223,7 +229,7 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
     note.className = 'sc-note';
 
     root.append(stage, note);
-    document.documentElement.append(style, root);
+    document.documentElement.append(root);
     return root;
   }
 

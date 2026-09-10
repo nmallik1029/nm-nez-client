@@ -92,6 +92,20 @@ instead of failing with a confusing error. Restart the client to switch again.
   asset with that name.
 - **CSS themes.** Any `.css` in `swap/themes/`. Edit one in a text editor and it lands in
   the game when you save; the folder is watched.
+
+  Every colour the client draws is a `--nm-*` custom property on `:root`, and a theme is
+  loaded last, so overriding a token re-skins everything that uses it without having to
+  match a single one of our selectors:
+
+  ```css
+  :root {
+    --nm-accent: #ff4d6d;      /* selected chips, map tiles, keybind capture */
+    --nm-surface: #12121a;     /* settings-tab cards */
+    --nm-game-bg: #14100f;     /* alt manager, changelog */
+  }
+  ```
+
+  The full list is `src/shared/palette.ts`, grouped by surface.
 - **Userscripts.** Any `.js` in `swap/scripts/`. Off by default, and worth keeping that
   way unless you wrote them.
 

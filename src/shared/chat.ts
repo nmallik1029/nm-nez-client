@@ -11,11 +11,12 @@ export type ChatChannel = 'team' | 'all';
 export interface ChatTag {
   readonly channel: ChatChannel;
   readonly label: string;
-  readonly color: string;
+  /** Which of the two tag classes the preload puts on the label. */
+  readonly cssClass: string;
 }
 
-const TEAM_TAG: ChatTag = { channel: 'team', label: '[T]', color: '#4ade80' };
-const ALL_TAG: ChatTag = { channel: 'all', label: '[M]', color: '#f87171' };
+const TEAM_TAG: ChatTag = { channel: 'team', label: '[T]', cssClass: 'kc-chat-team' };
+const ALL_TAG: ChatTag = { channel: 'all', label: '[M]', cssClass: 'kc-chat-all' };
 
 /**
  * Which channel the chat box will send to, from `#chatSwitch`'s `data-tab`.

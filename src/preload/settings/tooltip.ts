@@ -1,3 +1,5 @@
+import { defineStyle } from '../style';
+
 /**
  * Shared hover tooltip.
  *
@@ -14,17 +16,18 @@ const SHOW_DELAY_MS = 90;
 const GAP_PX = 8;
 
 /**
- * GameFont is Krunker's own pixel face, already loaded by the page, so naming
- * it is enough. It wants more line-height and no letter-spacing compared to a
- * normal UI font, and it has no real weight axis, so font-weight buys nothing
- * and risks a synthesised bold.
+ * `--nm-font` is Krunker's own pixel face. It wants more line-height and no
+ * letter-spacing compared to a normal UI font, and it has no real weight axis,
+ * so font-weight buys nothing here and risks a synthesised bold.
  */
 const CSS = `
 #kc-tip{position:fixed;z-index:2147483400;max-width:300px;padding:7px 10px;
-  border-radius:5px;background:#0d0e11;border:1px solid #33363f;color:#dfe1e6;
-  font-family:'GameFont',sans-serif;font-size:13px;line-height:1.55;
+  border-radius:var(--nm-radius-sm);background:var(--nm-popover-bg);
+  border:1px solid var(--nm-popover-border);color:var(--nm-popover-text);
+  font-family:var(--nm-font);font-size:13px;line-height:1.55;
   white-space:pre-line;
-  pointer-events:none;opacity:0;transition:opacity .1s;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  pointer-events:none;opacity:0;transition:opacity .1s;
+  box-shadow:0 6px 18px var(--nm-shadow-mid)}
 #kc-tip.kc-tip-show{opacity:1}
 .kc-tip-target{cursor:help}
 `;
@@ -36,14 +39,12 @@ function ensure(): HTMLDivElement | null {
   if (tip?.isConnected) return tip;
   if (!document.documentElement) return null;
 
-  const style = document.createElement('style');
-  style.id = 'kc-tip-style';
-  style.textContent = CSS;
+  defineStyle('kc-tip-style', CSS);
 
   tip = document.createElement('div');
   tip.id = 'kc-tip';
 
-  document.documentElement.append(style, tip);
+  document.documentElement.append(tip);
   return tip;
 }
 
