@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeIndex } from './section-nav';
+import { activeIndex, isAtEnd } from './section-nav';
 
 /**
  * The scroll-spy. `sectionLabel` is not here because it works on a real
@@ -64,5 +64,44 @@ describe('activeIndex', () => {
     // An empty section between two headers gives them the same top. Either
     // answer is defensible; this pins which one so it can't drift.
     expect(activeIndex([0, 300, 300, 700], 300)).toBe(2);
+  });
+});
+
+/**
+ * The bottom of the list is a special case, and getting it wrong is visible:
+ * the last sections can never be highlighted, because scrolling stops before
+ * their offsets are reached and the reading line stays in the section above.
+ */
+describe('isAtEnd', () => {
+  it('is false with room left to scroll', () => {
+    expect(isAtEnd(0, 600, 2000)).toBe(false);
+    expect(isAtEnd(900, 600, 2000)).toBe(false);
+  });
+
+  it('is true at the exact bottom', () => {
+    expect(isAtEnd(1400, 600, 2000)).toBe(true);
+  });
+
+  it('is true just short of the bottom, within the slack', () => {
+    // Browsers report fractional scroll heights at non-integer zoom, so an
+    // exact comparison never fires and the last section stays unreachable.
+    expect(isAtEnd(1399, 600, 2000)).toBe(true);
+    expect(isAtEnd(1398, 600, 2000)).toBe(true);
+    expect(isAtEnd(1397, 600, 2000)).toBe(false);
+  });
+
+  it('is true when the content does not overflow at all', () => {
+    // Nothing to scroll: every section is on screen, so the bottom is here.
+    expect(isAtEnd(0, 600, 600)).toBe(true);
+    expect(isAtEnd(0, 600, 400)).toBe(true);
+  });
+
+  it('is true past the bottom, as overscroll reports', () => {
+    expect(isAtEnd(1500, 600, 2000)).toBe(true);
+  });
+
+  it('honours a wider slack', () => {
+    expect(isAtEnd(1380, 600, 2000, 20)).toBe(true);
+    expect(isAtEnd(1379, 600, 2000, 20)).toBe(false);
   });
 });
