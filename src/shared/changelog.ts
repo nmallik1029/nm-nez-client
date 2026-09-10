@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.16',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The top right is just labels now. Notifications is gone, Settings and More Krunker have lost their icons, and hovering one lights the word rather than drawing a box around it.',
+      },
+      {
+        kind: 'changed',
+        text: 'The Summer Finale spin badge no longer hangs off Store.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The menu items down the left are evenly spaced. Krunker grouped them with dividers, which is what made some gaps twice the size of others.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Login or Register and Alt Manager sit the same distance from the divider between them.',
+      },
+    ],
+  },
+  {
     version: '0.1.15',
     date: '2026-09-10',
     changes: [

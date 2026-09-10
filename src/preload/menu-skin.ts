@@ -45,13 +45,6 @@ const FOOTER_HIDDEN = ['contact', 'terms'];
 const FOOTER_MOVED = 'changelog';
 /** Marks the moved link so the sheet can style it as a header item. */
 const HEADER_LINK_CLASS = 'kc-menu-headerlink';
-/**
- * More Krunker's icon. Material icons carry their ligature name as text
- * content, which is also the only way to tell the two header nav items apart
- * — neither has an id and their classes are Svelte-hashed and identical.
- */
-const MORE_KRUNKER_ICON = 'travel_explore';
-
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
@@ -236,23 +229,11 @@ function placeFooterLinks(): void {
   }
 }
 
-/** More Krunker keeps its label; the globe beside it goes. */
-function placeMoreKrunkerIcon(): void {
-  for (const icon of document.querySelectorAll<HTMLElement>(
-    '#playerHeaderEl .headerBarRight [class*="nav-mat-icon"]',
-  )) {
-    if ((icon.textContent ?? '').trim() !== MORE_KRUNKER_ICON) continue;
-    if (enabled) icon.style.display = 'none';
-    else icon.style.removeProperty('display');
-  }
-}
-
 function apply(): void {
   placeScrim();
   placeMark();
   placeAltManager();
   placeFooterLinks();
-  placeMoreKrunkerIcon();
 }
 
 /**
