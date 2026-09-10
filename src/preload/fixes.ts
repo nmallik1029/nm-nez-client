@@ -187,7 +187,7 @@ let promoStyle: HTMLStyleElement | null = null;
  * !important everywhere because these carry inline and component styles a
  * plain rule loses to.
  */
-export function setMenuPromoHiding(enabled: boolean): void {
+function setPromoStyle(enabled: boolean): void {
   if (!enabled) {
     promoStyle?.remove();
     promoStyle = null;
@@ -208,6 +208,171 @@ export function setMenuPromoHiding(enabled: boolean): void {
     '#topLeftAdHolder, #topRightAdHolder { display: none !important; }',
   ].join('\n');
   attachStyle(style);
+}
+
+/**
+ * The promos that come out of the document instead of being hidden. All read
+ * off the live menu on 2026-09-10.
+ *
+ * The two ids carry no Svelte build hash, so they're matched exactly. The
+ * tooltip has neither an id nor a stable class — "ph-tooltip svelte-zoii2u"
+ * is hashed — so it's matched on the stable fragment and scoped to the header
+ * bar, which keeps the rule off any other tooltip in the menu.
+ */
+const REMOVED_PROMO_SELECTORS = [
+  // The season splash over the play buttons; its only child is #mainLogo.
+  '#gameNameHolder',
+  // "Get Signup Rewards", in the signed-out header bar.
+  '#signupRewardsButton',
+  // "Register now to unlock more features and save your progress", the pitch
+  // hanging off the Login or Register button. The button itself stays — you
+  // still need somewhere to sign in.
+  '#signedOutHeaderBar [class*="ph-tooltip"]',
+] as const;
+
+/**
+ * The "Join Krunker today!" banner on the end-of-match screen renders into
+ * this container, which ships empty in Krunker's own HTML and is filled when a
+ * match ends.
+ *
+ * The container itself stays and its contents get taken out as they arrive.
+ * Removing the container would be the obvious thing, but Krunker looks it up
+ * by id to fill it, and handing their end-of-match code a null is a good way
+ * to break the screen the banner sits on.
+ */
+const MATCH_END_INCENTIVES_ID = 'matchEndSignupIncentives';
+
+interface RemovedPromo {
+  node: Element;
+  parent: Element;
+  /** Where it sat, so turning the setting back off puts it back. */
+  nextSibling: ChildNode | null;
+}
+
+const removedPromos = new Map<string, RemovedPromo>();
+
+/**
+ * Removed nodes are parked in here rather than dropped on the floor.
+ *
+ * Svelte detaches a node with `parentNode.removeChild(node)`, which throws
+ * when parentNode is null, and Krunker's menu is Svelte-compiled and tears
+ * these components down on its own schedule. Reparenting into a holder that is
+ * not in the document gets the element off the page — the part that actually
+ * matters — while leaving it a parent to be detached from.
+ */
+let promoBin: HTMLDivElement | null = null;
+
+let promoObserver: MutationObserver | null = null;
+let incentivesObserver: MutationObserver | null = null;
+let menuMountObserver: MutationObserver | null = null;
+
+function bin(): HTMLDivElement {
+  return (promoBin ??= document.createElement('div'));
+}
+
+function removeMenuPromos(): void {
+  for (const selector of REMOVED_PROMO_SELECTORS) {
+    // querySelector only sees the document, so a node already in the bin never
+    // turns up here twice.
+    const node = document.querySelector(selector);
+    if (!node?.parentElement) continue;
+    // Krunker rebuilding an element replaces the entry for its selector. The
+    // node it replaced is already off the page and stays in the bin.
+    removedPromos.set(selector, {
+      node,
+      parent: node.parentElement,
+      nextSibling: node.nextSibling,
+    });
+    bin().appendChild(node);
+  }
+}
+
+/**
+ * Elements only. Svelte marks its insertion points with comment nodes, and
+ * moving those out would send the next render somewhere it can't be seen —
+ * including into markup we don't own.
+ *
+ * Nothing here is recorded for restore: the banner only exists during an end
+ * screen, and with the setting off Krunker renders a fresh one next match.
+ */
+function emptyMatchEndIncentives(): void {
+  const holder = document.getElementById(MATCH_END_INCENTIVES_ID);
+  if (!holder) return;
+  for (const child of Array.from(holder.children)) bin().appendChild(child);
+}
+
+function restoreMenuPromos(): void {
+  for (const { node, parent, nextSibling } of removedPromos.values()) {
+    // If the menu was rebuilt while the node was out, Krunker owns the new
+    // copy and putting ours back would show it twice.
+    if (!parent.isConnected) continue;
+    if (nextSibling?.parentNode === parent) parent.insertBefore(node, nextSibling);
+    else parent.appendChild(node);
+  }
+  removedPromos.clear();
+}
+
+/**
+ * Two observers, each scoped as tightly as the thing it watches.
+ *
+ * The menu one has to keep running because Krunker rebuilds the header bar on
+ * every sign-in and sign-out, so removing those elements once is not enough.
+ * Scoping it to the menu mount keeps the callback off every HUD mutation
+ * during a round, which a document-wide subtree observer would not.
+ *
+ * Returns true once both are attached. Krunker builds the menu mount from its
+ * own script, so on an early call neither may exist yet.
+ */
+function attachPromoObservers(): boolean {
+  const mount = document.getElementById('mainMenuUIMount');
+  if (mount && !promoObserver) {
+    promoObserver = new MutationObserver(removeMenuPromos);
+    promoObserver.observe(mount, { childList: true, subtree: true });
+    removeMenuPromos();
+  }
+
+  const holder = document.getElementById(MATCH_END_INCENTIVES_ID);
+  if (holder && !incentivesObserver) {
+    incentivesObserver = new MutationObserver(emptyMatchEndIncentives);
+    incentivesObserver.observe(holder, { childList: true });
+    emptyMatchEndIncentives();
+  }
+
+  return promoObserver !== null && incentivesObserver !== null;
+}
+
+function setPromoRemoval(enabled: boolean): void {
+  if (!enabled) {
+    promoObserver?.disconnect();
+    promoObserver = null;
+    incentivesObserver?.disconnect();
+    incentivesObserver = null;
+    menuMountObserver?.disconnect();
+    menuMountObserver = null;
+    restoreMenuPromos();
+    return;
+  }
+  if (menuMountObserver || attachPromoObservers()) return;
+
+  // Observes `document` rather than documentElement, because the preload can
+  // run before <html> exists. It stops as soon as both targets are up.
+  menuMountObserver = new MutationObserver(() => {
+    if (!attachPromoObservers()) return;
+    menuMountObserver?.disconnect();
+    menuMountObserver = null;
+  });
+  menuMountObserver.observe(document, { childList: true, subtree: true });
+}
+
+/**
+ * Both halves of the menu-promo setting: a stylesheet for the promos CSS can
+ * cover, and node removal for the ones that come out of the page entirely.
+ * Still reversible without a reload — the removed menu nodes go back where
+ * they came from.
+ */
+export function setMenuPromoHiding(enabled: boolean): void {
+  setPromoStyle(enabled);
+  setPromoRemoval(enabled);
 }
 
 /**

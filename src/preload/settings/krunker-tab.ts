@@ -162,7 +162,7 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         section: 'features',
         key: 'hideMenuPromos',
         label: 'Hide menu promos',
-        hint: 'Clears the battle pass, daily spin, Twitch drops panel and the corner ad boxes out of the main menu. This is the game advertising itself, not third party ads.',
+        hint: 'Clears the battle pass, daily spin, Twitch drops panel and corner ad boxes out of the main menu, and deletes the season logo, the signup rewards button, the register-now pitch and the end of match signup banner outright. This is the game advertising itself, not third party ads.',
       },
       {
         section: 'features',
@@ -217,6 +217,12 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
   {
     title: 'Interface',
     items: [
+      {
+        section: 'features',
+        key: 'menuSkin',
+        label: 'Restyle the main menu',
+        hint: 'Gives the home screen one accent colour instead of five, grounds it so every label stops needing a heavy outline, and sets your FPS and ping as numbers you can read at a glance. Turn it off to get Krunker’s own menu back.',
+      },
       {
         section: 'ui',
         key: 'realPing',
