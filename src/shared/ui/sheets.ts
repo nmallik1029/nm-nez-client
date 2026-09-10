@@ -815,16 +815,20 @@ const menuSkin = `
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone) !important}
-/* Clicking Invite swaps the label to "Copied link" and the control shrinks.
-   Pinned by ID, not by class: a first attempt went through .match-action-btn
-   and did nothing, which means the class is not what it is wearing by the
-   time the label has changed. The ids are Krunker's own and do not move.
-   Descendants too, since the swapped-in label is a child. */
+/* Clicking Invite swaps its label to "Copied URL" and back a moment later,
+   and the row twitched each way.
+   Measured on the running client rather than guessed at, twice: the font
+   size, the height and the transform are all UNCHANGED through the whole
+   thing. It is the label. "Invite" is 43px wide and "Copied URL" is 72, so
+   the control resizes to its own text and everything beside it reflows.
+   A floor wide enough for the longer word is the fix; the transform and type
+   below are only insurance. Left-aligned so the word does not jump either. */
 #inviteButton,#menuBtnJoin,#inviteButton *,#menuBtnJoin *,
 #inviteButton:hover,#menuBtnJoin:hover,#inviteButton:active,#menuBtnJoin:active,
 #matchInfoHolder .match-action-btn,#matchInfoHolder .match-action-btn:hover,
 #matchInfoHolder .match-action-btn:active{
-  transform:none !important;animation:none !important;zoom:1 !important;
+  min-width:82px !important;text-align:left !important;
+  transform:none !important;animation:none !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-2xs) !important;
   line-height:1 !important;letter-spacing:var(--nm-track-3xl) !important;
   text-transform:uppercase !important;white-space:nowrap !important}

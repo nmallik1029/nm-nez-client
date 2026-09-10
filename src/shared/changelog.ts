@@ -29,7 +29,11 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'fixed',
-        text: 'Invite really does stop shrinking when you click it this time.',
+        text: 'Clicking a section in the settings index lands on that section. It had been stopping short by a fraction of however far it travelled, because Krunker scales its whole interface and the jump was measuring in one unit and scrolling in another.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Invite no longer resizes when you click it. Its label becomes “Copied URL” and back, which is wider than “Invite”, so the row moved twice each time.',
       },
     ],
   },
