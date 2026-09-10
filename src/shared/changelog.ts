@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.29',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Picking NM/NEZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match — the menu is untouched by it.',
+      },
+    ],
+  },
+  {
     version: '0.1.28',
     date: '2026-09-10',
     changes: [

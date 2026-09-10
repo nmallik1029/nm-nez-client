@@ -998,7 +998,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         ['krunker', 'Krunker (original)'],
         ['nmnez', 'NM/NEZ'],
       ],
-      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NEZ restyles the menu and the windows it opens: one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, and one settings section on screen at a time. Switches straight away, either way.',
+      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NEZ restyles the menu and the windows it opens — one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, one settings section on screen at a time — and strips the panels out from behind the in-game HUD to match. Switches straight away, either way.',
       onChange: (value) => deps.onChange('features', 'menuSkin', value === 'nmnez'),
     });
 
