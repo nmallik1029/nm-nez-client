@@ -1,11 +1,18 @@
 /*
  * Minimal HUD — a user-supplied theme, in a match only.
  *
- * Every selector below is prefixed `#uiBase:not(.onMenu):not(.onCompMenu)`,
- * and that prefix is the point. Krunker stamps its own state onto #uiBase —
- * onMenu, onGame, onSpect, onEndScrn — so "not the menu" becomes something
- * the stylesheet says out loud, rather than a property maintained by being
- * careful about which selectors get added to it later.
+ * Every selector below is prefixed `#uiBase:not(.onMenu)`, and that prefix is
+ * the point. Krunker stamps its own state onto #uiBase — its main.css labels
+ * them in its own main.css as onMenu "NORMAL MENU", onCompMenu "COMP MENU",
+ * onGame "IN-GAME", onSpect and onEndScrn — so "not the main menu" becomes
+ * something the stylesheet says out loud, rather than a property maintained by
+ * being careful about which selectors get added to it later.
+ *
+ * onCompMenu USED TO BE EXCLUDED HERE TOO, and that was wrong. The five states
+ * are mutually exclusive, so excluding the comp menu did not make the match
+ * safer — it only meant that hosting or joining a comp lobby dropped the theme
+ * entirely, which reads exactly like something external blocking the client.
+ * The comp lobby is one of ours to style; only the main menu is not.
  *
  * It matters because three of these aim at elements that exist in both
  * places: the chat box is on the menu as well as in a match, so #chatList,
@@ -17,116 +24,116 @@
  * where comments in a stylesheet are injected into the page verbatim.
  */
 
-#uiBase:not(.onMenu):not(.onCompMenu) #fpsDisplay,
-#uiBase:not(.onMenu):not(.onCompMenu) #pingDisplay {
+#uiBase:not(.onMenu) #fpsDisplay,
+#uiBase:not(.onMenu) #pingDisplay {
   visibility: hidden;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #ingameFPS,
-#uiBase:not(.onMenu):not(.onCompMenu) #pingText {
+#uiBase:not(.onMenu) #ingameFPS,
+#uiBase:not(.onMenu) #pingText {
   visibility: visible; color: white !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .debugInfo {
+#uiBase:not(.onMenu) .debugInfo {
   position: fixed; left: 156px; top: 18px; text-align: left;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .weapItem,
-#uiBase:not(.onMenu):not(.onCompMenu) .weapItemInner,
-#uiBase:not(.onMenu):not(.onCompMenu) #ammoHolder,
-#uiBase:not(.onMenu):not(.onCompMenu) .greyInner,
-#uiBase:not(.onMenu):not(.onCompMenu) #leaderContainer,
-#uiBase:not(.onMenu):not(.onCompMenu) #leaderboardHolder,
-#uiBase:not(.onMenu):not(.onCompMenu) .statIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItem,
-#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItemInner,
-#uiBase:not(.onMenu):not(.onCompMenu) #timerInner,
-#uiBase:not(.onMenu):not(.onCompMenu) #timerHolder,
-#uiBase:not(.onMenu):not(.onCompMenu) #teamScores,
-#uiBase:not(.onMenu):not(.onCompMenu) .nHealthBarSeg,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerRight,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerLeft,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayer,
-#uiBase:not(.onMenu):not(.onCompMenu) #chatInputHolder,
-#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInnerMid {
+#uiBase:not(.onMenu) .weapItem,
+#uiBase:not(.onMenu) .weapItemInner,
+#uiBase:not(.onMenu) #ammoHolder,
+#uiBase:not(.onMenu) .greyInner,
+#uiBase:not(.onMenu) #leaderContainer,
+#uiBase:not(.onMenu) #leaderboardHolder,
+#uiBase:not(.onMenu) .statIcon,
+#uiBase:not(.onMenu) .killStreakItem,
+#uiBase:not(.onMenu) .killStreakItemInner,
+#uiBase:not(.onMenu) #timerInner,
+#uiBase:not(.onMenu) #timerHolder,
+#uiBase:not(.onMenu) #teamScores,
+#uiBase:not(.onMenu) .nHealthBarSeg,
+#uiBase:not(.onMenu) #bottomLeftPlayerRight,
+#uiBase:not(.onMenu) #bottomLeftPlayerLeft,
+#uiBase:not(.onMenu) #bottomLeftPlayer,
+#uiBase:not(.onMenu) #chatInputHolder,
+#uiBase:not(.onMenu) .greyInlineInnerMid {
   background: 0 !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .weapKey,
-#uiBase:not(.onMenu):not(.onCompMenu) .weapSkin,
-#uiBase:not(.onMenu):not(.onCompMenu) #ammoMax,
-#uiBase:not(.onMenu):not(.onCompMenu) #ammoIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) #timerIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftChallIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamName,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamType {
+#uiBase:not(.onMenu) .weapKey,
+#uiBase:not(.onMenu) .weapSkin,
+#uiBase:not(.onMenu) #ammoMax,
+#uiBase:not(.onMenu) #ammoIcon,
+#uiBase:not(.onMenu) #timerIcon,
+#uiBase:not(.onMenu) #bottomLeftChallIcon,
+#uiBase:not(.onMenu) #bottomLeftTeamName,
+#uiBase:not(.onMenu) #bottomLeftTeamType {
   display: none !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .greyInner #ammoVal,
-#uiBase:not(.onMenu):not(.onCompMenu) .weapItemInner,
-#uiBase:not(.onMenu):not(.onCompMenu) .statIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) #leaderContainer,
-#uiBase:not(.onMenu):not(.onCompMenu) .killStreakItemInner {
+#uiBase:not(.onMenu) .greyInner #ammoVal,
+#uiBase:not(.onMenu) .weapItemInner,
+#uiBase:not(.onMenu) .statIcon,
+#uiBase:not(.onMenu) #leaderContainer,
+#uiBase:not(.onMenu) .killStreakItemInner {
   padding: 0;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #timerInner {
+#uiBase:not(.onMenu) #timerInner {
   margin: 0 !important; padding: 0 !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInner {
+#uiBase:not(.onMenu) .greyInlineInner {
   display: none;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .greyInlineInnerMid {
+#uiBase:not(.onMenu) .greyInlineInnerMid {
   margin: 0; padding: 0;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #chatInputHolder {
+#uiBase:not(.onMenu) #chatInputHolder {
   grid-template-columns: auto;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #chatList {
+#uiBase:not(.onMenu) #chatList {
   background: rgba(0, 0, 0, 0.15); border-radius: 0; padding-left: 5px;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #chatInput {
+#uiBase:not(.onMenu) #chatInput {
   background: rgba(0, 0, 0, 0.275); border: 2px solid transparent; width: 100%; border-radius: 0;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #topLeftBottom {
+#uiBase:not(.onMenu) #topLeftBottom {
   transform: translate(5px, 1px);
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayer,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftPlayerLeft,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamType {
+#uiBase:not(.onMenu) #bottomLeftPlayer,
+#uiBase:not(.onMenu) #bottomLeftPlayerLeft,
+#uiBase:not(.onMenu) #bottomLeftTeamType {
   background-color: transparent;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamName {
+#uiBase:not(.onMenu) #bottomLeftTeamName {
   color: #fff; background-color: transparent;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftHealthBar {
+#uiBase:not(.onMenu) #bottomLeftHealthBar {
   background-color: transparent !important; margin-top: 41px !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftChallIcon,
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftTeamHolder {
+#uiBase:not(.onMenu) #bottomLeftChallIcon,
+#uiBase:not(.onMenu) #bottomLeftTeamHolder {
   display: none;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #bottomLeftHealth {
+#uiBase:not(.onMenu) #bottomLeftHealth {
   color: #fff; font-size: 22px; position: absolute; bottom: 60px; left: 100px; display: inline-block; padding-right: 7px; padding-left: 10px; border-radius: 5px; will-change: transform;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) .nHealthBarSeg {
+#uiBase:not(.onMenu) .nHealthBarSeg {
   height: 30px !important;
 }
 
-#uiBase:not(.onMenu):not(.onCompMenu) #PC7WaterMark1,
-#uiBase:not(.onMenu):not(.onCompMenu) div#PC7WaterMark2 {
+#uiBase:not(.onMenu) #PC7WaterMark1,
+#uiBase:not(.onMenu) div#PC7WaterMark2 {
   display: none !important;
 }
