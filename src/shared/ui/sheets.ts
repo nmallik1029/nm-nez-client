@@ -352,7 +352,21 @@ const sectionNav = `
    Padding rather than a flex or grid rewrite, because the rows inside are
    Krunker's and rearranging their container is how this breaks on their next
    update. */
-.kc-has-sectnav{padding-left:190px !important}
+/* The holder is the index's containing block. Said with an ID because
+   Krunker's own #settHolder rule outranks a bare class, which is what beat an
+   earlier attempt at exactly this. */
+#settHolder.kc-has-sectnav{position:relative !important;padding-left:190px !important}
+/*
+ * The window stays centred, and stays as tall as whatever section is on it.
+ *
+ * Two earlier attempts at the same problem, both worse: a floor under the
+ * height stopped it moving by leaving a screenful of dead space under a short
+ * section, and anchoring the top stopped that but left the window sitting
+ * high on the screen. Centred and content-sized is what was wanted; the index
+ * is placed against the window and re-placed whenever it resizes, so it
+ * follows rather than drifting.
+ */
+#menuWindow:has(#settHolder.kc-has-sectnav){max-height:86vh !important}
 /*
  * Held in place by a transform, set from script each frame.
  *
@@ -376,13 +390,27 @@ const sectionNav = `
  * than frames during an animated jump. pin() reads where the index actually is
  * and corrects it, every frame, for as long as a scroll is playing.
  */
-#${UI_IDS.sectionNav}{float:left;width:172px;margin-left:-190px;
+/* Fixed, and neither floated nor absolute. Two separate reasons:
+   As a float it stayed in flow, and Krunker gives every settings row
+   clear:both for its float-right switches — so the first row of the first
+   section cleared the whole index and left a gap exactly as tall as it.
+   Absolute fixed that, but an absolutely positioned child of a scroller still
+   scrolls with it, so holding it still meant correcting it every frame, which
+   is a frame behind by construction. Fixed does not move at all. Its top and
+   left are written from script, because a transformed ancestor becomes the
+   containing block and Krunker has one. */
+#${UI_IDS.sectionNav}{position:absolute;top:0;left:0;width:172px;
+  /* Everything above this is pointer-events:none — #uiBase sets it and each
+     window holder keeps it, with Krunker re-enabling it only inside its own
+     panels. The index sits outside those now, so it has to say so itself or
+     the clicks fall straight through to the settings behind it. */
+  pointer-events:auto;
   overflow-y:auto;overscroll-behavior:contain;
   padding:2px 12px 2px 0;box-sizing:border-box;
   border-right:var(--nm-bw) solid var(--nm-kr-rule);
   font-family:var(--nm-font);font-size:var(--nm-fs-md);
   /* Above the rows, so a wide row can't paint over the index. */
-  position:relative;z-index:var(--nm-z-raise)}
+  z-index:var(--nm-z-raise)}
 /* No scrollbar of its own: one panel should not show two. */
 #${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
 /*
@@ -392,9 +420,11 @@ const sectionNav = `
 /* Wraps rather than clipping. "Crosshair (Third Person)" truncated to
    "Crosshair (Th..." beside a "Crosshair" above it is worse than useless —
    the two entries read as the same section. */
+/* --nm-lh, not --nm-lh-tight: these labels wrap to two and three lines, and
+   at 1.2 the wrapped lines of a tall face collide with each other. */
 .kc-sectnav-item{padding:8px 12px;margin:0 0 1px;
   color:var(--nm-kr-text-dim);cursor:pointer;
-  line-height:var(--nm-lh-tight);overflow-wrap:anywhere;
+  line-height:var(--nm-lh);overflow-wrap:anywhere;
   border-left:var(--nm-bw-thick) solid transparent;
   transition:color var(--nm-fast),background var(--nm-fast)}
 .kc-sectnav-item:hover{color:var(--nm-kr-text);background:var(--nm-kr-fill)}
@@ -962,6 +992,11 @@ const menuSkin = `
 const krunkerWindows = `
 /* ---- the panel, and what it sits on ---- */
 #windowHolder.popupWin,#popupBack,#guidePopupH{background:var(--nm-menu-scrim) !important}
+/* Krunker pads the window 20px all round. On the right that left the row
+   hairlines stopping short of the edge with the scrollbar just past them,
+   which reads as a black bar rather than as margin. Zero, so the rows run to
+   the scrollbar and there is no strip left to notice. */
+#menuWindow{padding-right:0 !important}
 #menuWindow,#menuWindow.dark,#popupContent,#policePopC,#guidePopup,.kc-menu-modal{
   background:var(--nm-menu-panel) !important;
   border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
@@ -1060,6 +1095,11 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
 .settingsBtn:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+/* Hidden header controls, marked by menu-skin.ts.
+   A class rather than an inline style, because the sizing rule below sets
+   display:inline-flex !important and an inline display:none loses to it —
+   which is exactly why Manage Ads kept coming back. Two classes beat one. */
+#menuWindow .settingsBtn.kc-menu-hidden,#menuWindow .kc-menu-hidden{display:none !important}
 /* One height across the header strip, taken from the preset dropdown. */
 #menuWindow .settingsBtn,#menuWindow select,#menuWindow .kc-menu-setctl{
   height:30px !important;min-height:30px !important;box-sizing:border-box !important;
@@ -1105,6 +1145,13 @@ table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
   letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important}
 .instructionsTab:hover{color:var(--nm-menu-bone) !important}
+
+/* The scrollbar, which otherwise reads as a black bar down the right edge of
+   an otherwise flat panel. */
+#menuWindow::-webkit-scrollbar{width:8px}
+#menuWindow::-webkit-scrollbar-track{background:none}
+#menuWindow::-webkit-scrollbar-thumb{background:var(--nm-menu-line-hi);border-radius:0}
+#menuWindow::-webkit-scrollbar-thumb:hover{background:var(--nm-menu-ash-dim)}
 
 /* ---- the section index, once the skin is on ---- */
 /* Drawn in Krunker's greys by its own sheet, which is right without the skin

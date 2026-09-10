@@ -280,8 +280,9 @@ function placeSettingsChrome(): void {
     const label = (el.textContent ?? '').trim().toLowerCase();
 
     if (SETTINGS_HIDDEN.includes(label)) {
-      if (enabled) el.style.display = 'none';
-      else el.style.removeProperty('display');
+      // A class, not an inline style: the sheet sizes .settingsBtn with
+      // display:inline-flex !important, which an inline display:none loses to.
+      el.classList.toggle('kc-menu-hidden', enabled);
       continue;
     }
 

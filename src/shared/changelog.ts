@@ -16,6 +16,36 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.21',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The settings index now shows one section at a time instead of scrolling to it. Pick a section and only that section is on screen. Nothing jumps, nothing slides, and there is nowhere to get lost.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The index no longer drifts down the page while you scroll, and it is clickable again.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The empty gap under the first heading is gone. It was as tall as the index, because the index was a float and Krunker clears every settings row past one.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Sections that do not apply to you, like KPD and Developer, no longer appear in the index or under the section above them.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Manage Ads is really gone this time, and the dead black strip down the right of the window with it.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The settings window is as tall as whatever section you are on, instead of a fixed height with a screenful of nothing under it, and it stays centred on screen.',
+      },
+    ],
+  },
+  {
     version: '0.1.20',
     date: '2026-09-10',
     changes: [

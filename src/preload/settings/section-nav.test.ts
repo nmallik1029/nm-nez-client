@@ -1,107 +1,70 @@
 import { describe, expect, it } from 'vitest';
-import { activeIndex, isAtEnd } from './section-nav';
+import { sectionRanges } from './section-nav';
 
 /**
- * The scroll-spy. `sectionLabel` is not here because it works on a real
- * Element and the suite runs under `environment: 'node'`; stubbing enough of
- * the DOM to exercise `cloneNode` and `querySelectorAll` would test the stub.
+ * The index shows one section at a time, so the only arithmetic left is
+ * working out which of the holder's children belong to which section.
  *
- * This is the part that goes wrong quietly. Highlighting the wrong entry
- * doesn't throw, doesn't fail a build, and reads as the nav being broken.
+ * The scroll-position helpers this file used to cover — `activeIndex` and
+ * `isAtEnd` — are gone with the scrolling version of the index. They existed
+ * to answer "which section am I looking at" while everything shared one long
+ * column, and nothing asks that any more.
  */
-describe('activeIndex', () => {
-  const tops = [0, 400, 900, 1500];
+describe('sectionRanges', () => {
+  const H = true;
+  const R = false;
 
-  it('has nothing active with no sections', () => {
-    expect(activeIndex([], 0)).toBe(-1);
-    expect(activeIndex([], 999)).toBe(-1);
+  it('finds nothing in an empty list', () => {
+    expect(sectionRanges([])).toEqual([]);
   });
 
-  it('starts on the first section', () => {
-    expect(activeIndex(tops, 0)).toBe(0);
+  it('finds nothing when there are no headers', () => {
+    expect(sectionRanges([R, R, R])).toEqual([]);
   });
 
-  it('stays on a section while scrolling through it', () => {
-    expect(activeIndex(tops, 100)).toBe(0);
-    expect(activeIndex(tops, 375)).toBe(0);
-    expect(activeIndex(tops, 500)).toBe(1);
-    // 876 is where the next one takes over, 24px early. See the lookahead test.
-    expect(activeIndex(tops, 875)).toBe(1);
+  it('takes a header and the rows under it', () => {
+    expect(sectionRanges([H, R, R])).toEqual([{ start: 0, end: 3 }]);
   });
 
-  it('advances as each header reaches the reading line', () => {
-    expect(activeIndex(tops, 400)).toBe(1);
-    expect(activeIndex(tops, 900)).toBe(2);
-    expect(activeIndex(tops, 1500)).toBe(3);
+  it('ends a section where the next header starts', () => {
+    expect(sectionRanges([H, R, H, R, R])).toEqual([
+      { start: 0, end: 2 },
+      { start: 2, end: 5 },
+    ]);
   });
 
-  /**
-   * Smooth scrolling lands a pixel or two short, and `scrollTo` is given
-   * `top - 8` so a jumped-to header is not flush against the edge. Without
-   * the lookahead the entry you just clicked would not light up.
-   */
-  it('counts a section as reached slightly before its exact top', () => {
-    expect(activeIndex(tops, 400 - 8)).toBe(1);
-    expect(activeIndex(tops, 400 - 24)).toBe(1);
-    expect(activeIndex(tops, 400 - 25)).toBe(0);
+  it('handles a header with no rows of its own', () => {
+    expect(sectionRanges([H, H, R])).toEqual([
+      { start: 0, end: 1 },
+      { start: 1, end: 3 },
+    ]);
   });
 
-  it('holds the last section past the end of the scroll range', () => {
-    expect(activeIndex(tops, 4000)).toBe(3);
+  it('leaves anything before the first header out', () => {
+    // Krunker puts its own preamble above the first section, and hiding that
+    // along with a section would take the tab strip with it.
+    expect(sectionRanges([R, R, H, R])).toEqual([{ start: 2, end: 4 }]);
   });
 
-  it('never goes negative above the first section', () => {
-    // Overscroll on a trackpad reports a negative scrollTop.
-    expect(activeIndex(tops, -50)).toBe(0);
+  it('covers every child once the first header is reached', () => {
+    const flags = [R, H, R, R, H, R];
+    const ranges = sectionRanges(flags);
+    expect(ranges[0]?.start).toBe(1);
+    expect(ranges[ranges.length - 1]?.end).toBe(flags.length);
+    // No gaps and no overlaps between consecutive sections.
+    for (let i = 1; i < ranges.length; i++) {
+      expect(ranges[i]?.start).toBe(ranges[i - 1]?.end);
+    }
   });
 
-  it('handles a single section', () => {
-    expect(activeIndex([0], 0)).toBe(0);
-    expect(activeIndex([0], 2000)).toBe(0);
+  it('handles a trailing header with nothing after it', () => {
+    expect(sectionRanges([H, R, H])).toEqual([
+      { start: 0, end: 2 },
+      { start: 2, end: 3 },
+    ]);
   });
 
-  it('picks the last of several sections sharing an offset', () => {
-    // An empty section between two headers gives them the same top. Either
-    // answer is defensible; this pins which one so it can't drift.
-    expect(activeIndex([0, 300, 300, 700], 300)).toBe(2);
-  });
-});
-
-/**
- * The bottom of the list is a special case, and getting it wrong is visible:
- * the last sections can never be highlighted, because scrolling stops before
- * their offsets are reached and the reading line stays in the section above.
- */
-describe('isAtEnd', () => {
-  it('is false with room left to scroll', () => {
-    expect(isAtEnd(0, 600, 2000)).toBe(false);
-    expect(isAtEnd(900, 600, 2000)).toBe(false);
-  });
-
-  it('is true at the exact bottom', () => {
-    expect(isAtEnd(1400, 600, 2000)).toBe(true);
-  });
-
-  it('is true just short of the bottom, within the slack', () => {
-    // Browsers report fractional scroll heights at non-integer zoom, so an
-    // exact comparison never fires and the last section stays unreachable.
-    expect(isAtEnd(1399, 600, 2000)).toBe(true);
-    expect(isAtEnd(1398, 600, 2000)).toBe(true);
-    expect(isAtEnd(1397, 600, 2000)).toBe(false);
-  });
-
-  it('is true when the content does not overflow at all', () => {
-    // Nothing to scroll: every section is on screen, so the bottom is here.
-    expect(isAtEnd(0, 600, 600)).toBe(true);
-    expect(isAtEnd(0, 600, 400)).toBe(true);
-  });
-
-  it('is true past the bottom, as overscroll reports', () => {
-    expect(isAtEnd(1500, 600, 2000)).toBe(true);
-  });
-
-  it('honours a wider slack', () => {
-    expect(isAtEnd(1380, 600, 2000, 20)).toBe(true);
-    expect(isAtEnd(1379, 600, 2000, 20)).toBe(false);
+  it('handles a single header on its own', () => {
+    expect(sectionRanges([H])).toEqual([{ start: 0, end: 1 }]);
   });
 });
