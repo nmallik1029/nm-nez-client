@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.30',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The character preview on the menu no longer sits over the middle of its own card. It moves right, so the weapon points out across empty space instead of the whole model reading as shifted left. NM/NEZ menu style only.',
+      },
+    ],
+  },
+  {
     version: '0.1.29',
     date: '2026-09-10',
     changes: [
