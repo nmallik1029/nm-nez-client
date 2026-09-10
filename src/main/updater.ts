@@ -1,3 +1,5 @@
+import { appendFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import type { UpdateState } from '../shared/ipc';
@@ -39,6 +41,25 @@ export function canUpdate(): boolean {
   return app.isPackaged && process.env['PORTABLE_EXECUTABLE_DIR'] === undefined;
 }
 
+/**
+ * Where update trouble goes.
+ *
+ * A packaged app has no console, so console.log from main lands nowhere.
+ * Without this there is no way to tell a check that found nothing from one
+ * that fell over, which is exactly as annoying to debug as it sounds.
+ */
+function fileLog(level: string, ...args: unknown[]): void {
+  try {
+    const line = args
+      .map((a) => (a instanceof Error ? (a.stack ?? a.message) : String(a)))
+      .join(' ');
+    const path = join(app.getPath('userData'), 'update.log');
+    appendFileSync(path, `${new Date().toISOString()} [${level}] ${line}\n`, 'utf8');
+  } catch {
+    // Logging is never allowed to be the thing that breaks an update.
+  }
+}
+
 let state: UpdateState = { status: 'idle' };
 let wired = false;
 
@@ -63,7 +84,12 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
     wired = true;
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
-    autoUpdater.logger = null;
+    autoUpdater.logger = {
+      info: (m: unknown) => fileLog('info', m),
+      warn: (m: unknown) => fileLog('warn', m),
+      error: (m: unknown) => fileLog('error', m),
+      debug: () => {},
+    };
 
     autoUpdater.on('checking-for-update', () => set({ status: 'checking' }));
 
@@ -136,7 +162,7 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
       // A silent install puts nothing on screen, so the window vanishing
       // with no explanation is all the user would get. The delay is for
       // the renderer to paint the message first.
-      setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 120);
     },
   };
 }

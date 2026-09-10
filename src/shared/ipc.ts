@@ -62,6 +62,14 @@ export const IPC = {
   /** Renderer -> main. Decrypt one account so the page can sign in with it. */
   accountsReveal: 'accounts:reveal',
 
+  /**
+   * Renderer -> main. What the updater already found, if anything.
+   *
+   * The check starts before the page can possibly be listening, so the push
+   * alone would be lost on a fast answer. The renderer asks once it is ready
+   * instead of main trying to guess when that is.
+   */
+  updateCurrent: 'update:current',
   /** Renderer -> main. Look for a new release now. */
   updateCheck: 'update:check',
   /** Renderer -> main. Start downloading the release we found. */

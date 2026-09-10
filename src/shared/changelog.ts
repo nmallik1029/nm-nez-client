@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.6',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Update checks run as soon as the client starts instead of eight seconds in, and repeat every twenty minutes so a client left open still hears about a new version.',
+      },
+      {
+        kind: 'fixed',
+        text: 'A failed update check now leaves a note in update.log next to your settings, instead of failing silently with nothing to go on.',
+      },
+    ],
+  },
+  {
     version: '0.1.4',
     date: '2026-09-10',
     changes: [

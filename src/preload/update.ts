@@ -206,6 +206,15 @@ export function renderUpdateState(state: UpdateState, manual: boolean): void {
  * the only time "no update" and "it failed" are worth showing.
  */
 export function installUpdatePrompt(): void {
+  // The check starts a few hundred ms into launch, well before this runs, so
+  // ask for anything already found rather than only listening for the push.
+  void ipcRenderer
+    .invoke(IPC.updateCurrent)
+    .then((state: unknown) => renderUpdateState(state as UpdateState, false))
+    .catch(() => {
+      // No updater on this build. Nothing to show.
+    });
+
   ipcRenderer.on(IPC.updateState, (_event, state: UpdateState) => {
     renderUpdateState(state, manualCheck);
     // One manual check answers once. Anything after it is background again.

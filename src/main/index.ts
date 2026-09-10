@@ -115,7 +115,17 @@ function pushRankedState(state: QueueState): void {
 // ── Self-update ──
 // Checked once, a little after launch, so it never competes with the game
 // loading. The prompt is the renderer's job; main only fetches and installs.
-const UPDATE_CHECK_DELAY_MS = 8000;
+/**
+ * Long enough to be off the startup path, short enough that the answer is
+ * usually waiting by the time the menu is up. The renderer asks for the
+ * result when it is ready, so there is no race to lose.
+ */
+const UPDATE_CHECK_DELAY_MS = 250;
+/**
+ * And again on a slow loop, because a client left open all evening should
+ * still hear about a release published while it was running.
+ */
+const UPDATE_RECHECK_MS = 20 * 60 * 1000;
 
 const updater = createUpdater({
   log,
@@ -191,6 +201,7 @@ function start(): void {
 
   if (config.get('updates').autoCheck && canUpdate()) {
     setTimeout(() => updater.check(false), UPDATE_CHECK_DELAY_MS).unref();
+    setInterval(() => updater.check(false), UPDATE_RECHECK_MS).unref();
   }
 
   // Edit a stylesheet in a text editor and it shows up in-game on save. A

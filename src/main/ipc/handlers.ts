@@ -7,7 +7,7 @@ import { CONFIG_SECTIONS, type AppConfig } from '../../shared/config';
 import { IPC, type Capabilities, type OpenableFolder, type ScanResult } from '../../shared/ipc';
 import { clampFrameCap } from '../platform/flags';
 import { createAccountStore } from '../accounts';
-import { canUpdate, type UpdaterControls } from '../updater';
+import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
 import { loadUserscripts } from '../assets';
@@ -85,6 +85,7 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     lastSeenVersion: config.get('updates').lastSeenVersion,
   }));
 
+  registry.handle(IPC.updateCurrent, () => currentUpdateState());
   registry.handle(IPC.updateCheck, () => deps.updater.check(true));
   registry.handle(IPC.updateDownload, () => deps.updater.download());
   registry.handle(IPC.updateInstall, () => deps.updater.install());
