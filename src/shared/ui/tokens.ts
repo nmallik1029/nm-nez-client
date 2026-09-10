@@ -328,15 +328,18 @@ const SHADOW = `
 /**
  * Typefaces.
  *
- * `GameFont` is Krunker's own pixel face, already loaded by the page, so
- * naming it is enough. The display stack adds Impact behind it for the panels
- * that want the game's heavier menu look, and the mono stack is the HUD's,
- * where digits have to stop jittering as the numbers change.
+ * One face for the whole client: `GameFont`, Krunker's own pixel type. The
+ * game page has it loaded already so naming it is enough there, and the
+ * windows that aren't the game page inline it themselves, in
+ * `main/game-font.ts`.
+ *
+ * The two entries differ only in what they fall back to while that inline
+ * copy is still arriving. Impact is much closer to GameFont's weight than a
+ * default sans, so a heading caught mid-load still reads as a heading.
  */
 const FONT = `
   --nm-font:'GameFont',sans-serif;
   --nm-font-display:'GameFont',Impact,'Arial Black',sans-serif;
-  --nm-font-mono:ui-monospace,'Cascadia Mono',Consolas,monospace;
 `;
 
 /**
@@ -382,8 +385,8 @@ const TYPE_DETAIL = `
   --nm-lh-tight:1.2;
   --nm-lh:1.5;
   --nm-lh-loose:1.55;
-  /* The HUD, which is set in a mono face and needs the extra room. */
-  --nm-lh-mono:1.45;
+  /* The perf HUD, whose stacked rows need the extra room. */
+  --nm-lh-hud:1.45;
   --nm-track-xs:.02em;
   --nm-track-sm:.04em;
   --nm-track-md:.06em;
@@ -516,20 +519,22 @@ const MENU_SCRIM = `
 `;
 
 /**
- * The menu's own face and its one bespoke measurement.
+ * The menu's face and its one bespoke measurement.
  *
- * Bahnschrift is Microsoft's DIN 1451 — road-signage lettering, which is the
- * right register for labels read at a glance and never studied. It ships with
- * Windows 10 and 11 and this client is Windows-only, so there is no download
- * and no fallback flash. Krunker's own GameFont is kept for headings and
- * buttons; replacing it is what would stop this looking like Krunker.
+ * This was a separate typeface for the small labels for a while, with
+ * GameFont kept for headings and buttons. Two faces on one screen read as
+ * two pieces of software, so the menu is set in GameFont like the rest.
+ *
+ * Still its own token rather than `--nm-font` written out everywhere: these
+ * rules all carry `!important` to beat Krunker's own, and one name for them
+ * means retuning the menu is one line rather than twenty-odd.
  *
  * The tracking step is here rather than in `TYPE_DETAIL` because nothing else
  * in the client is set this wide — it belongs to one label, and putting it on
  * the shared scale would invite someone to reach for it elsewhere.
  */
 const MENU_TYPE = `
-  --nm-menu-font:Consolas,'Cascadia Mono',ui-monospace,monospace;
+  --nm-menu-font:'GameFont',sans-serif;
   --nm-menu-track-cta:.42em;
 `;
 

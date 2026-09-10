@@ -16,7 +16,7 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
-    version: '0.1.24',
+    version: '0.1.26',
     date: '2026-09-10',
     changes: [
       {
@@ -26,6 +26,16 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       {
         kind: 'fixed',
         text: 'The index appears with the tab instead of a moment after it, and no longer sometimes fails to appear at all.',
+      },
+    ],
+  },
+  {
+    version: '0.1.24',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The client is set in Krunker’s own font throughout. The menu labels, the settings rows and the performance readout were all in a second typeface, which made the whole thing look like two programs stapled together.',
       },
     ],
   },
