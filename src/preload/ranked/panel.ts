@@ -75,6 +75,10 @@ function syncPill(): void {
 
   const pill = existing ?? document.createElement('div');
   if (!existing) {
+    // The pill can be the first thing on screen — after a reload it appears
+    // without the panel ever having been opened — so it cannot rely on
+    // openPanel() having installed the sheet.
+    defineStyle(STYLE_IDS.rankedPanel, SHEETS.rankedPanel);
     pill.id = PILL_ID;
     const dot = document.createElement('i');
     const text = document.createElement('span');

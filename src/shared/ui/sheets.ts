@@ -237,8 +237,15 @@ const rankedPanel = `
   line-height:var(--nm-lh)}
 #${UI_IDS.rankedPanel} .note.bad{color:var(--nm-bad-text)}
 
-/* The pill. Top centre, out of the way of everything the menu draws. */
-#${UI_IDS.rankedPill}{position:fixed;top:64px;left:50%;transform:translateX(-50%);
+/*
+ * The pill, under the HUD's own counters on the right.
+ *
+ * Top centre was wrong: in a match that is where the round timer and the
+ * client watermark sit, and it landed on both. The right-hand column already
+ * belongs to the leaderboard and the kill counters, so directly below those
+ * is the one place in a match that is reliably empty.
+ */
+#${UI_IDS.rankedPill}{position:fixed;top:196px;right:24px;
   z-index:var(--nm-z-toast);display:flex;align-items:center;gap:10px;
   padding:9px 12px;background:var(--nm-game-bg);
   border:var(--nm-bw-thick) solid var(--nm-game-border);
