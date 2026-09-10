@@ -2,17 +2,20 @@ name: Release
 
 # Push a version tag and this builds the installer and publishes it, along
 # with the latest.yml manifest the in-client updater reads. Without that yml
-# on the release, installed clients have no way to discover the new version.
+# on a published (not draft) release, installed clients have no way to
+# discover the new version.
 #
-#   npm version patch     # bumps package.json and tags it
-#   git push --follow-tags
+#   1. add the entry to src/shared/changelog.ts
+#   2. git commit
+#   3. npm version patch
+#   4. git push --follow-tags
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
-  # electron-builder creates the release and uploads to it.
+  # electron-builder creates the release; the notes step edits it afterwards.
   contents: write
 
 jobs:
@@ -34,11 +37,28 @@ jobs:
 
       - run: npm run verify
 
+      # Before the build, so a tag with no matching changelog entry fails here
+      # rather than after a release is already public. The script exits 1 when
+      # the version is missing or its entry is empty.
+      - name: Generate release notes
+        shell: bash
+        run: node scripts/release-notes.mjs "${GITHUB_REF_NAME#v}" > release-notes.md
+
       - run: npm run build
 
-      # --publish always creates the GitHub release (or fills in the draft for
-      # this tag) and uploads the exe plus latest.yml.
+      # --publish always creates the release and uploads the exe plus
+      # latest.yml. releaseType in electron-builder.yml decides draft vs live.
       - name: Publish
         run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # electron-builder leaves the body empty, so the changelog goes on after.
+      - name: Attach release notes
+        shell: bash
+        run: |
+          gh release edit "$GITHUB_REF_NAME" \
+            --title "NM/NEZ ${GITHUB_REF_NAME#v}" \
+            --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

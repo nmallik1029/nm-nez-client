@@ -30,6 +30,10 @@ publish:
   provider: github
   owner: nmallik1029
   repo: nm-nez-client
+  # Publish outright rather than leaving a draft nobody remembers to press
+  # the button on. A draft is invisible to the updater, so a forgotten one
+  # means installed clients never hear about the version at all.
+  releaseType: release
 
 # No runtime dependencies, so this is the whole payload. The clients we cribbed
 # from keep about 24 node_modules paths in here by hand to satisfy

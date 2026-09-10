@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.2',
+    date: '2026-09-10',
+    changes: [
+      { kind: 'changed', text: 'Round app icon.' },
+      {
+        kind: 'changed',
+        text: 'Every colour the client draws now comes from one palette file instead of being spread across nine stylesheets, which is the groundwork for proper theming.',
+      },
+      { kind: 'fixed', text: 'Releases publish with their patch notes attached rather than as an empty draft.' },
+    ],
+  },
+  {
     version: '0.1.1',
     date: '2026-09-10',
     changes: [
