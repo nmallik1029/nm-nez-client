@@ -64,6 +64,23 @@ const STAMP = join(ROOT, 'node_modules', 'electron', '.patched-build.json');
 const force = process.argv.includes('--force');
 
 async function main() {
+  // The asset is a windows-x64 build, and unpacking it needs bsdtar or
+  // PowerShell, neither of which a Linux runner has. Without this guard
+  // postinstall downloads 380MB on every CI job and then fails trying to
+  // extract it, which is exactly what it did the first time this was pushed.
+  if (process.platform !== 'win32') {
+    console.log(`skipping patched Electron: windows-x64 only, this is ${process.platform}`);
+    return;
+  }
+
+  // The conventional "don't fetch binaries" flag. CI sets it on the job that
+  // only typechecks, lints and tests. An explicit --force still wins, since
+  // asking for the patch by name beats an ambient env var.
+  if (!force && process.env.ELECTRON_SKIP_BINARY_DOWNLOAD) {
+    console.log('skipping patched Electron: ELECTRON_SKIP_BINARY_DOWNLOAD is set');
+    return;
+  }
+
   await assertVersionMatch();
 
   if (!force && (await installedHash()) === ASSET_SHA256) {

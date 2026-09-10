@@ -11,6 +11,7 @@
     "vite.main.config.ts",
     "vite.preload.config.ts",
     "vite.ranked-preload.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "src/test/**/*.ts"
   ]
 }
