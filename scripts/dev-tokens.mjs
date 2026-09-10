@@ -31,7 +31,18 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tokensFile = join(root, 'src/shared/ui/tokens.ts');
 const brandingFile = join(root, 'src/shared/branding.ts');
 
-const src = readFileSync(tokensFile, 'utf8');
+/**
+ * Read a source file with line endings normalised.
+ *
+ * `core.autocrlf` is on for this repo, so a Windows checkout has CRLF in the
+ * working tree while every pattern below anchors on a bare newline. Without
+ * this the script matches nothing and the guard further down refuses to write,
+ * which is how it was found: `npm run tokens:dev` reported "emitted 0 of 161
+ * tokens" on a clean Windows clone.
+ */
+const read = (path) => readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+
+const src = read(tokensFile);
 
 /** Values kept as JS constants and interpolated into a token. */
 const constants = new Map(
@@ -90,7 +101,7 @@ if (written !== declared || text.includes('${')) {
 
 /** Same folder the client reads, derived rather than typed out twice. */
 function themesDir() {
-  const dirName = /userDataDirName: '([^']+)'/.exec(readFileSync(brandingFile, 'utf8'))?.[1];
+  const dirName = /userDataDirName: '([^']+)'/.exec(read(brandingFile))?.[1];
   if (dirName === undefined) throw new Error('could not read userDataDirName from branding.ts');
 
   const base =
