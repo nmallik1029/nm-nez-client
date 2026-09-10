@@ -30,6 +30,16 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     ],
   },
   {
+    version: '0.1.5',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'A list of sections down the left of the settings window. Click one to jump straight to it instead of scrolling for it, and the one you are reading stays highlighted. It works on Krunker’s own tabs too, not just Client.',
+      },
+    ],
+  },
+  {
     version: '0.1.4',
     date: '2026-09-10',
     changes: [

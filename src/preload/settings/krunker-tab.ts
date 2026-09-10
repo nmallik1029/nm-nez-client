@@ -11,6 +11,7 @@ import {
 import { SHEETS, STYLE_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 import { createKeybindRows, type KeybindRows } from './keybind-rows';
+import { createSectionNav, type SectionNav } from './section-nav';
 import { attachTooltip, hideTooltip } from './tooltip';
 
 /**
@@ -270,6 +271,8 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
   let reloadNeeded = false;
   const collapsed = new Set<string>();
 
+  const sectionNav: SectionNav = createSectionNav();
+
   const keybindRows: KeybindRows = createKeybindRows({
     getHotkeys: () => deps.config.hotkeys,
     onSave: deps.onHotkeysChange,
@@ -351,6 +354,17 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
   function currentSearch(): string {
     const input = document.getElementById('settSearch');
     return input instanceof HTMLInputElement ? input.value.trim().toLowerCase() : '';
+  }
+
+  /**
+   * Redraw, then reindex.
+   *
+   * `render` bails on Krunker's own tabs — there is nothing of ours to draw
+   * there — but the section index is for every tab, so it goes outside.
+   */
+  function rerender(): void {
+    render();
+    sectionNav.sync();
   }
 
   function render(): void {
@@ -1028,7 +1042,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         // of ours. open() re-selects ours right after if that's what was
         // actually asked for.
         clientTabActive = false;
-        queueMicrotask(render);
+        queueMicrotask(rerender);
       }
       return result;
     };
@@ -1039,7 +1053,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         // One of Krunker's tabs got picked, so ours isn't showing any more.
         clientTabActive = false;
         const result = originalChangeTab(...args);
-        queueMicrotask(render);
+        queueMicrotask(rerender);
         return result;
       };
     }
@@ -1048,7 +1062,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       const originalSearchList = win.searchList.bind(win);
       win.searchList = (...args: unknown[]) => {
         const result = originalSearchList(...args);
-        queueMicrotask(render);
+        queueMicrotask(rerender);
         return result;
       };
     }
@@ -1082,7 +1096,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       return hooked;
     },
 
-    refresh: render,
+    refresh: rerender,
 
     open() {
       if (typeof globals.showWindow !== 'function') return;
@@ -1094,7 +1108,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         ensureClientTab();
         const tab = document.getElementById(CLIENT_TAB_ID);
         if (tab instanceof HTMLElement) tab.click();
-        else render();
+        else rerender();
       });
     },
   };

@@ -336,6 +336,41 @@ const settings = `
 `;
 
 /**
+ * The section index down the left of the settings window.
+ *
+ * Positioned rather than laid out: it is an absolute box against the scroll
+ * container's parent, so it stays put while the content scrolls without a
+ * single line of scroll-handling. The container gets padding on the left to
+ * make room, which is the only thing this does to Krunker's own layout.
+ *
+ * Width is fixed rather than fit-to-content. Section names differ per tab, and
+ * a nav that changes width as you move between them makes the whole panel
+ * appear to shift.
+ */
+const sectionNav = `
+.kc-sectnav-host{position:relative}
+.kc-has-sectnav{padding-left:180px}
+#${UI_IDS.sectionNav}{position:absolute;left:0;top:0;bottom:0;width:168px;
+  overflow-y:auto;overscroll-behavior:contain;padding:6px 8px 6px 0;
+  box-sizing:border-box;
+  border-right:var(--nm-bw) solid var(--nm-border);
+  font-family:var(--nm-font);font-size:var(--nm-fs-md)}
+/* Krunker's own scrollbars are heavy; this one should read as a rule, not a
+   second piece of chrome next to the panel's real scrollbar. */
+#${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
+.kc-sectnav-item{padding:7px 10px;margin-bottom:2px;border-radius:var(--nm-radius-sm);
+  color:var(--nm-text-dim);cursor:pointer;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;
+  border-left:var(--nm-bw-thick) solid transparent;
+  transition:color var(--nm-fast),background var(--nm-fast)}
+.kc-sectnav-item:hover{color:var(--nm-text-mid);background:var(--nm-surface)}
+/* The marker is a left rule rather than a filled pill: the rows to the right
+   are already busy, and a solid block here competes with them. */
+.kc-sectnav-item.kc-sectnav-on{color:var(--nm-text-hi);background:var(--nm-surface);
+  border-left-color:var(--nm-accent)}
+`;
+
+/**
  * The match-scan overlay.
  *
  * GameFont is a pixel face, so everything here gets positioned on whole pixels
@@ -519,6 +554,7 @@ export const SHEETS = {
   chatTags,
   chatMerge,
   settings,
+  sectionNav,
   scan,
   update,
 } as const;
