@@ -16,6 +16,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.8',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The section list scrolled away with the settings instead of staying put beside them.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Jumping to one of the last sections no longer leaves an earlier one highlighted.',
+      },
+      {
+        kind: 'changed',
+        text: 'Settings rows are separated by a thin line instead of alternating shading, which was drawn in the wrong grey for the game’s panel.',
+      },
+    ],
+  },
+  {
     version: '0.1.7',
     date: '2026-09-10',
     changes: [
