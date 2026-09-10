@@ -433,6 +433,9 @@ const MOTION = `
  * not over gameplay, and a toast fired while one is up should still be read.
  */
 const LAYER = `
+  /* One step above its own siblings, for something that has to sit over the
+     content beside it without leaving the stack it is in. */
+  --nm-z-raise:1;
   --nm-z-modal:100000;
   --nm-z-update:100001;
   --nm-z-hud:2147483000;
