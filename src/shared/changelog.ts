@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.10',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Krunker’s Default / Pro / Performance / Custom preset boxes are gone from the top of the settings. The same four are still in the dropdown in the header if you want them.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The section list stays put while the settings scroll. It held for a couple of hundred pixels and then rode away with everything else.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The quieter row styling now applies to Krunker’s own tabs, not just the Client tab. It had never reached them.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Section names no longer pick up the “* requires restart” note from the heading they belong to.',
+      },
+    ],
+  },
+  {
     version: '0.1.9',
     date: '2026-09-10',
     changes: [
