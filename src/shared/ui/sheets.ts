@@ -696,10 +696,15 @@ const menuSkin = `
 #signupRewardsButton{display:none !important}
 /* The scrim is the ground now; a flat black bar on top of it reads as a seam. */
 #playerHeaderEl{background:none !important}
-#signedOutHeaderBar [class*="ph-login-wrap"]{border:var(--nm-bw) solid var(--nm-menu-line-hi);
-  padding:6px 13px;transition:border-color var(--nm-fast),background var(--nm-fast)}
-#signedOutHeaderBar [class*="ph-login-wrap"]:hover{border-color:var(--nm-menu-bone);
-  background:var(--nm-menu-wash)}
+#signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.altManagerButton}{
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  height:34px !important;padding:0 14px !important;
+  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  background:var(--nm-menu-fill) !important;
+  transition:border-color var(--nm-fast),background var(--nm-fast)}
+#signedOutHeaderBar [class*="ph-login-wrap"]:hover,
+#playerHeaderEl #${UI_IDS.altManagerButton}:hover{border-color:var(--nm-menu-bone) !important;
+  background:var(--nm-menu-wash) !important}
 #playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
@@ -714,9 +719,28 @@ const menuSkin = `
 /* ---- left rail ---- */
 /* An inset shadow rather than a positioned pseudo-element: same 2px bar, but
    it needs no containing block, so nothing here has to touch position. */
-#menuItemContainer .menuItem{transition:background var(--nm-fast),box-shadow var(--nm-fast)}
-#menuItemContainer .menuItem:hover{background:var(--nm-menu-wash) !important;
-  box-shadow:inset 2px 0 0 var(--nm-menu-ember)}
+/* Krunker nudges the row sideways on hover. Pinning both the transform and the
+   left padding in BOTH states is what stops it; the row lights up instead. */
+#menuItemContainer .menuItem{position:relative !important;transform:none !important;
+  padding-left:16px !important;transition:background var(--nm-fast)}
+#menuItemContainer .menuItem:hover{transform:none !important;padding-left:16px !important;
+  background:var(--nm-menu-wash) !important}
+/* The marker starts as a bare vertical stroke and turns into a chevron: same
+   element throughout, so it reads as one mark moving rather than two states
+   swapping. Borders rather than a filled box, because a chevron is two edges
+   of a square rotated 45 degrees. */
+#menuItemContainer .menuItem::before{content:'';position:absolute;left:3px;top:50%;
+  box-sizing:border-box;width:0;height:14px;margin-top:-7px;opacity:0;
+  border-right:var(--nm-bw-thick) solid var(--nm-menu-ember);
+  border-top-width:0;border-top-style:solid;border-top-color:var(--nm-menu-ember);
+  transform-origin:center}
+#menuItemContainer .menuItem:hover::before{
+  animation:kc-menu-arrow var(--nm-menu-arrow) ease forwards}
+@keyframes kc-menu-arrow{
+  0%{opacity:0;width:0;height:14px;margin-top:-7px;border-top-width:0;transform:rotate(0deg)}
+  45%{opacity:1;width:0;height:14px;margin-top:-7px;border-top-width:0;transform:rotate(0deg)}
+  100%{opacity:1;width:7px;height:7px;margin-top:-4px;
+    border-top-width:var(--nm-bw-thick);transform:rotate(45deg)}}
 #menuItemContainer .menuItemTitle{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-md) !important;letter-spacing:var(--nm-track-xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
@@ -785,7 +809,8 @@ const menuSkin = `
 /* ---- the command bar ---- */
 /* Krunker centres this with left:50% plus translate(-50%). Clearing left/right
    without clearing the transform is what shifted it off screen. */
-#subLogoButtons{left:0 !important;right:0 !important;transform:none !important;
+#subLogoButtons{left:0 !important;right:0 !important;bottom:24px !important;
+  transform:none !important;
   display:grid !important;grid-template-columns:repeat(5,1fr);
   gap:var(--nm-gap);padding:0 26px;box-sizing:border-box}
 /* The match info spans the whole bar; the five buttons take a column each. */
@@ -797,7 +822,7 @@ const menuSkin = `
 /* The class card would otherwise sit under the bar now that it reaches the
    right edge. Its transform-origin is bottom right, so raising bottom moves it
    straight up. */
-#menuClassContainer{bottom:300px !important}
+#menuClassContainer{bottom:210px !important}
 
 /* ---- play row: one primary, one accent, three quiet ---- */
 /* Krunker ships five buttons in five hues, two of them the same red for
@@ -847,18 +872,23 @@ const menuSkin = `
 /* menu-buttons.ts copies Krunker's 449px button rule onto this element as an
    inline style so it matches the class card. In the header that is absurd, and
    an inline width only loses to !important. */
-#playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;height:auto !important;
-  margin:0 0 0 var(--nm-gap-lg) !important;padding:7px 14px !important;
+#playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;
+  margin:0 0 0 var(--nm-gap-lg) !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
   letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
-  line-height:1 !important;border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
-  border-radius:0 !important;background:var(--nm-menu-fill) !important;
-  color:var(--nm-menu-ash) !important;text-shadow:none !important;
-  display:inline-flex !important;align-items:center !important;justify-content:center !important;
-  transform:none !important}
+  line-height:1 !important;color:var(--nm-menu-ash) !important;
+  text-shadow:none !important;transform:none !important}
 #playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important;
   transform:none !important;filter:none !important}
+
+/* Krunker's own Changelog link, relocated out of the footer to sit beside
+   More Krunker. Matched to the nav labels it now stands with. */
+.headerBarRight .kc-menu-headerlink{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  text-decoration:none !important;text-shadow:none !important;
+  margin-left:var(--nm-gap-lg);transition:color var(--nm-fast)}
+.headerBarRight .kc-menu-headerlink:hover{color:var(--nm-menu-bone) !important}
 `;
 
 export const SHEETS = {

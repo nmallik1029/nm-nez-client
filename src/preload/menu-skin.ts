@@ -27,6 +27,23 @@ const MARK_ID = UI_IDS.menuMark;
 const VERSION = CHANGELOG[0]?.version ?? '';
 /** Krunker's own left menu list; the wordmark goes in at the top of it. */
 const NAV_ID = 'menuItemContainer';
+/** Contact / Terms / Changelog, bottom right, under everything else. */
+const BASE_LINKS_ID = 'baseLinks';
+/** Footer links that go away. Compared lowercased against link text. */
+const FOOTER_HIDDEN = ['contact', 'terms'];
+/** The one footer link that moves up beside More Krunker instead. */
+const FOOTER_MOVED = 'changelog';
+/** Marks the moved link so the sheet can style it as a header item. */
+const HEADER_LINK_CLASS = 'kc-menu-headerlink';
+/**
+ * More Krunker's icon. Material icons carry their ligature name as text
+ * content, which is also the only way to tell the two header nav items apart
+ * — neither has an id and their classes are Svelte-hashed and identical.
+ */
+const MORE_KRUNKER_ICON = 'travel_explore';
+
+/** Where the Changelog link came from, so turning the skin off puts it back. */
+let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
 /** Krunker's menu root. Static markup, so it survives its own re-renders. */
 const HOLDER_ID = 'menuHolder';
@@ -159,10 +176,70 @@ function placeMark(): void {
   nav.insertBefore(mark, nav.firstChild);
 }
 
+/**
+ * Krunker's footer links.
+ *
+ * Contact and Terms go; Changelog moves up beside More Krunker. That empties
+ * the strip along the bottom of the screen, which is what lets the command bar
+ * sit on the floor instead of stopping 139px short of it.
+ *
+ * Matched on link text rather than position, because nth-child would silently
+ * hide the wrong two the day Krunker adds a link.
+ */
+function placeFooterLinks(): void {
+  const links = document.getElementById(BASE_LINKS_ID);
+  if (!links) return;
+
+  for (const link of [...links.querySelectorAll<HTMLElement>('a')]) {
+    const label = (link.textContent ?? '').trim().toLowerCase();
+    if (!FOOTER_HIDDEN.includes(label)) continue;
+    if (enabled) link.style.display = 'none';
+    else link.style.removeProperty('display');
+  }
+
+  const moved = [...document.querySelectorAll<HTMLElement>(`a.${HEADER_LINK_CLASS}`)][0];
+  const source =
+    moved ??
+    [...links.querySelectorAll<HTMLElement>('a')].find(
+      (a) => (a.textContent ?? '').trim().toLowerCase() === FOOTER_MOVED,
+    );
+  if (!source) return;
+
+  if (enabled) {
+    const header = document.querySelector('.headerBarRight');
+    if (!header || source.parentElement === header) return;
+    if (!footerHome && source.parentElement) {
+      footerHome = { parent: source.parentElement, nextSibling: source.nextSibling };
+    }
+    source.classList.add(HEADER_LINK_CLASS);
+    header.appendChild(source);
+    return;
+  }
+
+  source.classList.remove(HEADER_LINK_CLASS);
+  if (footerHome?.parent.isConnected) {
+    footerHome.parent.insertBefore(source, footerHome.nextSibling);
+    footerHome = null;
+  }
+}
+
+/** More Krunker keeps its label; the globe beside it goes. */
+function placeMoreKrunkerIcon(): void {
+  for (const icon of document.querySelectorAll<HTMLElement>(
+    '#playerHeaderEl .headerBarRight [class*="nav-mat-icon"]',
+  )) {
+    if ((icon.textContent ?? '').trim() !== MORE_KRUNKER_ICON) continue;
+    if (enabled) icon.style.display = 'none';
+    else icon.style.removeProperty('display');
+  }
+}
+
 function apply(): void {
   placeScrim();
   placeMark();
   placeAltManager();
+  placeFooterLinks();
+  placeMoreKrunkerIcon();
 }
 
 /**

@@ -16,6 +16,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.14',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The bottom bar sits on the floor of the window now. Contact and Terms are gone from the bottom right, and Changelog has moved up beside More Krunker, which is what was holding the bar off the bottom.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Menu items no longer shift sideways when you hover them. The row lights up instead, and the red mark on its left grows into an arrow.',
+      },
+      {
+        kind: 'changed',
+        text: 'Alt Manager is drawn as the same button as Login or Register, and More Krunker has lost its globe icon.',
+      },
+    ],
+  },
+  {
     version: '0.1.13',
     date: '2026-09-10',
     changes: [
