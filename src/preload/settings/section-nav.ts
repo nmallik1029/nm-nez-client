@@ -67,9 +67,20 @@ const HEADER_PASSENGERS = [
   '.setting-input-wrapper',
 ].join(',');
 
+/**
+ * Krunker's own restart/reload legend, which sits in a bare `<span>` inside the
+ * header it applies to — the General tab's Localization heading reads
+ * "Localization * requires restart" in the DOM. It cannot be matched by class
+ * because it has none, so it is matched by what it says.
+ */
+const LEGEND = /^\s*\*?\s*requires?\s+(restart|reload)\s*$/i;
+
 export function sectionLabel(header: Element): string {
   const clone = header.cloneNode(true) as HTMLElement;
   clone.querySelectorAll(HEADER_PASSENGERS).forEach((el) => el.remove());
+  clone.querySelectorAll('span').forEach((el) => {
+    if (LEGEND.test(el.textContent ?? '')) el.remove();
+  });
   return (clone.textContent ?? '')
     .replace(/\s+/g, ' ')
     // A header left with a dangling separator once its control is gone.
@@ -241,7 +252,22 @@ export function createSectionNav(): SectionNav {
     // inside itself instead of running past the bottom of the window.
     nav.style.maxHeight = `${scroller.clientHeight}px`;
 
-    const limit = Math.max(0, holderEl.clientHeight - nav.offsetHeight);
+    /*
+     * The travel limit comes from the scroller, not from the holder.
+     *
+     * It used to be `holder.clientHeight - nav.offsetHeight`, which sounds
+     * right and is not: `#settHolder` has `overflow: visible`, so its own box
+     * stays short while its rows spill out of it. Measured on the running
+     * client that box was 478px against a 1590px scroll range, so the index
+     * held for 216px and then rode away with everything else — which is
+     * exactly what it looked like.
+     *
+     * The scroller can never be scrolled further than its own range, so this
+     * bound does not normally bite. It is here so a bad measurement can't
+     * translate the index off the end of the content.
+     */
+    const maxScroll = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const limit = Math.max(0, maxScroll - holderOffset);
     const y = Math.min(Math.max(scroller.scrollTop - holderOffset, 0), limit);
 
     // A transform, not `top`. `top` needs the holder to be the containing
