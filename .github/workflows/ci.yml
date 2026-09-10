@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Drop superseded runs on the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # This job never launches Electron, and its postinstall pulls a ~380MB
+      # binary. Skipping that roughly halves the time to a red or green.
+      - name: Install dependencies
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      # Three steps instead of `npm run verify`, so a failure names itself in
+      # the job summary rather than collapsing into "verify failed".
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+
+  build:
+    name: Build Windows installer
+    needs: verify
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # No skip flag here: postinstall is what installs the patched Electron,
+      # and electron-builder packages that tree via electronDist.
+      - run: npm ci
+
+      # electron-builder only copies dist/, it doesn't produce it. Without this
+      # the installer builds happily around an empty app.
+      - run: npm run build
+
+      - name: Build distributables
+        run: npx electron-builder --win --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-dist
+          path: |
+            out/*.exe
+          if-no-files-found: error

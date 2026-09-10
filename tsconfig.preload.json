@@ -1,0 +1,10 @@
+{
+  // Preload and renderer world. Has DOM, and no Node globals beyond what a
+  // sandboxed preload actually gets.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/preload/**/*.ts", "src/shared/**/*.ts", "src/krunker/**/*.ts"]
+}

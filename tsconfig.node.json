@@ -1,0 +1,16 @@
+{
+  // Build tooling that runs under Node directly (vite / vitest configs).
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "vite.main.config.ts",
+    "vite.preload.config.ts",
+    "vite.ranked-preload.config.ts",
+    "vitest.config.ts"
+  ]
+}

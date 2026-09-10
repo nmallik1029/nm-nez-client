@@ -1,0 +1,64 @@
+# Windows only. No macOS or Linux targets, which is what lets us skip the
+# Apple Developer ID and notarisation pipeline and the Linux ozone launcher
+# wrapper. Between them those are a good chunk of the complexity in the
+# clients this is based on.
+#
+# Both values below mirror src/shared/branding.ts and have to stay in step.
+#
+# appId: Windows keys taskbar pin persistence off it, so changing this after a
+# release orphans anyone's existing pins.
+#
+# productName: this is BRANDING.fileSafeName, not BRANDING.productName. The
+# display name "NM/NEZ" has a slash in it, and electron-builder feeds
+# productName straight into artifactName and the default NSIS install path,
+# where a slash reads as a directory separator.
+appId: com.nmnez.client
+productName: NM-NEZ
+
+directories:
+  output: out
+  buildResources: build
+
+# No runtime dependencies, so this is the whole payload. The clients we cribbed
+# from keep about 24 node_modules paths in here by hand to satisfy
+# electron-store's transitive tree, and that list breaks quietly on any
+# dependency change. Easier not to have the dependency.
+files:
+  - dist/**/*
+  - '!**/*.map'
+
+asar: true
+
+# Package the patched binary, not a stock one.
+#
+# Left alone, electron-builder resolves Electron from its own CDN cache off the
+# devDependency version. That ships a stock 44.0.0 and puts the aim freeze back
+# into every installer we hand out, while npm start stays fine because it uses
+# node_modules directly. Pointing electronDist at the local tree means both
+# paths get the same binary.
+#
+# scripts/fetch-electron.mjs has to have run first. It checks for the
+# setFrameCap marker, so a stock tree here fails loudly instead of quietly.
+electronDist: node_modules/electron/dist
+
+win:
+  # No icon key here. Left to the default, electron-builder takes
+  # build/icon.ico, falls back to converting build/icon.png, and only uses the
+  # stock Electron icon if neither is there. Pinning icon.ico would break the
+  # png route that build/README.md offers.
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  artifactName: '${productName}-${version}-Setup.${ext}'
+
+portable:
+  artifactName: '${productName}-${version}-Portable.${ext}'

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+out/
+*.log
+.env
+.vscode/
+.idea/
+.DS_Store
+*.tsbuildinfo
+coverage/
+
+# Local Claude Code overrides (keep .claude/settings.json shared if we add one)
+.claude/settings.local.json
+
+# Cached patched-Electron archive (157 MB, re-fetchable)
+.electron-cache/

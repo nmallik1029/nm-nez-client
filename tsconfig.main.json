@@ -1,0 +1,16 @@
+{
+  // Main process, and no "DOM" lib.
+  //
+  // Partly because it's accurate, there being no document in main, but mostly
+  // because of one specific and very confusing failure: the DOM lib declares a
+  // global `Clipboard` interface (async navigator.clipboard) that shadows
+  // Electron's own, so `clipboard.readText()` types as `Promise<string>` and
+  // `writeImage` looks like it doesn't exist. Leaving DOM out fixes that and
+  // stops main-process code reaching for `window`.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/main/**/*.ts", "src/shared/**/*.ts", "src/krunker/**/*.ts"]
+}

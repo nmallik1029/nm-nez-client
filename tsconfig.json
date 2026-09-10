@@ -1,0 +1,14 @@
+{
+  // What the editor and ESLint see. A permissive superset so every file
+  // resolves to *a* project.
+  //
+  // This is not the type-check gate. `npm run typecheck` runs tsconfig.main,
+  // tsconfig.preload and tsconfig.node separately, because main and the
+  // renderer need genuinely different `lib` sets. See tsconfig.main.json.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/**/*.ts", "*.config.ts"]
+}
