@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.22',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Invite and Join sit on the same line as the mode and map, to their right, instead of orphaned underneath.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Invite and Join no longer look switched off. They rested two thirds of the way to the background, so letting go of one right after clicking it read as the button greying out.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The Advanced switch in the settings header is no longer Krunker blue.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The section index no longer sits on top of the changelog listing settings sections that are not there.',
+      },
+    ],
+  },
+  {
     version: '0.1.21',
     date: '2026-09-10',
     changes: [

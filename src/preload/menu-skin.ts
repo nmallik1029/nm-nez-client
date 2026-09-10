@@ -27,6 +27,13 @@ const MARK_ID = UI_IDS.menuMark;
 const VERSION = CHANGELOG[0]?.version ?? '';
 /** Krunker's own left menu list; the wordmark goes in at the top of it. */
 const NAV_ID = 'menuItemContainer';
+/** Invite and Join, which Krunker puts on the line below the map name. */
+const MATCH_ACTIONS_SELECTOR = '[class*="match-info-actions"]';
+/** The map name's own wrapper, once the actions have joined it. */
+const MATCH_LINE_CLASS = 'kc-menu-matchline';
+/** Where the actions came from, so turning the skin off puts them back. */
+let actionsHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
+
 /**
  * Contact / Terms / Changelog, bottom right, under everything else.
  *
@@ -55,9 +62,6 @@ const SETTINGS_WINDOW_ID = 'menuWindow';
  * problem the footer links had, and the same answer. Text is what they are.
  */
 const SETTINGS_HIDDEN = ['manage ads'];
-const SETTINGS_RESTYLED = ['advanced'];
-/** Marks a header control the sheet then paints like the rest. */
-const SETTINGS_CONTROL_CLASS = 'kc-menu-setctl';
 
 /** Marks a window panel the sheet paints. See `tagModals`. */
 const MODAL_CLASS = 'kc-menu-modal';
@@ -263,13 +267,14 @@ function placeFooterLinks(): void {
 /**
  * The settings window's own header strip.
  *
- * Manage Ads goes. The Advanced switch keeps Krunker's blue because it is not
- * one of the classes the sheet can reach, so it is tagged here and painted
- * there.
+ * Only Manage Ads needs script. The Advanced switch used to be handled here
+ * too and never worked: its label is a ::after `content` string rather than a
+ * text node, so there is no element saying "Advanced" to find. The sheet
+ * styles it by class instead.
  *
- * Scoped to the window and matched on exact label text, so a section that
- * happens to be called "Advanced" further down the panel is not caught: this
- * only looks at elements with no element children of their own.
+ * Scoped to the window and matched on exact label text, and only against
+ * elements with no children of their own, so a section further down that
+ * happens to share a name is not caught.
  */
 function placeSettingsChrome(): void {
   const win = document.getElementById(SETTINGS_WINDOW_ID);
@@ -283,12 +288,7 @@ function placeSettingsChrome(): void {
       // A class, not an inline style: the sheet sizes .settingsBtn with
       // display:inline-flex !important, which an inline display:none loses to.
       el.classList.toggle('kc-menu-hidden', enabled);
-      continue;
     }
-
-    if (!SETTINGS_RESTYLED.includes(label)) continue;
-    if (enabled) el.classList.add(SETTINGS_CONTROL_CLASS);
-    else el.classList.remove(SETTINGS_CONTROL_CLASS);
   }
 }
 
@@ -337,10 +337,43 @@ function tagModals(): void {
   }
 }
 
+/**
+ * Invite and Join, moved up beside the map name.
+ *
+ * Krunker lays the match info out as two rows — the mode and map on the first,
+ * these two on the second — which leaves them orphaned under a line they
+ * belong to. They go in next to the map name instead, and the wrapper gets a
+ * class so the sheet can lay that pair out on one baseline.
+ */
+function placeMatchActions(): void {
+  const actions = document.querySelector<HTMLElement>(MATCH_ACTIONS_SELECTOR);
+  if (!actions) return;
+
+  const mapInfo = document.getElementById('mapInfoHld');
+  const line = mapInfo?.parentElement ?? null;
+
+  if (enabled) {
+    if (!line || actions.parentElement === line) return;
+    if (!actionsHome && actions.parentElement) {
+      actionsHome = { parent: actions.parentElement, nextSibling: actions.nextSibling };
+    }
+    line.classList.add(MATCH_LINE_CLASS);
+    line.appendChild(actions);
+    return;
+  }
+
+  line?.classList.remove(MATCH_LINE_CLASS);
+  if (actionsHome?.parent.isConnected) {
+    actionsHome.parent.insertBefore(actions, actionsHome.nextSibling);
+    actionsHome = null;
+  }
+}
+
 function apply(): void {
   placeScrim();
   placeMark();
   placeAltManager();
+  placeMatchActions();
   placeFooterLinks();
   placeSettingsChrome();
   tagModals();

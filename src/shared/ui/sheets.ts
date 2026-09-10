@@ -837,14 +837,28 @@ const menuSkin = `
 #mapInfoHld #mapInfo{font-family:var(--nm-font-display) !important;
   font-size:var(--nm-fs-7xl) !important;color:var(--nm-menu-bone) !important;
   text-shadow:none !important;letter-spacing:var(--nm-track-xs) !important}
+/* The map name and the two actions beside it, on one baseline. */
+.kc-menu-matchline{display:flex !important;align-items:baseline !important;
+  gap:20px !important}
+.kc-menu-matchline [class*="match-info-actions"]{margin:0 !important;
+  display:flex !important;align-items:baseline !important;gap:12px !important}
 #menuRegionLabel{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
   letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
+/* Bone at rest, not ash.
+   These read as greyed out after you use one, and the reason is the size of
+   the step back: hovering lit them from ash to bone, so letting go dropped
+   them two thirds of the way to the background — right at the moment you had
+   just clicked, which makes it look like a response to the click. Krunker
+   changes nothing on click; measured with our own stylesheet stood down, the
+   colour and opacity are constant through the whole cycle. So the fix is to
+   stop resting so dim. Full strength at rest, white on hover. */
 #matchInfoHolder .match-action-btn{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-3xl) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
-#matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone) !important}
+#matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone-hi) !important}
+#matchInfoHolder .match-action-sep{opacity:1 !important}
 /* Clicking Invite swaps its label to "Copied URL" and back a moment later,
    and the row twitched each way.
    Measured on the running client rather than guessed at, twice: the font
@@ -857,7 +871,17 @@ const menuSkin = `
 #inviteButton:hover,#menuBtnJoin:hover,#inviteButton:active,#menuBtnJoin:active,
 #matchInfoHolder .match-action-btn,#matchInfoHolder .match-action-btn:hover,
 #matchInfoHolder .match-action-btn:active{
-  min-width:82px !important;text-align:left !important;
+  /* Krunker rests these at opacity .7, which on top of the skin's mid grey
+     reads as a control that has been switched off. Full strength; the colour
+     already carries how quiet they are meant to be. */
+  opacity:1 !important;
+  /* Wide enough for "Copied URL" so the row does not reflow when the label
+     changes.
+     In LAYOUT pixels, which is the trap here: the label measures 71.7px on
+     screen, but the whole UI is scaled 0.869, so it needs 82.5 of these. A
+     floor of 74 looked generous against the measured number and was actually
+     short, and the row still moved. */
+  min-width:88px !important;text-align:left !important;
   transform:none !important;animation:none !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-2xs) !important;
   line-height:1 !important;letter-spacing:var(--nm-track-3xl) !important;
@@ -1101,20 +1125,35 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
    which is exactly why Manage Ads kept coming back. Two classes beat one. */
 #menuWindow .settingsBtn.kc-menu-hidden,#menuWindow .kc-menu-hidden{display:none !important}
 /* One height across the header strip, taken from the preset dropdown. */
-#menuWindow .settingsBtn,#menuWindow select,#menuWindow .kc-menu-setctl{
+#menuWindow .settingsBtn,#menuWindow select{
   height:30px !important;min-height:30px !important;box-sizing:border-box !important;
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   padding:0 12px !important;width:auto !important;min-width:78px !important;
   vertical-align:middle !important;margin:0 3px !important}
-/* The Advanced switch, which has no class this sheet can name because its
-   markup is written by Krunker's script. menu-skin.ts tags it. */
-.kc-menu-setctl{background:var(--nm-menu-fill) !important;
-  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
-  color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
+/*
+ * The Advanced switch.
+ *
+ * Its whole visible self is one empty div. The track is .advancedSlider, the
+ * knob is its ::before, and the word "Advanced" is its ::after — a content
+ * string, not a text node. That is why three attempts at finding it by its
+ * label came back with nothing: there is no element in the document that says
+ * "Advanced" anywhere.
+ *
+ * Same language as every other toggle in here: track and knob swap on state,
+ * and the accent marks on.
+ */
+#menuWindow .advancedSlider{background:var(--nm-menu-line-hi) !important;
+  border-radius:0 !important;transition:background var(--nm-fast)}
+#menuWindow .advancedSlider::before{background:var(--nm-menu-bone) !important;
+  border-radius:0 !important}
+#menuWindow .advancedSlider::after{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
-  text-transform:uppercase !important;text-shadow:none !important;gap:8px !important}
-.kc-menu-setctl:hover{color:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+  text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
+  text-shadow:none !important}
+#menuWindow input:checked + .advancedSlider{background:var(--nm-menu-ember) !important}
+#menuWindow input:checked + .advancedSlider::before{background:var(--nm-menu-ink) !important}
+#menuWindow input:checked + .advancedSlider::after{color:var(--nm-menu-ink) !important}
+
 
 /* ---- buttons ---- */
 /* Global on purpose. The menu skin's own button rules are all ID-scoped, so
