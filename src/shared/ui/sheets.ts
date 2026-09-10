@@ -352,35 +352,44 @@ const sectionNav = `
    Padding rather than a flex or grid rewrite, because the rows inside are
    Krunker's and rearranging their container is how this breaks on their next
    update. */
-.kc-has-sectnav{position:relative;padding-left:190px !important}
+.kc-has-sectnav{padding-left:190px !important}
 /*
- * Held in place by script, not by position:sticky.
+ * Held in place by a transform, set from script each frame.
  *
- * Sticky fails silently the moment any ancestor between the element and the
- * scrolling box has overflow:hidden — that ancestor becomes the sticky
- * context and the element just scrolls away. Krunker's settings window has
- * one, so the index rode down the page with the rows. top is set from the
- * scroll offset each frame instead, which cannot be defeated by a container
- * we do not own, and stays absolutely positioned inside the holder so it can
- * never leave the window the way it did before.
+ * Two earlier attempts both failed on something an ancestor did:
+ *
+ *  - position:sticky stops working the moment anything between the element
+ *    and the scrolling box has overflow:hidden, because that ancestor becomes
+ *    the sticky context. The settings window has one.
+ *  - position:absolute needs the holder to be the containing block, and the
+ *    rule saying so lost to Krunker's own #settHolder rule on specificity, so
+ *    the index positioned against the window instead and setting top from the
+ *    scroll offset pushed it DOWN as you scrolled.
+ *
+ * A transform is measured from the element's own layout position. There is no
+ * containing block to lose and no ancestor property that can switch it off, so
+ * this cannot fail the way the other two did. The float keeps it out of the
+ * rows' flow; the holder's padding reserves the column it sits in.
  */
-#${UI_IDS.sectionNav}{position:absolute;left:0;top:0;
-  width:172px;
+#${UI_IDS.sectionNav}{float:left;width:172px;margin-left:-190px;
   overflow-y:auto;overscroll-behavior:contain;
   padding:2px 12px 2px 0;box-sizing:border-box;
   border-right:var(--nm-bw) solid var(--nm-kr-rule);
   font-family:var(--nm-font);font-size:var(--nm-fs-md);
   /* Above the rows, so a wide row can't paint over the index. */
-  z-index:var(--nm-z-raise)}
+  position:relative;z-index:var(--nm-z-raise)}
 /* No scrollbar of its own: one panel should not show two. */
 #${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
 /*
  * Krunker's greys, not ours. This sits ON the game's settings panel, which is
  * a mid grey — reaching for --nm-surface here paints a near-black block on it.
  */
+/* Wraps rather than clipping. "Crosshair (Third Person)" truncated to
+   "Crosshair (Th..." beside a "Crosshair" above it is worse than useless —
+   the two entries read as the same section. */
 .kc-sectnav-item{padding:8px 12px;margin:0 0 1px;
-  color:var(--nm-kr-text-dim);cursor:pointer;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;line-height:var(--nm-lh-tight);
+  color:var(--nm-kr-text-dim);cursor:pointer;
+  line-height:var(--nm-lh-tight);overflow-wrap:anywhere;
   border-left:var(--nm-bw-thick) solid transparent;
   transition:color var(--nm-fast),background var(--nm-fast)}
 .kc-sectnav-item:hover{color:var(--nm-kr-text);background:var(--nm-kr-fill)}
@@ -426,6 +435,16 @@ const sectionNav = `
   padding:11px 2px !important;
   border-bottom:var(--nm-bw) solid var(--nm-kr-rule-soft) !important}
 .kc-has-sectnav .setBodH > .setting:last-child{border-bottom:0 !important}
+/*
+ * A step down from Krunker's own row size.
+ *
+ * Theirs is set for a panel where every row is boxed and the type has to carry
+ * across the gap between boxes. With the boxes gone the rules do that work, and
+ * the labels can come down a notch and fit more on screen. !important because
+ * Krunker sizes these by id, which outranks any class selector of ours.
+ */
+.kc-has-sectnav .setting,
+.kc-has-sectnav .setting .setting-title{font-size:var(--nm-fs-3xl) !important}
 `;
 
 /**

@@ -39,15 +39,42 @@ const HEADER_CLASS = 'setHed';
 const COLLAPSED_CLASS = 'kc-setbod-collapsed';
 
 /**
- * Krunker's headers carry a `material-icons` chevron whose text content is the
- * ligature name (`keyboard_arrow_down`), which would otherwise land in the
- * label. Stripping by element rather than by string, so a section legitimately
- * containing those words keeps them.
+ * Everything in a section header that is not its name.
+ *
+ * Two kinds of passenger, and both ended up in the index before this list
+ * existed:
+ *
+ *  - The collapse chevron is a `material-icons` ligature, so its text content
+ *    is the ligature NAME (`keyboard_arrow_down`).
+ *  - Krunker puts controls in some headers — the Controls tab's "Gameplay
+ *    Settings" carries an All/dropdown — and their text ran straight into the
+ *    label, giving entries that did not match any section on screen.
+ *
+ * Stripped by element rather than by matching strings, so a section genuinely
+ * called "All Chat" keeps its name.
  */
+const HEADER_PASSENGERS = [
+  '.material-icons',
+  '.plusOrMinus',
+  'select',
+  'option',
+  'input',
+  'button',
+  'textarea',
+  '.settingsBtn',
+  '.switch',
+  '.slider',
+  '.setting-input-wrapper',
+].join(',');
+
 export function sectionLabel(header: Element): string {
   const clone = header.cloneNode(true) as HTMLElement;
-  clone.querySelectorAll('.material-icons, .plusOrMinus').forEach((el) => el.remove());
-  return (clone.textContent ?? '').replace(/\s+/g, ' ').trim();
+  clone.querySelectorAll(HEADER_PASSENGERS).forEach((el) => el.remove());
+  return (clone.textContent ?? '')
+    .replace(/\s+/g, ' ')
+    // A header left with a dangling separator once its control is gone.
+    .replace(/^[\s:·|/-]+|[\s:·|/-]+$/g, '')
+    .trim();
 }
 
 /**
@@ -212,12 +239,18 @@ export function createSectionNav(): SectionNav {
 
     // Only as tall as the visible part of the panel, so a long index scrolls
     // inside itself instead of running past the bottom of the window.
-    const visible = scroller.clientHeight;
-    nav.style.maxHeight = `${visible}px`;
+    nav.style.maxHeight = `${scroller.clientHeight}px`;
 
     const limit = Math.max(0, holderEl.clientHeight - nav.offsetHeight);
     const y = Math.min(Math.max(scroller.scrollTop - holderOffset, 0), limit);
-    nav.style.top = `${Math.round(y)}px`;
+
+    // A transform, not `top`. `top` needs the holder to be the containing
+    // block, and the rule saying so lost to Krunker's own #settHolder rule on
+    // specificity — so the offset was applied against the window and pushed
+    // the index down the page instead of holding it still. A transform is
+    // measured from the element's own layout position, which nothing above it
+    // can take away.
+    nav.style.transform = `translateY(${Math.round(y)}px)`;
   }
 
   function schedulePaint(): void {
@@ -293,7 +326,12 @@ export function createSectionNav(): SectionNav {
     items = headers.map((header, index) => {
       const item = document.createElement('div');
       item.className = 'kc-sectnav-item';
-      item.textContent = sectionLabel(header);
+      const label = sectionLabel(header);
+      item.textContent = label;
+      // Long names wrap to a second line rather than being clipped, and the
+      // full one is on hover either way — an index you cannot read the end of
+      // is not much of an index.
+      item.title = label;
       item.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
