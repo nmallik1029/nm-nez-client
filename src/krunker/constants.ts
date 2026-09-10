@@ -39,6 +39,8 @@ export const KRUNKER_DOM_IDS = {
   chatHolder: 'chatHolder',
   /** The bar under the messages: channel globe, the input, the mic toggle. */
   chatInputHolder: 'chatInputHolder',
+  /** Krunker's left menu list. Chat has to stop before it reaches this. */
+  menuNav: 'menuItemContainer',
   /** Wraps the whole UI and carries the menu/match flag below. */
   uiBase: 'uiBase',
   /**

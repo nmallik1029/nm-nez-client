@@ -176,11 +176,16 @@ const KRUNKER = `
 /**
  * Chat: the two channel colours, and where the menu puts the box.
  *
- * `--nm-chat-lift` is how far chat rises off the bottom of the screen to
- * clear Krunker's own button block. The value here is a fallback measured at
- * 1920x1080; `preload/chat-place.ts` overwrites it with a real measurement,
- * because the block scales with the window and a fixed number is right at
- * exactly one size. If that measurement fails, this still clears the buttons.
+ * Both of the placement values here are fallbacks. `preload/chat-place.ts`
+ * measures the real thing on every resize and overwrites them, because
+ * Krunker scales its whole UI and the scale is a user setting: any number
+ * written down here is right at exactly one size and wrong at the rest.
+ *
+ * `--nm-chat-lift` is how far chat rises off the bottom to clear Krunker's
+ * button block. `--nm-chat-menu-height` is how tall the message list may
+ * get, which is what stops chat reaching up into the menu list at a large UI
+ * scale. The values are what those measure at 1920x1080, so a failed
+ * measurement still lands somewhere sane.
  */
 const CHAT = `
   --nm-chat-team:#4ade80;
@@ -506,11 +511,18 @@ const MENU = `
   --nm-menu-bone-hi:#fff;
   --nm-menu-ash:#9a9285;
   --nm-menu-ash-dim:#6e675d;
-  --nm-menu-ember:#e4552e;
+  --nm-menu-ember:#48eaff;
   --nm-menu-panel:#15130f;
   --nm-menu-fill:rgba(12,11,10,.42);
   --nm-menu-wash:rgba(242,238,230,.09);
-  --nm-menu-ember-wash:rgba(228,85,46,.12);
+  /*
+   * Derived, not written out. This is the accent at 12% behind the Ranked
+   * button and the buttons Krunker fills green, and as a second hand-typed
+   * colour it silently went stale the first time the accent changed: cyan
+   * border and text over the old orange fill. Mixing it means the accent is
+   * one value in one place.
+   */
+  --nm-menu-ember-wash:color-mix(in srgb,var(--nm-menu-ember) 12%,transparent);
 `;
 
 /**

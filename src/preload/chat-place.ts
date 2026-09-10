@@ -19,6 +19,24 @@ import { defineStyle } from './style';
 
 /** Breathing room between the top of the button block and the last message. */
 const GAP_PX = 12;
+/** The same, between the foot of the menu list and the first message. */
+const NAV_GAP_PX = 14;
+/**
+ * The tallest chat we would ever want, room permitting.
+ *
+ * Krunker's own is 250. This is a ceiling, not a target: what actually gets
+ * used is whatever fits between the nav and the button block.
+ */
+const MAX_HEIGHT_PX = 340;
+/**
+ * And the shortest, at roughly two lines.
+ *
+ * Low on purpose. At a large UI scale the nav and the button block between
+ * them leave very little, and a cramped chat you can still read past is
+ * better than a full-size one drawn over Social and Community & Events.
+ * Below this there is nothing sensible left to do and it will overlap.
+ */
+const MIN_HEIGHT_PX = 56;
 /**
  * Below this, assume the measurement is wrong rather than the screen tiny.
  *
@@ -70,10 +88,42 @@ function measureLift(): number | null {
   return Math.round(lift);
 }
 
+/**
+ * How tall the message list is allowed to be.
+ *
+ * The bottom of chat is pinned by the lift, so height is what decides where
+ * the top lands, and a fixed height cannot be right: Krunker's UI scale is a
+ * user setting, so the same 340px is 340 for one person and half the screen
+ * for another. At 0.8 it reached up through Social and Community & Events.
+ *
+ * So it is fitted instead. Everything below is in the element's own unscaled
+ * pixels, which is what max-height is set in; the two rects are screen
+ * pixels, hence the division.
+ */
+function measureHeight(lift: number, scale: number): number {
+  const nav = document.getElementById(KRUNKER_DOM_IDS.menuNav);
+  if (!nav) return MAX_HEIGHT_PX;
+
+  const navBottom = nav.getBoundingClientRect().bottom;
+  if (navBottom <= 0) return MAX_HEIGHT_PX;
+
+  // The input bar is part of chat's height but is not part of the list.
+  const input = document.getElementById(KRUNKER_DOM_IDS.chatInputHolder);
+  const inputHeight = input?.offsetHeight ?? 0;
+
+  const room = (window.innerHeight - navBottom) / scale - NAV_GAP_PX - lift - inputHeight;
+  if (!Number.isFinite(room)) return MAX_HEIGHT_PX;
+  return Math.round(Math.min(MAX_HEIGHT_PX, Math.max(MIN_HEIGHT_PX, room)));
+}
+
 function applyLift(): void {
+  const block = document.getElementById(KRUNKER_DOM_IDS.menuBottomBlock);
   const lift = measureLift();
-  if (lift === null) return;
-  document.documentElement.style.setProperty('--nm-chat-lift', `${lift}px`);
+  if (lift === null || block === null) return;
+
+  const style = document.documentElement.style;
+  style.setProperty('--nm-chat-lift', `${lift}px`);
+  style.setProperty('--nm-chat-menu-height', `${measureHeight(lift, uiScale(block))}px`);
 }
 
 /** Coalesce the bursts of calls a resize or a menu rebuild produces. */
