@@ -71,7 +71,10 @@ const tooltip = `
 const perfHud = `
 #${UI_IDS.perfHud}{position:fixed;z-index:var(--nm-z-hud);display:none;padding:5px 8px;
   border-radius:var(--nm-radius-sm);background:var(--nm-hud-bg);color:var(--nm-text);
-  font:600 var(--nm-fs-2xs)/1.45 var(--nm-font-mono);letter-spacing:var(--nm-track-xs);
+  /* Longhands, not the font shorthand: a raw line-height hidden in a shorthand
+     is the one place the token guard cannot see it. */
+  font-weight:600;font-size:var(--nm-fs-2xs);line-height:var(--nm-lh-mono);
+  font-family:var(--nm-font-mono);letter-spacing:var(--nm-track-xs);
   pointer-events:none;white-space:pre;
   /* Keep the HUD out of page layout entirely. It shouldn't be able to force a
      reflow of the game UI under it. */
@@ -126,7 +129,7 @@ const altModal = `
 #${UI_IDS.altModal} .hd{display:flex;align-items:center;justify-content:space-between;
   padding:14px 18px;border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
-#${UI_IDS.altModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-xl);
+#${UI_IDS.altModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-2xl);
   font-weight:normal}
 #${UI_IDS.altModal} .bd{overflow-y:auto;padding:14px 18px 18px}
 /* Column so the button sits on its own line: inline after wrapped text, it
@@ -148,7 +151,7 @@ const altModal = `
 #${UI_IDS.altModal} button{font-family:inherit;cursor:pointer;
   border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
   background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);padding:7px 14px;
-  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track)}
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-md)}
 #${UI_IDS.altModal} button:hover{background:var(--nm-game-btn-bg-hover);
   color:var(--nm-game-text)}
 #${UI_IDS.altModal} button.go{border-color:var(--nm-ok-border);color:var(--nm-ok)}
@@ -191,7 +194,7 @@ const changelog = `
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
 #${UI_IDS.changelogModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
-  letter-spacing:var(--nm-track-xl);font-weight:normal}
+  letter-spacing:var(--nm-track-2xl);font-weight:normal}
 #${UI_IDS.changelogModal} .bd{overflow-y:auto;padding:6px 18px 18px}
 /* One clickable row per version; the changes hang below it. */
 #${UI_IDS.changelogModal} .ver{display:flex;align-items:baseline;gap:var(--nm-gap);
@@ -217,7 +220,7 @@ const changelog = `
  * Centring makes the narrower words sit evenly in the same box.
  */
 #${UI_IDS.changelogModal} .tag{flex:0 0 74px;min-width:0;text-align:center;
-  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track);padding-top:2px}
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);padding-top:2px}
 #${UI_IDS.changelogModal} .tag.added{color:var(--nm-ok)}
 #${UI_IDS.changelogModal} .tag.fixed{color:var(--nm-tag-fixed)}
 #${UI_IDS.changelogModal} .tag.changed{color:var(--nm-tag-changed)}
@@ -465,20 +468,22 @@ const update = `
   border:var(--nm-bw-thick) solid var(--nm-game-border);
   font-family:var(--nm-font-display);color:var(--nm-game-text);
   box-shadow:0 6px 24px var(--nm-shadow-mid);
-  transform:translateY(12px);opacity:0;transition:opacity .16s,transform .16s}
+  transform:translateY(12px);opacity:0;
+  transition:opacity var(--nm-med),transform var(--nm-med)}
 #${UI_IDS.updatePanel}.kc-in{opacity:1;transform:translateY(0)}
 #${UI_IDS.updatePanel} .hd{padding:11px 14px;background:var(--nm-game-bg-head);
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track-xl)}
 #${UI_IDS.updatePanel} .bd{padding:13px 14px 14px}
-#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-md);line-height:1.5;
+#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-md);line-height:var(--nm-lh);
   color:var(--nm-game-text-body)}
 #${UI_IDS.updatePanel} .ver{color:var(--nm-ok)}
-#${UI_IDS.updatePanel} .row{display:flex;gap:8px;margin-top:13px}
+#${UI_IDS.updatePanel} .row{display:flex;gap:var(--nm-gap-sm);margin-top:13px}
 #${UI_IDS.updatePanel} button{flex:1;padding:8px 10px;cursor:pointer;font:inherit;
-  font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track);
+  font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track-md);
   color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
-  border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);transition:background .12s}
+  border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);
+  transition:background var(--nm-fast)}
 #${UI_IDS.updatePanel} button:hover{background:var(--nm-upd-btn-bg-hover)}
 #${UI_IDS.updatePanel} button.go{background:var(--nm-upd-go-bg);
   border-color:var(--nm-upd-go-border)}
@@ -487,7 +492,7 @@ const update = `
 #${UI_IDS.updatePanel} .bar{height:6px;background:var(--nm-upd-btn-bg);
   border:var(--nm-bw) solid var(--nm-upd-btn-border);margin-top:12px}
 #${UI_IDS.updatePanel} .bar i{display:block;height:100%;width:0;
-  background:var(--nm-upd-go-border);transition:width .2s}
+  background:var(--nm-upd-go-border);transition:width var(--nm-slow)}
 `;
 
 export const SHEETS = {

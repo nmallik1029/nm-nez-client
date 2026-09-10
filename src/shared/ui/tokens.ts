@@ -351,18 +351,26 @@ const TYPE_SCALE = `
  * The wide tracking is Krunker's, not ours: the game sets its menu headings in
  * spaced-out caps and the panels that sit inside its UI copy that so they
  * don't read as someone else's work.
+ *
+ * Named in steps like the type scale rather than by role, and every step is a
+ * value already in use. The .1em one is the update panel header; it briefly
+ * rendered at .12em because the scale had no step for it and the nearest name
+ * was taken.
  */
 const TYPE_DETAIL = `
   --nm-lh-tight:1.2;
   --nm-lh:1.5;
   --nm-lh-loose:1.55;
+  /* The HUD, which is set in a mono face and needs the extra room. */
+  --nm-lh-mono:1.45;
   --nm-track-xs:.02em;
   --nm-track-sm:.04em;
-  --nm-track:.06em;
+  --nm-track-md:.06em;
   --nm-track-lg:.08em;
-  --nm-track-xl:.12em;
-  --nm-track-2xl:.14em;
-  --nm-track-3xl:.2em;
+  --nm-track-xl:.1em;
+  --nm-track-2xl:.12em;
+  --nm-track-3xl:.14em;
+  --nm-track-4xl:.2em;
 `;
 
 /**
@@ -407,6 +415,7 @@ const MOTION = `
   --nm-fast:.12s;
   --nm-quick:.1s;
   --nm-med:.16s;
+  --nm-slow:.2s;
   --nm-blink:1.4s;
   --nm-scan-land:420ms;
   --nm-scan-fade:260ms;
