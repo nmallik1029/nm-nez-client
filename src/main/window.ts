@@ -4,6 +4,7 @@ import { KRUNKER_URLS } from '../krunker/constants';
 import { iconOption } from './app-icon';
 import { BRANDING } from '../shared/branding';
 import type { AppConfig, FixConfig } from '../shared/config';
+import { GAME_WINDOW_BACKGROUND } from '../shared/palette';
 import type { ConfigStore } from './config/store';
 
 export interface MainWindowDeps {
@@ -21,7 +22,7 @@ export function createMainWindow(deps: MainWindowDeps): BrowserWindow {
     ...(saved.x !== undefined && saved.y !== undefined ? { x: saved.x, y: saved.y } : {}),
     minWidth: 640,
     minHeight: 480,
-    backgroundColor: '#000000',
+    backgroundColor: GAME_WINDOW_BACKGROUND,
     autoHideMenuBar: true,
     ...iconOption(),
     // Borderless fullscreen. maximize() only fills the work area and leaves

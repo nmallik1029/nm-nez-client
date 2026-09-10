@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc';
+import { defineStyle } from './style';
 
 /**
  * Adds a launcher for the external queue into Krunker's own ranked panel.
@@ -24,21 +25,13 @@ const REGIONS_SELECTOR = '[class*="queue-all-regions-container"]';
 
 const CSS = `
 #${BUTTON_ID}{display:inline-flex;align-items:center;justify-content:center;
-  width:38px;height:38px;margin:0 10px;border-radius:6px;cursor:pointer;
-  background:#1f7a3d;border:2px solid #38c463;box-sizing:border-box;
+  width:38px;height:38px;margin:0 10px;border-radius:var(--nm-radius);cursor:pointer;
+  background:var(--nm-queue-bg);border:2px solid var(--nm-queue-border);box-sizing:border-box;
   transition:background .12s,transform .12s}
-#${BUTTON_ID}:hover{background:#2a9a4f;transform:translateY(-1px)}
-#${BUTTON_ID} svg{width:19px;height:19px;fill:none;stroke:#eafff1;stroke-width:2.2;
+#${BUTTON_ID}:hover{background:var(--nm-queue-bg-hover);transform:translateY(-1px)}
+#${BUTTON_ID} svg{width:19px;height:19px;fill:none;stroke:var(--nm-queue-icon);stroke-width:2.2;
   stroke-linecap:round;stroke-linejoin:round}
 `;
-
-function injectStyle(): void {
-  if (document.getElementById(`${BUTTON_ID}-css`)) return;
-  const style = document.createElement('style');
-  style.id = `${BUTTON_ID}-css`;
-  style.textContent = CSS;
-  document.head?.appendChild(style);
-}
 
 function buildButton(): HTMLElement {
   const button = document.createElement('div');
@@ -62,7 +55,7 @@ function place(): void {
   if (!footer) return;
   if (footer.querySelector(`#${BUTTON_ID}`)) return;
 
-  injectStyle();
+  defineStyle(`${BUTTON_ID}-css`, CSS);
   const button = buildButton();
   const regions = footer.querySelector(REGIONS_SELECTOR);
 

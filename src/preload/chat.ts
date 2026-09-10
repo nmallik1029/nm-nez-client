@@ -6,6 +6,7 @@ import {
   isTeamMode,
   overflowCount,
 } from '../shared/chat';
+import { defineStyle, toggleStyle } from './style';
 
 /**
  * Chat: both channels at once, and history that survives Krunker's pruning.
@@ -27,6 +28,17 @@ const MERGE_STYLE_ID = 'kc-chat-merge';
 /** Krunker hides the inactive channel. Overriding display shows both. */
 const MERGE_CSS = `#${KRUNKER_DOM_IDS.chatList} > * { display: block !important; }`;
 
+/**
+ * The [T]/[M] prefixes. A stylesheet rather than the inline `cssText` this used
+ * to set per message, so the colours live with every other colour and a theme
+ * can reach them.
+ */
+const TAG_CSS = `
+.kc-chat-tag{float:left;margin-right:4px;font-weight:bold}
+.kc-chat-tag.kc-chat-team{color:var(--nm-chat-team)}
+.kc-chat-tag.kc-chat-all{color:var(--nm-chat-all)}
+`;
+
 export interface ChatOptions {
   /** Show both channels with [T]/[M] prefixes. */
   readonly merged: boolean;
@@ -41,7 +53,6 @@ interface GameActivity {
 let chatList: HTMLElement | null = null;
 let observer: MutationObserver | null = null;
 let options: ChatOptions = { merged: false, historyLimit: 0 };
-let mergeStyle: HTMLStyleElement | null = null;
 
 /** Messages we removed ourselves, so the re-inserter doesn't bring them back. */
 const selfRemoved = new WeakSet<Node>();
@@ -70,15 +81,7 @@ function currentMode(): string | undefined {
 }
 
 function syncMergeStyle(): void {
-  if (options.merged && !mergeStyle) {
-    mergeStyle = document.createElement('style');
-    mergeStyle.id = MERGE_STYLE_ID;
-    mergeStyle.textContent = MERGE_CSS;
-    document.head?.appendChild(mergeStyle);
-  } else if (!options.merged && mergeStyle) {
-    mergeStyle.remove();
-    mergeStyle = null;
-  }
+  toggleStyle(MERGE_STYLE_ID, MERGE_CSS, options.merged);
 }
 
 function tagMessage(node: HTMLElement, teamMode: boolean): boolean {
@@ -100,8 +103,7 @@ function tagMessage(node: HTMLElement, teamMode: boolean): boolean {
   if (!tag) return false;
 
   const label = document.createElement('span');
-  label.className = 'kc-chat-tag';
-  label.style.cssText = `float:left;margin-right:4px;font-weight:bold;color:${tag.color}`;
+  label.className = `kc-chat-tag ${tag.cssClass}`;
   label.textContent = tag.label;
   body.insertBefore(label, body.firstChild);
   return true;
@@ -249,6 +251,7 @@ export function attachChat(): boolean {
 
 /** Poll for the chat element, then attach. Gives up instead of spinning forever. */
 export function initChat(initial: ChatOptions): void {
+  defineStyle('kc-chat-tags', TAG_CSS);
   setChatOptions(initial);
 
   if (attachChat()) return;

@@ -2,6 +2,7 @@ import { ipcRenderer } from 'electron';
 import { blockMessage, type AccountSummary, type Credentials } from '../../shared/accounts';
 import { IPC } from '../../shared/ipc';
 import { showToast } from '../toast';
+import { defineStyle } from '../style';
 import { currentUsername, loginBlock, signIn } from './login';
 
 /**
@@ -23,50 +24,54 @@ const ID = 'kc-alt-modal';
 const STYLE_ID = 'kc-alt-modal-css';
 
 const CSS = `
-#${ID}-backdrop{position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.72);
+#${ID}-backdrop{position:fixed;inset:0;z-index:100000;background:var(--nm-game-scrim);
   display:flex;align-items:center;justify-content:center}
 #${ID}{width:min(560px,92vw);max-height:82vh;display:flex;flex-direction:column;
-  background:#1e1e1e;border:2px solid #3a3a3a;color:#fff;
-  font-family:'GameFont',Impact,'Arial Black',sans-serif}
+  background:var(--nm-game-bg);border:2px solid var(--nm-game-border);color:var(--nm-game-text);
+  font-family:var(--nm-font-display)}
 #${ID} .hd{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:2px solid #3a3a3a;background:#171717}
+  padding:14px 18px;border-bottom:2px solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
 #${ID} .hd h2{margin:0;font-size:19px;letter-spacing:.12em;font-weight:normal}
 #${ID} .bd{overflow-y:auto;padding:14px 18px 18px}
 /* Column so the button sits on its own line: inline after wrapped text, it
    never lines up with anything. */
 #${ID} .warn{display:flex;flex-direction:column;align-items:flex-start;gap:10px;
   font-size:13px;line-height:1.5;margin-bottom:14px;padding:10px 12px;
-  background:#2a2320;border:2px solid #6d4b47;color:#d8a9a3}
+  background:var(--nm-caution-bg);border:2px solid var(--nm-bad-border);
+  color:var(--nm-caution-text)}
 #${ID} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;margin-bottom:8px;
-  background:#262626;border:2px solid #3a3a3a}
-#${ID} .row.on{border-color:#7d9d7a;background:#232922}
+  background:var(--nm-game-row-bg);border:2px solid var(--nm-game-border)}
+#${ID} .row.on{border-color:var(--nm-ok-border);background:var(--nm-ok-bg)}
 #${ID} .who{flex:1;min-width:0}
 #${ID} .nm{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#${ID} .sub{font-size:12px;color:#8b8b8b;margin-top:2px;
+#${ID} .sub{font-size:12px;color:var(--nm-game-text-dim);margin-top:2px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#${ID} button{font-family:inherit;cursor:pointer;border:2px solid #4a4a4a;
-  background:#2f2f2f;color:#ddd;padding:7px 14px;font-size:13px;letter-spacing:.06em}
-#${ID} button:hover{background:#3b3b3b;color:#fff}
-#${ID} button.go{border-color:#7d9d7a;color:#a9c4a6}
-#${ID} button.go:hover{background:#2c3a2b;color:#d6e6d4}
-#${ID} button.del{border-color:#6d4b47;color:#c98b84;padding:7px 11px}
-#${ID} button.del:hover{background:#3a2a28;color:#e8bab4}
+#${ID} button{font-family:inherit;cursor:pointer;border:2px solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);padding:7px 14px;
+  font-size:13px;letter-spacing:.06em}
+#${ID} button:hover{background:var(--nm-game-btn-bg-hover);color:var(--nm-game-text)}
+#${ID} button.go{border-color:var(--nm-ok-border);color:var(--nm-ok)}
+#${ID} button.go:hover{background:var(--nm-ok-bg-hover);color:var(--nm-ok-text-hi)}
+#${ID} button.del{border-color:var(--nm-bad-border);color:var(--nm-bad-text);padding:7px 11px}
+#${ID} button.del:hover{background:var(--nm-bad-bg);color:var(--nm-bad-text-hi)}
 #${ID} button:disabled{opacity:.4;cursor:default}
 /* Square, and centred on the title's optical middle rather than its box. The
    plus is drawn rather than typed: GameFont's own "+" is a heavy pixel glyph
    that reads as some other icon at this size. */
 #${ID} button.add{display:flex;align-items:center;justify-content:center;
-  width:30px;height:30px;padding:0;border-color:#7d9d7a;color:#a9c4a6}
+  width:30px;height:30px;padding:0;border-color:var(--nm-ok-border);color:var(--nm-ok)}
 #${ID} button.add svg{width:14px;height:14px;fill:none;stroke:currentColor;
   stroke-width:2.4;stroke-linecap:round}
 #${ID} .form{display:flex;flex-direction:column;gap:8px;margin-top:14px;
-  padding-top:14px;border-top:2px solid #3a3a3a}
+  padding-top:14px;border-top:2px solid var(--nm-game-border)}
 #${ID} .form input{font-family:inherit;font-size:14px;padding:8px 10px;
-  background:#141414;border:2px solid #3a3a3a;color:#fff}
-#${ID} .form input:focus{outline:none;border-color:#5a5a5a}
+  background:var(--nm-game-input-bg);border:2px solid var(--nm-game-border);
+  color:var(--nm-game-text)}
+#${ID} .form input:focus{outline:none;border-color:var(--nm-game-input-focus)}
 #${ID} .form .actions{display:flex;gap:8px;justify-content:flex-end}
-#${ID} .empty{padding:22px 0;text-align:center;color:#8b8b8b;font-size:14px}
-#${ID} .note{font-size:12px;color:#7a7a7a;line-height:1.5;margin-top:12px}
+#${ID} .empty{padding:22px 0;text-align:center;color:var(--nm-game-text-dim);font-size:14px}
+#${ID} .note{font-size:12px;color:var(--nm-game-text-faint);line-height:1.5;margin-top:12px}
 `;
 
 let close: (() => void) | null = null;
@@ -75,14 +80,6 @@ let adding = false;
 
 const list = (active: string): Promise<AccountSummary[]> =>
   ipcRenderer.invoke(IPC.accountsList, active).then((r: unknown) => (r as AccountSummary[]) ?? []);
-
-function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = CSS;
-  document.head?.appendChild(style);
-}
 
 export interface AltModalDeps {
   /** False when the OS cannot encrypt, which disables saving entirely. */
@@ -99,7 +96,7 @@ export function toggleAltManager(deps: AltModalDeps): void {
 }
 
 async function open(deps: AltModalDeps): Promise<void> {
-  injectStyle();
+  defineStyle(STYLE_ID, CSS);
   adding = false;
 
   const backdrop = document.createElement('div');

@@ -1,4 +1,5 @@
 import type { HudCorner } from '../../shared/config';
+import { defineStyle } from '../style';
 import { FrameStats } from './frame-stats';
 
 /**
@@ -18,11 +19,36 @@ export interface PerfHudOptions {
 
 const REPAINT_INTERVAL_MS = 250;
 
-const CORNER_STYLES: Record<HudCorner, Partial<CSSStyleDeclaration>> = {
-  'top-left': { top: '8px', left: '8px' },
-  'top-right': { top: '8px', right: '8px' },
-  'bottom-left': { bottom: '8px', left: '8px' },
-  'bottom-right': { bottom: '8px', right: '8px' },
+const ID = 'kc-perf-hud';
+
+/**
+ * A stylesheet rather than the inline styles this used to set from JS.
+ *
+ * Inline styles beat every rule a theme could write short of `!important`, so
+ * the HUD was the one client surface no theme could touch. Corners and
+ * visibility are classes for the same reason: nothing here writes to
+ * `element.style` any more.
+ */
+const CSS = `
+#${ID}{position:fixed;z-index:2147483000;display:none;padding:5px 8px;
+  border-radius:var(--nm-radius-sm);background:var(--nm-hud-bg);color:var(--nm-text);
+  font:600 11px/1.45 var(--nm-font-mono);letter-spacing:.02em;
+  pointer-events:none;white-space:pre;
+  /* Keep the HUD out of page layout entirely. It shouldn't be able to force a
+     reflow of the game UI under it. */
+  contain:layout style paint}
+#${ID}.kc-hud-on{display:block}
+#${ID}.kc-hud-top-left{top:8px;left:8px}
+#${ID}.kc-hud-top-right{top:8px;right:8px}
+#${ID}.kc-hud-bottom-left{bottom:8px;left:8px}
+#${ID}.kc-hud-bottom-right{bottom:8px;right:8px}
+`;
+
+const CORNER_CLASSES: Record<HudCorner, string> = {
+  'top-left': 'kc-hud-top-left',
+  'top-right': 'kc-hud-top-right',
+  'bottom-left': 'kc-hud-bottom-left',
+  'bottom-right': 'kc-hud-bottom-right',
 };
 
 export interface PerfHud {
@@ -37,24 +63,10 @@ export interface PerfHud {
 export function createPerfHud(initial: PerfHudOptions): PerfHud {
   const stats = new FrameStats(1000);
 
+  defineStyle(`${ID}-css`, CSS);
+
   const root = document.createElement('div');
-  root.id = 'kc-perf-hud';
-  Object.assign(root.style, {
-    position: 'fixed',
-    zIndex: '2147483000',
-    padding: '5px 8px',
-    borderRadius: '5px',
-    background: 'rgba(10,11,13,0.72)',
-    color: '#e8e9ec',
-    font: '600 11px/1.45 ui-monospace, "Cascadia Mono", Consolas, monospace',
-    letterSpacing: '0.02em',
-    pointerEvents: 'none',
-    whiteSpace: 'pre',
-    display: 'none',
-    // Keep the HUD out of page layout entirely. It shouldn't be able to force
-    // a reflow of the game UI under it.
-    contain: 'layout style paint',
-  } satisfies Partial<CSSStyleDeclaration>);
+  root.id = ID;
 
   const line = document.createElement('div');
   root.appendChild(line);
@@ -68,8 +80,8 @@ export function createPerfHud(initial: PerfHudOptions): PerfHud {
   applyCorner(options.corner);
 
   function applyCorner(corner: HudCorner): void {
-    for (const key of ['top', 'right', 'bottom', 'left'] as const) root.style[key] = '';
-    Object.assign(root.style, CORNER_STYLES[corner]);
+    root.classList.remove(...Object.values(CORNER_CLASSES));
+    root.classList.add(CORNER_CLASSES[corner]);
   }
 
   function frame(now: number): void {
@@ -118,7 +130,7 @@ export function createPerfHud(initial: PerfHudOptions): PerfHud {
       if (visible) return;
       visible = true;
       attach();
-      root.style.display = 'block';
+      root.classList.add('kc-hud-on');
       stats.reset();
       lastTime = 0;
       lastPaint = 0;
@@ -129,7 +141,7 @@ export function createPerfHud(initial: PerfHudOptions): PerfHud {
     hide() {
       if (!visible) return;
       visible = false;
-      root.style.display = 'none';
+      root.classList.remove('kc-hud-on');
       // Kill the rAF loop when hidden. Leaving it up wakes the renderer every
       // frame to work out numbers nobody is looking at.
       if (rafId !== null) cancelAnimationFrame(rafId);

@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { BrowserWindow } from 'electron';
 import { BRANDING } from '../../shared/branding';
+import { PALETTE_CSS, QUEUE_WINDOW_BACKGROUND } from '../../shared/palette';
 import { RANKED_REGIONS } from '../../shared/ranked';
 import { gameFontFace } from '../game-font';
 import { iconOption } from '../app-icon';
@@ -13,8 +14,8 @@ import { iconOption } from '../app-icon';
  * you get on with something else.
  *
  * Styled after Krunker instead of the usual dark dashboard: the game's own
- * typeface, hard edges, dark fill inside a thick border for buttons. Palette
- * is deliberately low-chroma, see the :root block.
+ * typeface, hard edges, dark fill inside a thick border for buttons. Colours
+ * are the `--nm-rq-*` group in `shared/palette.ts`, deliberately low-chroma.
  */
 
 const REGION_BUTTONS = RANKED_REGIONS.map(
@@ -29,31 +30,19 @@ function buildHtml(fontFace: string): string {
 ${fontFace}
 
 /*
- * Low-chroma palette. Brightness carries most of the state, with just enough
- * hue in the accents to tell them apart at a glance. A saturated green/cyan/red
- * set fought with the game's own UI, which is grey almost everywhere.
+ * Shared with the game window. This document has no preload of its own to
+ * inject it, so the block is interpolated straight in; the --nm-rq-* group
+ * is the part that belongs to this window.
  */
-:root{
-  --ink:#0a0b0d;        /* window backdrop */
-  --panel:#111318;      /* body fill */
-  --panel-hi:#14171a;   /* body fill, lit half of the blink */
-  --head:#0d0f13;
-  --line:#2c313a;       /* resting border */
-  --line-hi:#444b57;    /* hover border */
-  --text:#d7dbe2;
-  --dim:#6b717c;
-  --go:#93a892;         /* muted sage: active, queued, success */
-  --go-dim:#4b5750;     /* its unlit half */
-  --stop:#b47a72;       /* muted clay: leaving, cooldown, error */
-}
+${PALETTE_CSS}
 
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;-webkit-user-select:none;
-  background:var(--ink);color:var(--text);
-  font-family:'GameFont',Impact,'Arial Black',sans-serif}
+  background:var(--nm-rq-ink);color:var(--nm-rq-text);
+  font-family:var(--nm-font-display)}
 
 .frame{height:100%;display:flex;flex-direction:column;
-  border:2px solid var(--line);background:var(--panel)}
+  border:2px solid var(--nm-rq-line);background:var(--nm-rq-panel)}
 
 /*
  * While queued the window edge steps between two flat greens. No blur, no
@@ -69,19 +58,20 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
  */
 .frame.live{animation:edge 1.4s steps(1,end) infinite}
 @keyframes edge{
-  0%,50%{border-color:var(--go);background:var(--panel-hi)}
-  50.01%,100%{border-color:var(--go-dim);background:var(--panel)}
+  0%,50%{border-color:var(--nm-rq-go);background:var(--nm-rq-panel-hi)}
+  50.01%,100%{border-color:var(--nm-rq-go-dim);background:var(--nm-rq-panel)}
 }
 
 .head{display:flex;align-items:center;justify-content:center;
-  padding:12px 16px 10px;border-bottom:2px solid var(--line);background:var(--head)}
+  padding:12px 16px 10px;border-bottom:2px solid var(--nm-rq-line);
+  background:var(--nm-rq-head)}
 .head .t{font-size:17px;letter-spacing:.2em}
 
 /* The header rule steps with the frame edge, on the same beat. */
 .frame.live .head{animation:headEdge 1.4s steps(1,end) infinite}
 @keyframes headEdge{
-  0%,50%{border-bottom-color:var(--go)}
-  50.01%,100%{border-bottom-color:var(--go-dim)}
+  0%,50%{border-bottom-color:var(--nm-rq-go)}
+  50.01%,100%{border-bottom-color:var(--nm-rq-go-dim)}
 }
 
 .body{flex:1;display:flex;flex-direction:column;align-items:center;
@@ -89,30 +79,33 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
 
 /* Hard offset shadow, the way the game draws its own text. Not a soft halo. */
 #timer{font-size:52px;letter-spacing:.08em;line-height:1;
-  text-shadow:0 4px 0 rgba(0,0,0,.55)}
-.frame.live #timer{color:var(--go)}
+  text-shadow:0 4px 0 var(--nm-rq-timer-shadow)}
+.frame.live #timer{color:var(--nm-rq-go)}
 
 /* Krunker's button look: dark fill, thick border, uppercase. */
 #go{padding:13px 0;width:260px;cursor:pointer;font-family:inherit;
   font-size:17px;letter-spacing:.14em;
-  background:rgba(7, 85, 3, 0.97);border:3px solid var(--go);color:var(--go);
+  background:var(--nm-rq-go-fill);border:3px solid var(--nm-rq-go);color:var(--nm-rq-go);
   transition:background .12s,color .12s}
-#go:hover{background:rgba(147,168,146,.18);color:#e4eae2}
-#go.on{background:rgb(105, 16, 5);border-color:var(--stop);color:var(--stop)}
-#go.on:hover{background:rgba(180,122,114,.18);color:#f0e2df}
+#go:hover{background:var(--nm-rq-go-wash);color:var(--nm-rq-go-text)}
+#go.on{background:var(--nm-rq-stop-fill);border-color:var(--nm-rq-stop);
+  color:var(--nm-rq-stop)}
+#go.on:hover{background:var(--nm-rq-stop-wash);color:var(--nm-rq-stop-text)}
 #go:disabled{opacity:.45;cursor:default}
 
 /* Selected regions read brighter rather than bluer. Brightness does the work. */
 .regions{display:flex;gap:10px}
 .rg{padding:9px 22px;cursor:pointer;font-family:inherit;font-size:13px;
-  letter-spacing:.12em;background:rgba(255,255,255,.03);
-  border:2px solid var(--line);color:var(--dim);transition:all .12s}
-.rg:hover{border-color:var(--line-hi);color:#a7adb8}
-.rg.on{background:rgba(255,255,255,.08);border-color:#7d8695;color:var(--text)}
+  letter-spacing:.12em;background:var(--nm-rq-rg-bg);
+  border:2px solid var(--nm-rq-line);color:var(--nm-rq-dim);transition:all .12s}
+.rg:hover{border-color:var(--nm-rq-line-hi);color:var(--nm-rq-text-hi)}
+.rg.on{background:var(--nm-rq-on-wash);border-color:var(--nm-rq-line-on);
+  color:var(--nm-rq-text)}
 
-#msg{font-size:12px;letter-spacing:.08em;color:var(--dim);min-height:15px;text-align:center}
-#msg.bad{color:var(--stop)}
-#msg.good{color:var(--go)}
+#msg{font-size:12px;letter-spacing:.08em;color:var(--nm-rq-dim);min-height:15px;
+  text-align:center}
+#msg.bad{color:var(--nm-rq-stop)}
+#msg.good{color:var(--nm-rq-go)}
 </style></head>
 <body>
   <div class="frame" id="frame">
@@ -224,7 +217,7 @@ export function createRankedWindow(fontBase64: string, onClosed: () => void): Ra
     minHeight: 380,
     frame: true,
     autoHideMenuBar: true,
-    backgroundColor: '#0a0b0d',
+    backgroundColor: QUEUE_WINDOW_BACKGROUND,
     ...iconOption(),
     title: `${BRANDING.productName}`,
     show: false,

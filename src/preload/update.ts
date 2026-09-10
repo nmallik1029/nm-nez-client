@@ -1,6 +1,7 @@
 import { ipcRenderer } from 'electron';
 import { BRANDING } from '../shared/branding';
 import { IPC, type UpdateState } from '../shared/ipc';
+import { defineStyle } from './style';
 
 /**
  * The update prompt.
@@ -24,39 +25,33 @@ const STYLE_ID = 'kc-update-css';
 
 const CSS = `
 #${ID}{position:fixed;right:18px;bottom:18px;z-index:100001;width:320px;
-  background:#1e1e1e;border:2px solid #3a3a3a;color:#fff;
+  background:var(--nm-game-bg);border:2px solid var(--nm-game-border);
   font-family:'GameFont',Impact,'Arial Black',sans-serif;
-  box-shadow:0 6px 24px rgba(0,0,0,.5);
+  color:var(--nm-game-text);box-shadow:0 6px 24px var(--nm-shadow-mid);
   transform:translateY(12px);opacity:0;transition:opacity .16s,transform .16s}
 #${ID}.kc-in{opacity:1;transform:translateY(0)}
-#${ID} .hd{padding:11px 14px;background:#171717;border-bottom:2px solid #3a3a3a;
+#${ID} .hd{padding:11px 14px;background:var(--nm-game-bg-head);border-bottom:2px solid var(--nm-game-border);
   font-size:14px;letter-spacing:.1em}
 #${ID} .bd{padding:13px 14px 14px}
-#${ID} .msg{font-size:13px;line-height:1.5;color:#c8c8c8}
-#${ID} .ver{color:#a9c4a6}
+#${ID} .msg{font-size:13px;line-height:1.5;color:var(--nm-game-text-body)}
+#${ID} .ver{color:var(--nm-ok)}
 #${ID} .row{display:flex;gap:8px;margin-top:13px}
 #${ID} button{flex:1;padding:8px 10px;cursor:pointer;font:inherit;font-size:12px;
-  letter-spacing:.06em;color:#fff;background:#2a2a2a;border:2px solid #3f3f3f;
-  transition:background .12s}
-#${ID} button:hover{background:#343434}
-#${ID} button.go{background:#2f6b3f;border-color:#3f8a52}
-#${ID} button.go:hover{background:#38804b}
+  letter-spacing:.06em;color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
+  border:2px solid var(--nm-upd-btn-border);transition:background .12s}
+#${ID} button:hover{background:var(--nm-upd-btn-bg-hover)}
+#${ID} button.go{background:var(--nm-upd-go-bg);border-color:var(--nm-upd-go-border)}
+#${ID} button.go:hover{background:var(--nm-upd-go-bg-hover)}
 /* Track is always drawn so the panel doesn't resize when the bar appears. */
-#${ID} .bar{height:6px;background:#2a2a2a;border:1px solid #3f3f3f;margin-top:12px}
-#${ID} .bar i{display:block;height:100%;width:0;background:#3f8a52;transition:width .2s}
+#${ID} .bar{height:6px;background:var(--nm-upd-btn-bg);
+  border:1px solid var(--nm-upd-btn-border);margin-top:12px}
+#${ID} .bar i{display:block;height:100%;width:0;background:var(--nm-upd-go-border);
+  transition:width .2s}
 `;
 
 let panel: HTMLDivElement | null = null;
 /** Dismissed for this session; a later state change should not bring it back. */
 let dismissed = false;
-
-function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = CSS;
-  document.head?.appendChild(style);
-}
 
 function close(): void {
   panel?.remove();
@@ -65,7 +60,7 @@ function close(): void {
 
 function ensurePanel(): HTMLDivElement {
   if (panel?.isConnected) return panel;
-  injectStyle();
+  defineStyle(STYLE_ID, CSS);
 
   const el = document.createElement('div');
   el.id = ID;

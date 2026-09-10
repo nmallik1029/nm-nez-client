@@ -1,3 +1,5 @@
+import { defineStyle } from './style';
+
 /**
  * Transient status messages.
  *
@@ -7,9 +9,9 @@
  */
 const CSS = `
 #kc-toast{position:fixed;left:50%;bottom:46px;transform:translateX(-50%) translateY(8px);
-  z-index:2147483200;padding:8px 15px;border-radius:6px;
-  background:rgba(12,13,16,.9);border:1px solid #2b2e36;color:#e8e9ec;
-  font-family:'GameFont',sans-serif;font-size:13px;line-height:1.2;
+  z-index:2147483200;padding:8px 15px;border-radius:var(--nm-radius);
+  background:var(--nm-toast-bg);border:1px solid var(--nm-toast-border);color:var(--nm-text);
+  font-family:var(--nm-font);font-size:13px;line-height:1.2;
   pointer-events:none;opacity:0;transition:opacity .16s,transform .16s}
 #kc-toast.kc-show{opacity:1;transform:translateX(-50%) translateY(0)}
 `;
@@ -21,13 +23,12 @@ function ensure(): HTMLDivElement | null {
   if (element) return element;
   if (!document.documentElement) return null;
 
-  const style = document.createElement('style');
-  style.textContent = CSS;
+  defineStyle('kc-toast-css', CSS);
 
   element = document.createElement('div');
   element.id = 'kc-toast';
 
-  document.documentElement.append(style, element);
+  document.documentElement.append(element);
   return element;
 }
 

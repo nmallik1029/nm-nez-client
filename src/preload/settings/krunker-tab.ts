@@ -8,6 +8,7 @@ import {
   prettyMap,
   REGIONS,
 } from '../../shared/matchmaker';
+import { defineStyle } from '../style';
 import { createKeybindRows, type KeybindRows } from './keybind-rows';
 import { attachTooltip, hideTooltip } from './tooltip';
 
@@ -262,12 +263,12 @@ const CSS = `
    blue = needs a page reload; the tooltip on the row spells out which. */
 .kc-tagline{display:inline-block;margin-left:6px;font-size:16px;line-height:0;
   vertical-align:-1px;font-weight:700}
-.kc-tag-restart{color:#e05a5a}
-.kc-tag-reload{color:#4d90e0}
+.kc-tag-restart{color:var(--nm-restart)}
+.kc-tag-reload{color:var(--nm-reload)}
 /* Krunker's rows rely on their .setBodH parent for the card background, and
    its control is floated rather than laid out, so force label-left /
    buttons-right onto one line instead of letting them stack. */
-.kc-note{font-size:12px;color:#8a8a8a;padding-right:2px}
+.kc-note{font-size:12px;color:var(--nm-game-text-dim);padding-right:2px}
 .kc-actionrow{display:flex;align-items:center;justify-content:space-between;
   gap:14px;flex-wrap:wrap}
 .kc-actionbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -278,24 +279,29 @@ const CSS = `
 .kc-numrow{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .kc-chiprow{display:block}
 .kc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.kc-chip{padding:7px 14px;border-radius:5px;border:1px solid #2f323a;background:#1b1d22;
-  color:#9aa0aa;font-size:14px;cursor:pointer;font-family:inherit;line-height:1.5}
-.kc-chip:hover{border-color:#414652;color:#d6d9de}
-.kc-chip.on{background:#31417d;border-color:#5570c8;color:#fff}
+.kc-chip{padding:7px 14px;border-radius:var(--nm-radius-sm);border:1px solid var(--nm-border);
+  background:var(--nm-surface);
+  color:var(--nm-text-dim);font-size:14px;cursor:pointer;font-family:inherit;line-height:1.5}
+.kc-chip:hover{border-color:var(--nm-border-hover);color:var(--nm-text-mid)}
+.kc-chip.on{background:var(--nm-accent-bg);border-color:var(--nm-accent-border);
+  color:var(--nm-text-hi)}
 
 /* Map picker: a tile grid with Krunker's own hosted previews. */
 .kc-maprow{display:block}
 .kc-maphead{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .kc-mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));
   gap:8px;margin-top:10px}
-.kc-maptile{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:6px;
-  border:1px solid #2f323a;background:#1b1d22;cursor:pointer;font-size:14px;color:#c3c7ce}
-.kc-maptile:hover{border-color:#414652;color:#fff}
-.kc-maptile.on{background:#26314f;border-color:#5570c8;color:#fff}
-.kc-maptile img{width:38px;height:26px;object-fit:cover;border-radius:3px;flex:none;
-  background:#111;image-rendering:auto}
+.kc-maptile{display:flex;align-items:center;gap:9px;padding:7px 10px;
+  border-radius:var(--nm-radius);
+  border:1px solid var(--nm-border);background:var(--nm-surface);cursor:pointer;
+  font-size:14px;color:var(--nm-text-body)}
+.kc-maptile:hover{border-color:var(--nm-border-hover);color:var(--nm-text-hi)}
+.kc-maptile.on{background:var(--nm-accent-bg-soft);border-color:var(--nm-accent-border);
+  color:var(--nm-text-hi)}
+.kc-maptile img{width:38px;height:26px;object-fit:cover;border-radius:var(--nm-radius-2xs);
+  flex:none;background:var(--nm-surface-sunken);image-rendering:auto}
 .kc-maptile .kc-mapname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kc-maptile input[type=checkbox]{accent-color:#6d8cff;width:15px;height:15px;flex:none;
+.kc-maptile input[type=checkbox]{accent-color:var(--nm-accent);width:15px;height:15px;flex:none;
   pointer-events:none}
 .kc-numrow .kc-numctl{display:flex;align-items:center;gap:10px;flex:none}
 .kc-numrow .kc-numctl .sliderM{width:230px;margin:0;display:block}
@@ -307,12 +313,13 @@ const CSS = `
   display:inline-flex;align-items:center;justify-content:center}
 .kc-keywrap{display:flex;align-items:center;gap:8px}
 .kc-keyicon{min-width:104px;text-align:center;cursor:pointer;user-select:none}
-.kc-keyicon.kc-capturing{background:#31417d;color:#fff;border-color:#6d8cff}
-.kc-keyicon.kc-clash{border-color:#a35555;color:#e79a9a}
-.kc-unbind{color:#c0504d;cursor:pointer;font-size:20px}
-.kc-unbind:hover{color:#e06663}
-.kc-reset{color:#d7902f;cursor:pointer;font-size:20px}
-.kc-reset:hover{color:#f0a840}
+.kc-keyicon.kc-capturing{background:var(--nm-accent-bg);color:var(--nm-text-hi);
+  border-color:var(--nm-accent)}
+.kc-keyicon.kc-clash{border-color:var(--nm-danger-border);color:var(--nm-danger-soft)}
+.kc-unbind{color:var(--nm-danger);cursor:pointer;font-size:20px}
+.kc-unbind:hover{color:var(--nm-danger-hover)}
+.kc-reset{color:var(--nm-warn);cursor:pointer;font-size:20px}
+.kc-reset:hover{color:var(--nm-warn-hover)}
 .kc-setbod-collapsed{display:none !important}
 .kc-hidden{display:none !important}
 `;
@@ -327,7 +334,7 @@ export interface SettingsTab {
 }
 
 export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
-  injectStyle();
+  defineStyle('kc-settings-style', CSS);
 
   let hooked = false;
   let restartNeeded = false;
@@ -541,7 +548,6 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
           : [staticNote('Portable build, update by downloading again')],
       ),
     );
-
 
     // Only there when something is actually pending, so the tab isn't sitting
     // with a permanent Restart button inviting a pointless one.
@@ -1163,12 +1169,4 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       });
     },
   };
-}
-
-function injectStyle(): void {
-  if (document.getElementById('kc-settings-style')) return;
-  const style = document.createElement('style');
-  style.id = 'kc-settings-style';
-  style.textContent = CSS;
-  document.documentElement.appendChild(style);
 }

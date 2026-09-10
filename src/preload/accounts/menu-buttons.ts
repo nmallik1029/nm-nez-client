@@ -1,3 +1,5 @@
+import { defineStyle } from '../style';
+
 /**
  * Rearranges the two buttons under the class preview in Krunker's main menu.
  *
@@ -59,14 +61,6 @@ const CSS = `
   justify-content:center}
 `;
 
-function injectStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = CSS;
-  document.head?.appendChild(style);
-}
-
 /** Find one of the game's buttons by the window index its onclick opens. */
 function findByWindowIndex(container: Element, index: number): HTMLElement | null {
   for (const el of container.querySelectorAll<HTMLElement>('.button')) {
@@ -115,7 +109,7 @@ function place(deps: MenuButtonDeps): void {
   // Menu isn't what we expect. Leave it be rather than half-rebuild it.
   if (!loadout || !customize) return;
 
-  injectStyle();
+  defineStyle(STYLE_ID, CSS);
 
   const rule = buttonRule();
 
