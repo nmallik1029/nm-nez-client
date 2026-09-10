@@ -64,4 +64,5 @@ export const STYLE_IDS = {
   update: 'kc-update-css',
   menuSkin: 'kc-menu-skin-css',
   krunkerWindows: 'kc-krunker-windows-css',
+  hudMinimal: 'kc-hud-minimal-css',
 } as const;

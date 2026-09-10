@@ -1,6 +1,7 @@
 import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_IDS } from './ids';
 import { SCAN_THUMB, SCAN_TIMING } from './tokens';
+import hudMinimal from './hud-minimal.css?raw';
 
 /**
  * Every stylesheet the client installs, in one file.
@@ -1333,4 +1334,5 @@ export const SHEETS = {
   update,
   menuSkin,
   krunkerWindows,
+  hudMinimal,
 } as const;
