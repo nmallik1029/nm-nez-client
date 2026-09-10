@@ -4,7 +4,9 @@ import { CHANGELOG, type ChangeKind } from '../shared/changelog';
 /**
  * The changelog: a row in Krunker's left menu, and the panel it opens.
  *
- * Versions start collapsed; clicking one shows its changes.
+ * Versions start collapsed; clicking one shows its changes. The exception is
+ * `showPatchNotes`, which is what runs after an update installs and opens the
+ * new version already expanded, since that is the thing you just asked to read.
  *
  * The row is cloned from one of the game's own menu items rather than built by
  * hand. The menu is Svelte-compiled and its styling hides behind a per-build
@@ -129,6 +131,22 @@ export function toggleChangelog(): void {
     closeModal();
     return;
   }
+  open(null);
+}
+
+/**
+ * Open on a specific version, expanded.
+ *
+ * Called once after an update, so the first thing you see is what changed.
+ * Re-opening an already-open panel would be worse than doing nothing, so an
+ * existing one is left alone.
+ */
+export function showPatchNotes(version: string): void {
+  if (closeModal) return;
+  open(version);
+}
+
+function open(expandVersion: string | null): void {
   injectStyle();
 
   const backdrop = document.createElement('div');
@@ -166,8 +184,11 @@ export function toggleChangelog(): void {
 
     const ul = document.createElement('ul');
     // Collapsed to start. It's a table of contents until you ask for more,
-    // which is the point of splitting it up.
-    ul.hidden = true;
+    // which is the point of splitting it up. The version we were opened for,
+    // if any, is the one thing already showing.
+    const expanded = expandVersion !== null && entry.version === expandVersion;
+    ul.hidden = !expanded;
+    if (expanded) ver.classList.add('open');
     for (const change of entry.changes) {
       const li = document.createElement('li');
       const tag = document.createElement('span');

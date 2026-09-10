@@ -16,6 +16,22 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.1',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'In-client updates. The client checks for a new version on launch and asks before downloading anything.',
+      },
+      {
+        kind: 'added',
+        text: 'These patch notes, shown once after an update installs.',
+      },
+      { kind: 'added', text: 'App icon.' },
+      { kind: 'added', text: 'Check for updates button in the client settings tab.' },
+    ],
+  },
+  {
     version: '0.1.0',
     date: '2026-09-07',
     changes: [

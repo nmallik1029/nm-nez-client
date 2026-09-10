@@ -7,6 +7,7 @@ import { CONFIG_SECTIONS, type AppConfig } from '../../shared/config';
 import { IPC, type Capabilities, type OpenableFolder, type ScanResult } from '../../shared/ipc';
 import { clampFrameCap } from '../platform/flags';
 import { createAccountStore } from '../accounts';
+import { canUpdate, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
 import { loadUserscripts } from '../assets';
@@ -25,6 +26,7 @@ export interface HandlerDeps {
   readonly log: (...args: unknown[]) => void;
   /** Re-read the swap folder; returns the new file count. */
   readonly rescanSwap: () => number;
+  readonly updater: UpdaterControls;
 }
 
 /** Structural check on credentials arriving from the renderer. */
@@ -78,7 +80,21 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   registry.handle(IPC.capabilities, (): Capabilities => ({
     liveFrameCap: hasLiveFrameCap(),
     canStoreAccounts: accounts.canEncrypt,
+    canUpdate: canUpdate(),
+    version: app.getVersion(),
+    lastSeenVersion: config.get('updates').lastSeenVersion,
   }));
+
+  registry.handle(IPC.updateCheck, () => deps.updater.check(true));
+  registry.handle(IPC.updateDownload, () => deps.updater.download());
+  registry.handle(IPC.updateInstall, () => deps.updater.install());
+  // Written once the notes have actually been shown, so a crash between
+  // updating and reading them means you still get them next launch.
+  registry.handle(IPC.updateNotesSeen, (_e, version: unknown) => {
+    if (typeof version !== 'string' || version === '') return false;
+    config.patch('updates', { lastSeenVersion: version });
+    return true;
+  });
 
   /**
    * Every argument gets checked. These run at the same origin as any

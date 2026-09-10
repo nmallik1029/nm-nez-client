@@ -27,6 +27,7 @@ import {
 } from './swapper';
 import { handleSwapProtocol, registerSwapScheme, SwapServer } from './swapper/protocol';
 import { createMainWindow } from './window';
+import { canUpdate, createUpdater } from './updater';
 
 // ── Identity ──
 // Has to happen before getPath('userData'), which is derived from the app
@@ -111,6 +112,24 @@ function pushRankedState(state: QueueState): void {
   rankedWindow?.send(IPC.rankedState, decorated);
 }
 
+// ── Self-update ──
+// Checked once, a little after launch, so it never competes with the game
+// loading. The prompt is the renderer's job; main only fetches and installs.
+const UPDATE_CHECK_DELAY_MS = 8000;
+
+const updater = createUpdater({
+  log,
+  onState: (state) => {
+    const contents = mainWindow?.webContents;
+    if (!contents || contents.isDestroyed()) return;
+    try {
+      contents.send(IPC.updateState, state);
+    } catch {
+      /* frame gone */
+    }
+  },
+});
+
 const pinger = new ServerPinger({
   onSample: (ms) => {
     const contents = mainWindow?.webContents;
@@ -164,10 +183,15 @@ function start(): void {
     getWindow: () => mainWindow,
     log,
     rescanSwap,
+    updater,
   });
 
   installHotkeys(mainWindow.webContents);
   installRankedIpc();
+
+  if (config.get('updates').autoCheck && canUpdate()) {
+    setTimeout(() => updater.check(false), UPDATE_CHECK_DELAY_MS).unref();
+  }
 
   // Edit a stylesheet in a text editor and it shows up in-game on save. A
   // theme is just a <style> element, so there's nothing to reload.

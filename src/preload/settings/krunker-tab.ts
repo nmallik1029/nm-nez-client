@@ -62,6 +62,8 @@ export interface SettingsTabDeps {
   readonly setCaptureLock: (locked: boolean) => void;
   readonly openFolder: (folder: OpenableFolder) => void;
   readonly relaunch: () => void;
+  /** Ask main to look for a new release right now. */
+  readonly checkForUpdates: () => void;
   readonly reloadPage: () => void;
   /** Re-read the swap folder; resolves with the new file count. */
   readonly rescanSwap: () => Promise<number>;
@@ -265,6 +267,7 @@ const CSS = `
 /* Krunker's rows rely on their .setBodH parent for the card background, and
    its control is floated rather than laid out, so force label-left /
    buttons-right onto one line instead of letting them stack. */
+.kc-note{font-size:12px;color:#8a8a8a;padding-right:2px}
 .kc-actionrow{display:flex;align-items:center;justify-content:space-between;
   gap:14px;flex-wrap:wrap}
 .kc-actionbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -527,6 +530,18 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       ),
     );
 
+    // Only offered where it can work. The portable exe and `npm start` have
+    // no install to replace, so the row says why rather than showing a button
+    // that only ever produces an error.
+    body.appendChild(
+      actionRow(
+        `Version ${deps.capabilities.version || '?'}`,
+        deps.capabilities.canUpdate
+          ? [gameButton('Check for updates', deps.checkForUpdates)]
+          : [staticNote('Portable build, update by downloading again')],
+      ),
+    );
+
 
     // Only there when something is actually pending, so the tab isn't sitting
     // with a permanent Restart button inviting a pointless one.
@@ -536,6 +551,14 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     if (pending.length > 0) body.appendChild(actionRow('Apply changes', pending));
 
     return [body];
+  }
+
+  /** Where a button would go, when there is nothing to press. */
+  function staticNote(text: string): HTMLElement {
+    const el = document.createElement('span');
+    el.className = 'kc-note';
+    el.textContent = text;
+    return el;
   }
 
   function actionRow(label: string, buttons: HTMLElement[]): HTMLElement {

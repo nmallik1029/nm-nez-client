@@ -19,7 +19,7 @@
     "build:ranked-preload": "vite build --config vite.ranked-preload.config.ts",
     "build": "npm run build:main && npm run build:preload && npm run build:ranked-preload",
     "start": "npm run build && set \"ELECTRON_RUN_AS_NODE=\" && electron .",
-    "dist": "npm run verify && npm run build && electron-builder --win",
+    "dist": "npm run verify && npm run build && electron-builder --win --publish never",
     "clean": "rimraf dist out",
     "postinstall": "node scripts/fetch-electron.mjs",
     "electron:patch": "node scripts/fetch-electron.mjs --force"
@@ -29,6 +29,7 @@
     "@types/node": "^22.10.0",
     "electron": "44.0.0",
     "electron-builder": "^25.1.8",
+    "electron-updater": "^6.8.9",
     "eslint": "^9.18.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.7.0",

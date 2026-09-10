@@ -1,0 +1,44 @@
+name: Release
+
+# Push a version tag and this builds the installer and publishes it, along
+# with the latest.yml manifest the in-client updater reads. Without that yml
+# on the release, installed clients have no way to discover the new version.
+#
+#   npm version patch     # bumps package.json and tags it
+#   git push --follow-tags
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  # electron-builder creates the release and uploads to it.
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # postinstall fetches the patched Electron here; electronDist points the
+      # packager at that same tree, so this is what keeps the aim-freeze fix in
+      # the shipped build.
+      - run: npm ci
+
+      - run: npm run verify
+
+      - run: npm run build
+
+      # --publish always creates the GitHub release (or fills in the draft for
+      # this tag) and uploads the exe plus latest.yml.
+      - name: Publish
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
