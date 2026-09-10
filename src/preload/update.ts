@@ -22,17 +22,41 @@ import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
  */
 
 let panel: HTMLDivElement | null = null;
+let backdrop: HTMLDivElement | null = null;
+/** Undoes the Escape listener, so it does not outlive the panel. */
+let unbindKeys: (() => void) | null = null;
 /** Dismissed for this session; a later state change should not bring it back. */
 let dismissed = false;
+/** True only while a LATER button is on screen, i.e. while dismissing is allowed. */
+let dismissable = false;
 
 function close(): void {
-  panel?.remove();
+  unbindKeys?.();
+  unbindKeys = null;
+  backdrop?.remove();
+  backdrop = null;
   panel = null;
+}
+
+/**
+ * Dismiss the way the LATER button would.
+ *
+ * Only while LATER is actually showing. Clicking away mid-download would look
+ * like it cancelled the download, which it would not, so those states hold
+ * the panel open rather than lie about what happened.
+ */
+function dismiss(): void {
+  if (!dismissable) return;
+  dismissed = true;
+  close();
 }
 
 function ensurePanel(): HTMLDivElement {
   if (panel?.isConnected) return panel;
   defineStyle(STYLE_IDS.update, SHEETS.update);
+
+  const back = document.createElement('div');
+  back.id = `${UI_IDS.updatePanel}-backdrop`;
 
   const el = document.createElement('div');
   el.id = UI_IDS.updatePanel;
@@ -42,11 +66,27 @@ function ensurePanel(): HTMLDivElement {
   const body = document.createElement('div');
   body.className = 'bd';
   el.append(head, body);
-  document.body.appendChild(el);
+  back.appendChild(el);
+  document.body.appendChild(back);
+  backdrop = back;
   panel = el;
 
+  back.addEventListener('click', (event) => {
+    if (event.target === back) dismiss();
+  });
+  // Captured ahead of Krunker's handler, which otherwise eats Escape and
+  // opens the game menu behind us.
+  const onKey = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !dismissable) return;
+    event.stopPropagation();
+    event.preventDefault();
+    dismiss();
+  };
+  document.addEventListener('keydown', onKey, true);
+  unbindKeys = () => document.removeEventListener('keydown', onKey, true);
+
   // Next frame, so the transition has a start value to move from.
-  requestAnimationFrame(() => el.classList.add('kc-in'));
+  requestAnimationFrame(() => back.classList.add('kc-in'));
   return el;
 }
 
@@ -90,6 +130,8 @@ export function renderUpdateState(state: UpdateState, manual: boolean): void {
   if (state.status === 'idle') return;
   if (dismissed && state.status === 'available') return;
 
+  // Only the two states with a LATER button may be clicked away from.
+  dismissable = state.status === 'available' || state.status === 'ready';
   const bd = body();
   bd.replaceChildren();
 

@@ -460,23 +460,35 @@ html.kc-scanning .sliderSml::after{
  * an update is never urgent enough to interrupt a round.
  */
 const update = `
-#${UI_IDS.updatePanel}{position:fixed;right:18px;bottom:18px;z-index:var(--nm-z-update);
-  width:320px;background:var(--nm-game-bg);
+/*
+ * Backdrop as well as a scrim: the menu behind is busy and high-contrast, and
+ * dimming alone still left the panel competing with it. The blur is what
+ * actually pushes the page back. backdrop-filter is composited, so it costs
+ * nothing while the panel is closed and it is only ever up for a few seconds.
+ */
+#${UI_IDS.updatePanel}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-update);
+  background:var(--nm-game-scrim);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .16s}
+#${UI_IDS.updatePanel}-backdrop.kc-in{opacity:1}
+
+#${UI_IDS.updatePanel}{width:min(460px,92vw);background:var(--nm-game-bg);
   border:var(--nm-bw-thick) solid var(--nm-game-border);
   font-family:var(--nm-font-display);color:var(--nm-game-text);
-  box-shadow:0 6px 24px var(--nm-shadow-mid);
-  transform:translateY(12px);opacity:0;transition:opacity .16s,transform .16s}
-#${UI_IDS.updatePanel}.kc-in{opacity:1;transform:translateY(0)}
-#${UI_IDS.updatePanel} .hd{padding:11px 14px;background:var(--nm-game-bg-head);
+  box-shadow:0 10px 40px var(--nm-shadow-mid);
+  transform:scale(.96);transition:transform .16s}
+#${UI_IDS.updatePanel}-backdrop.kc-in #${UI_IDS.updatePanel}{transform:scale(1)}
+
+#${UI_IDS.updatePanel} .hd{padding:15px 20px;background:var(--nm-game-bg-head);
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
-  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track-xl)}
-#${UI_IDS.updatePanel} .bd{padding:13px 14px 14px}
-#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-md);line-height:1.5;
+  font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-xl)}
+#${UI_IDS.updatePanel} .bd{padding:20px}
+#${UI_IDS.updatePanel} .msg{font-size:var(--nm-fs-xl);line-height:1.55;
   color:var(--nm-game-text-body)}
 #${UI_IDS.updatePanel} .ver{color:var(--nm-ok)}
-#${UI_IDS.updatePanel} .row{display:flex;gap:8px;margin-top:13px}
-#${UI_IDS.updatePanel} button{flex:1;padding:8px 10px;cursor:pointer;font:inherit;
-  font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track);
+#${UI_IDS.updatePanel} .row{display:flex;gap:11px;margin-top:20px}
+#${UI_IDS.updatePanel} button{flex:1;padding:12px 14px;cursor:pointer;font:inherit;
+  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track);
   color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
   border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);transition:background .12s}
 #${UI_IDS.updatePanel} button:hover{background:var(--nm-upd-btn-bg-hover)}
@@ -484,8 +496,8 @@ const update = `
   border-color:var(--nm-upd-go-border)}
 #${UI_IDS.updatePanel} button.go:hover{background:var(--nm-upd-go-bg-hover)}
 /* Track is always drawn so the panel doesn't resize when the bar appears. */
-#${UI_IDS.updatePanel} .bar{height:6px;background:var(--nm-upd-btn-bg);
-  border:var(--nm-bw) solid var(--nm-upd-btn-border);margin-top:12px}
+#${UI_IDS.updatePanel} .bar{height:8px;background:var(--nm-upd-btn-bg);
+  border:var(--nm-bw) solid var(--nm-upd-btn-border);margin-top:16px}
 #${UI_IDS.updatePanel} .bar i{display:block;height:100%;width:0;
   background:var(--nm-upd-go-border);transition:width .2s}
 `;
