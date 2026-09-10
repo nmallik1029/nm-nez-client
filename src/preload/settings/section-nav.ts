@@ -360,12 +360,25 @@ export function createSectionNav(): SectionNav {
     const body = header.nextElementSibling;
     if (body?.classList.contains(COLLAPSED_CLASS)) header.click();
 
-    // Re-measure: expanding one section moves every section below it.
+    // Re-measure: expanding one section moves every section below it. The
+    // highlight reads these; the scroll below no longer does.
     tops = measure(headersIn(holderEl));
 
-    const top = tops[index];
-    if (top === undefined) return;
-    scroller.scrollTo({ top: Math.max(0, top - 8), behavior: 'smooth' });
+    /**
+     * Ask the browser to bring the header up, rather than working out where
+     * that is.
+     *
+     * This used to compute a scroll offset by hand — the header's rect
+     * measured against the scroller's rect plus its scrollTop — and then
+     * scrollTo that. Every term in that has to be right about which box is
+     * which: getBoundingClientRect is a border box, scrollTop counts from the
+     * padding box, and #menuWindow carries 20px of padding, so the arithmetic
+     * and the browser disagreed by the size of whatever was between them.
+     *
+     * scrollIntoView cannot be wrong about any of it, and the gap above the
+     * landing is CSS (scroll-margin-top) rather than a magic number here.
+     */
+    header.scrollIntoView({ block: 'start', behavior: 'smooth' });
 
     // Hold the index still for the length of the animation. Without this it is
     // only repositioned when a scroll event happens to arrive, which is less
@@ -464,9 +477,12 @@ export function createSectionNav(): SectionNav {
 
     holder.insertBefore(nav, holder.firstChild);
 
+    // fit() before measure(), not after: it sets the index's max-height, and
+    // the index is a float in the holder, so sizing it can move the very
+    // headers we are about to record the positions of.
+    fit();
     tops = measure(headers);
     measuredHeight = scroller.scrollHeight;
-    fit();
     onScroll = schedulePaint;
     scroller.addEventListener('scroll', onScroll, { passive: true });
 
