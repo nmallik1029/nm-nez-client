@@ -205,7 +205,19 @@ function setPromoStyle(enabled: boolean): void {
     '[class*="streams-overlay"],',
     // Despite the name, topLeftAdHolder renders on the right in the current
     // layout. Both are hidden so it doesn't matter which is which.
-    '#topLeftAdHolder, #topRightAdHolder { display: none !important; }',
+    '#topLeftAdHolder, #topRightAdHolder,',
+    // The season splash over the play buttons, and the signed-out header's
+    // rewards button and register pitch.
+    //
+    // Hidden rather than taken out of the document, and that is the whole
+    // point of this rule. Reparenting them into an off-document bin left
+    // Krunker's own menu setup calling getElementById on ids that no longer
+    // resolved; it threw partway through, so the loading backdrop never faded
+    // and none of the play buttons were ever wired up. A black screen you
+    // cannot click. display:none gets the same pixels off the page while
+    // leaving every lookup working.
+    '#gameNameHolder, #signupRewardsButton,',
+    '#signedOutHeaderBar [class*="ph-tooltip"] { display: none !important; }',
   ].join('\n');
   attachStyle(style);
 }
@@ -219,16 +231,16 @@ function setPromoStyle(enabled: boolean): void {
  * is hashed — so it's matched on the stable fragment and scoped to the header
  * bar, which keeps the rule off any other tooltip in the menu.
  */
-const REMOVED_PROMO_SELECTORS = [
-  // The season splash over the play buttons; its only child is #mainLogo.
-  '#gameNameHolder',
-  // "Get Signup Rewards", in the signed-out header bar.
-  '#signupRewardsButton',
-  // "Register now to unlock more features and save your progress", the pitch
-  // hanging off the Login or Register button. The button itself stays — you
-  // still need somewhere to sign in.
-  '#signedOutHeaderBar [class*="ph-tooltip"]',
-] as const;
+/**
+ * Empty, deliberately.
+ *
+ * Everything that used to be listed here is hidden by `setPromoStyle` instead,
+ * because taking a promo out of the document broke Krunker's own menu setup —
+ * see the note on those selectors. The machinery below is kept because it is
+ * the right tool for a promo that genuinely cannot be hidden with CSS, but
+ * anything added here has to be checked against the menu actually loading.
+ */
+const REMOVED_PROMO_SELECTORS: readonly string[] = [];
 
 /**
  * The "Join Krunker today!" banner on the end-of-match screen renders into

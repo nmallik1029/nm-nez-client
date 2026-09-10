@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.12',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The main menu works again. In 0.1.11 the map behind it stayed black, Click to Play did nothing and several buttons were dead. Hiding the game’s own promos was taking them out of the page entirely, which broke Krunker’s menu setup partway through. They are hidden now instead, and everything wires up as it should.',
+      },
+    ],
+  },
+  {
     version: '0.1.11',
     date: '2026-09-10',
     changes: [
