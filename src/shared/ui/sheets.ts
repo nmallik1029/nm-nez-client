@@ -123,6 +123,33 @@ const queueButton = `
 /**
  * The Alt Manager window. Krunker's palette, so it reads as part of the game.
  */
+/**
+ * The scripts window.
+ *
+ * Deliberately the same shell as the alt manager: dark panel, thick border,
+ * a header rule and a scrolling body. Two client windows that look like two
+ * different programs is the thing this menu has been spending its time
+ * getting away from.
+ */
+const scriptsModal = `
+#${UI_IDS.scriptsModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
+  background:var(--nm-game-scrim);
+  display:flex;align-items:center;justify-content:center}
+#${UI_IDS.scriptsModal}{width:min(560px,92vw);max-height:82vh;display:flex;flex-direction:column;
+  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);font-family:var(--nm-font-display)}
+#${UI_IDS.scriptsModal} .hd{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
+#${UI_IDS.scriptsModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
+  letter-spacing:var(--nm-track-xl);font-weight:normal}
+#${UI_IDS.scriptsModal} .bd{overflow-y:auto;padding:14px 18px 18px}
+#${UI_IDS.scriptsModal} .empty{padding:22px 0;text-align:center;
+  color:var(--nm-game-text-dim);font-size:var(--nm-fs-lg)}
+#${UI_IDS.scriptsModal} .note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
+  line-height:var(--nm-lh);margin-top:12px;text-align:center}
+`;
+
 const altModal = `
 #${UI_IDS.altModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
   background:var(--nm-game-scrim);
@@ -740,7 +767,7 @@ const menuSkin = `
 /* ---- top bar ---- */
 #signupRewardsButton{display:none !important}
 #signedOutHeaderBar [class*="ph-icon"]{display:none !important}
-#signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.altManagerButton}{
+#signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.scriptsButton}{
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   box-sizing:border-box !important;height:34px !important;min-height:34px !important;
   max-height:34px !important;padding:0 16px !important;margin:0 !important;
@@ -751,7 +778,7 @@ const menuSkin = `
   background:var(--nm-menu-fill) !important;
   transition:border-color var(--nm-fast),background var(--nm-fast)}
 #signedOutHeaderBar [class*="ph-login-wrap"]:hover,
-#playerHeaderEl #${UI_IDS.altManagerButton}:hover{border-color:var(--nm-menu-bone) !important;
+#playerHeaderEl #${UI_IDS.scriptsButton}:hover{border-color:var(--nm-menu-bone) !important;
   background:var(--nm-menu-wash) !important}
 #playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
@@ -1021,18 +1048,20 @@ const menuSkin = `
 #menuClassContainer .button .material-icons{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 
-/* ---- alt manager, once it has moved to the left end of the header ---- */
-/* menu-buttons.ts copies Krunker's 449px button rule onto this element as an
-   inline style so it matches the class card. In the header that is absurd, and
-   an inline width only loses to !important. */
-#playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;
-  /* It is a child of .headerBarRight now, which is a flex row that stretches
-     its items. Without this the 34px height loses to the 61px bar. */
+/* ---- scripts button, at the front of Krunker's own nav ---- */
+#playerHeaderEl #${UI_IDS.scriptsButton}{width:auto !important;
+  /* A child of .headerBarRight, which is a flex row that stretches its items.
+     Without this the 34px height loses to the 61px bar. */
   align-self:center !important;flex:0 0 auto !important;
-  margin:0 12px 0 0 !important;color:var(--nm-menu-ash) !important;
+  margin:0 !important;cursor:pointer !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transform:none !important}
-#playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
+#playerHeaderEl #${UI_IDS.scriptsButton}:hover{color:var(--nm-menu-bone) !important;
   transform:none !important;filter:none !important}
+/* Krunker's own separators in this bar are hidden further up, so ours is a
+   separate element rather than one of theirs turned back on. */
+#playerHeaderEl #${UI_IDS.headerSeparator}{align-self:center !important;flex:0 0 auto !important;
+  width:var(--nm-bw) !important;height:30px !important;margin:0 16px !important;
+  background:var(--nm-menu-line-hi) !important}
 
 /* Krunker's own Changelog link, relocated out of the footer to sit beside
    More Krunker. Matched to the nav labels it now stands with. */
@@ -1322,6 +1351,7 @@ export const SHEETS = {
   watermark,
   queueButton,
   altModal,
+  scriptsModal,
   changelog,
   menuButtons,
   chatTags,

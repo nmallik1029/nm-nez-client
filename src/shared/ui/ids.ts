@@ -31,6 +31,11 @@ export const UI_IDS = {
   /** Wrapper that puts Loadout and Customize on one line. */
   classButtonRow: 'kc-class-buttons',
   altManagerButton: 'kc-alt-manager-button',
+  /** Opens the scripts window from the top bar. */
+  scriptsButton: 'kc-scripts-button',
+  /** The rule between our own header controls and Krunker's nav. */
+  headerSeparator: 'kc-header-sep',
+  scriptsModal: 'kc-scripts-modal',
   /** The update prompt, bottom right. */
   updatePanel: 'kc-update',
   /** Client wordmark and version at the top of Krunker's left menu. */
@@ -55,6 +60,7 @@ export const STYLE_IDS = {
   scan: 'kc-scan-css',
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
+  scriptsModal: 'kc-scripts-modal-css',
   sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',
   menuButtons: 'kc-class-buttons-css',

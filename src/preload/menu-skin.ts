@@ -1,6 +1,7 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
+import { toggleScripts } from './scripts/modal';
 import { toggleStyle } from './style';
 
 /**
@@ -78,6 +79,8 @@ const MODAL_ROOTS = [
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
+const SCRIPTS_ID = UI_IDS.scriptsButton;
+const SEPARATOR_ID = UI_IDS.headerSeparator;
 /** The backdrop older builds drew, kept only so it can be cleaned up. */
 const SCRIM_ID_LEGACY = 'kc-menu-scrim';
 /** Where the class card keeps Loadout and Customize; Alt Manager's home. */
@@ -142,18 +145,8 @@ function placeAltManager(): void {
     if (index > 0) duplicate.remove();
   });
 
-  if (enabled) {
-    const header = headerHome();
-    if (!header || alt.parentElement === header) return;
-    // menu-buttons copies Krunker's 449px button rule onto this element as an
-    // inline style. The sheet overrides what matters with !important, but
-    // clearing it first keeps devtools honest about where the size comes from.
-    alt.style.cssText = '';
-    header.insertBefore(alt, header.firstChild);
-    return;
-  }
-
-  // Off: back under Loadout and Customize, where menu-buttons put it.
+  // Under Loadout and Customize, where menu-buttons put it, skin or not.
+  // It used to move up into the header; Scripts has that slot now.
   const row = document.getElementById(CLASS_ROW_ID);
   if (row?.nextElementSibling === alt) return;
   if (row) {
@@ -162,6 +155,57 @@ function placeAltManager(): void {
   }
   const container = document.getElementById(CLASS_CONTAINER_ID);
   if (container && alt.parentElement !== container) container.appendChild(alt);
+}
+
+/**
+ * Scripts, at the front of Krunker's nav with a rule after it.
+ *
+ * Built here rather than cloned from one of the game's buttons: this one is
+ * ours, it is a plain div, and the header rule in the sheet gives it its
+ * whole appearance. Krunker hides its own separators in this bar, so the
+ * divider is an element of ours rather than one of theirs turned back on.
+ *
+ * The hover and click sounds are the game's own, looked up at call time.
+ * They live on `window` and are not always there, so a missing one is no
+ * sound rather than a broken button.
+ */
+function placeScriptsButton(): void {
+  const existing = document.getElementById(SCRIPTS_ID);
+  const existingRule = document.getElementById(SEPARATOR_ID);
+
+  if (!enabled) {
+    existing?.remove();
+    existingRule?.remove();
+    return;
+  }
+
+  const header = headerHome();
+  if (!header) return;
+  // Already in place. The observer runs this on every mutation batch, so the
+  // steady state has to be cheap.
+  if (existing?.parentElement === header && existingRule?.parentElement === header) return;
+
+  const button = existing ?? document.createElement('div');
+  if (!existing) {
+    button.id = SCRIPTS_ID;
+    // Uppercased by the sheet, like the nav labels it stands with.
+    button.textContent = 'Scripts';
+    button.addEventListener('mouseenter', () => {
+      const tick = (window as unknown as { playTick?: () => void }).playTick;
+      if (typeof tick === 'function') tick();
+    });
+    button.addEventListener('click', () => {
+      const select = (window as unknown as { playSelect?: (v: number) => void }).playSelect;
+      if (typeof select === 'function') select(0.1);
+      toggleScripts();
+    });
+  }
+
+  const rule = existingRule ?? document.createElement('div');
+  rule.id = SEPARATOR_ID;
+
+  header.insertBefore(rule, header.firstChild);
+  header.insertBefore(button, rule);
 }
 
 /**
@@ -365,6 +409,7 @@ function placeMatchActions(): void {
 
 function apply(): void {
   clearScrim();
+  placeScriptsButton();
   placeMark();
   placeAltManager();
   placeMatchActions();
