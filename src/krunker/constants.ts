@@ -39,6 +39,8 @@ export const KRUNKER_DOM_IDS = {
   chatHolder: 'chatHolder',
   /** The bar under the messages: channel globe, the input, the mic toggle. */
   chatInputHolder: 'chatInputHolder',
+  /** The team score strip. Its mutations are the hardpoint counter's clock. */
+  teamScores: 'teamScores',
   /** Krunker's left menu list. Chat has to stop before it reaches this. */
   menuNav: 'menuItemContainer',
   /** Wraps the whole UI and carries the menu/match flag below. */
@@ -59,6 +61,27 @@ export const KRUNKER_DOM_IDS = {
  * the one thing a stylesheet can key "only on the menu" off.
  */
 export const KRUNKER_MENU_CLASS = 'onMenu';
+
+/**
+ * Markup the hardpoint counter reads.
+ *
+ * The two team headers sit beside their score, which is the next element
+ * along rather than a child of either. Your own team carries `you`, which is
+ * the only way to tell which score is the enemy's.
+ */
+export const KRUNKER_TEAM_SCORES = {
+  /** Both team headers. The enemy is whichever one is not yours. */
+  headers: '#tScoreC1, #tScoreC2',
+  /** On your own team's header. */
+  ownTeamClass: 'you',
+  /** Where the HUD's small readouts live, top right. */
+  counterStrip: '.topRightCounters',
+  /** Krunker's own class for one of those readouts, and its inner box. */
+  counterClass: 'statIcon',
+  counterInnerClass: 'greyInner',
+  /** Present in competitive matches; the fallback for detecting hardpoint. */
+  competitiveHeader: '.cmpTmHed',
+} as const;
 
 /** Krunker markup the chat features depend on. */
 export const KRUNKER_CHAT = {

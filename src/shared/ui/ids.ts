@@ -33,6 +33,8 @@ export const UI_IDS = {
   altManagerButton: 'kc-alt-manager-button',
   /** Opens the scripts window from the top bar. */
   scriptsButton: 'kc-scripts-button',
+  /** Enemies standing on the hardpoint, in the top-right HUD counters. */
+  hardpointCounter: 'kc-hp-counter',
   /** The rule between our own header controls and Krunker's nav. */
   headerSeparator: 'kc-header-sep',
   scriptsModal: 'kc-scripts-modal',
@@ -61,6 +63,7 @@ export const STYLE_IDS = {
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
   scriptsModal: 'kc-scripts-modal-css',
+  hardpointCounter: 'kc-hp-counter-css',
   sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',
   menuButtons: 'kc-class-buttons-css',

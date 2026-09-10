@@ -14,6 +14,7 @@ import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
+import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
@@ -102,6 +103,8 @@ async function bootstrap(): Promise<void> {
   onDomReady(() => {
     hud = createPerfHud({ corner: cfg.ui.perfHudCorner, detail: cfg.ui.perfHudDetail });
     if (cfg.ui.perfHud) hud.show();
+
+    setHardpointCounter(cfg.ui.hardpointCounter);
 
     settingsTab = hookKrunkerSettings({
       config: cfg,
@@ -205,6 +208,8 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
       hud.setOptions({ corner: value as HudCorner });
     } else if (key === 'perfHudDetail' && hud && (value === 'fps' || value === 'full')) {
       hud.setOptions({ detail: value });
+    } else if (key === 'hardpointCounter') {
+      setHardpointCounter(value === true);
     } else if (key === 'hideAdContainers') {
       setAdContainerHiding(value === true);
     }

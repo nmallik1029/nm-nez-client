@@ -151,6 +151,25 @@ const scriptsModal = `
   line-height:var(--nm-lh);margin-top:12px;text-align:center}
 `;
 
+/**
+ * The hardpoint enemy counter, in the top-right HUD strip.
+ *
+ * Krunker's own `statIcon` and `greyInner` classes do the box, so this only
+ * sets what they leave: the label against the figure, and the accent on the
+ * number so it reads at a glance mid-fight, which is the only time anyone
+ * looks at it.
+ */
+const hardpointCounter = `
+#${UI_IDS.hardpointCounter} .greyInner{display:flex;align-items:center;gap:6px}
+#${UI_IDS.hardpointCounter} .lbl{color:var(--nm-text);font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-md);text-transform:uppercase}
+#${UI_IDS.hardpointCounter} .val{color:var(--nm-accent);font-size:var(--nm-fs-5xl);
+  font-weight:bold;min-width:14px;text-align:center;
+  /* Tabular so 1 and 4 are the same width; the strip beside it must not
+     shuffle every time the count changes. */
+  font-variant-numeric:tabular-nums}
+`;
+
 const altModal = `
 #${UI_IDS.altModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
   background:var(--nm-game-scrim);
@@ -1370,6 +1389,7 @@ export const SHEETS = {
   watermark,
   queueButton,
   altModal,
+  hardpointCounter,
   scriptsModal,
   changelog,
   menuButtons,

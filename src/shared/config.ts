@@ -140,6 +140,11 @@ export interface UiConfig {
    */
   realPing: boolean;
   perfHud: boolean;
+  /**
+   * Show how many enemies are standing on the hardpoint, in the top-right
+   * counters. Hardpoint only, and it hides itself in every other mode.
+   */
+  hardpointCounter: boolean;
   perfHudCorner: HudCorner;
   perfHudDetail: 'fps' | 'full';
   hideAdContainers: boolean;
@@ -262,6 +267,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   ui: {
     realPing: true,
     perfHud: false,
+    hardpointCounter: true,
     perfHudCorner: 'top-left',
     perfHudDetail: 'full',
     hideAdContainers: true,

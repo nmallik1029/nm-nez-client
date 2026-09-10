@@ -231,6 +231,12 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         hint: 'FPS, frame time, and your worst 1% and 0.1% of frames. The lows are the number worth watching: 300 FPS with regular hitches feels worse than a steady 200. F10 toggles it.',
       },
       {
+        section: 'ui',
+        key: 'hardpointCounter',
+        label: 'Hardpoint enemy counter',
+        hint: 'How many enemies are on the point, beside the other counters top right. Worked out from how fast their score is climbing, since Hardpoint pays 10 a second for each of them. Only appears in Hardpoint.',
+      },
+      {
         section: 'fixes',
         key: 'escapePointerLock',
         label: 'Escape releases the cursor',
