@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.24',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The settings index keeps up with the tab you are on. Switching to the Client tab left the previous tab’s sections listed down the side, and every section on that tab showing at once.',
+      },
+    ],
+  },
+  {
     version: '0.1.23',
     date: '2026-09-10',
     changes: [

@@ -179,6 +179,8 @@ export function createSectionNav(): SectionNav {
   let holderTopInset = 0;
   /** Remembered by name, because a rebuild hands back different elements. */
   let openLabel = '';
+  /** Guards against sync() re-entering through its own DOM writes. */
+  let syncing = false;
   /**
    * Each element's own inline display, as Krunker left it.
    *
@@ -277,15 +279,41 @@ export function createSectionNav(): SectionNav {
    * does not have to rebuild.
    */
   function guard(): void {
+    if (syncing) return;
+
     const holder = document.getElementById(HOLDER_ID);
     if (!holder || !holder.isConnected) {
       detach();
       return;
     }
     if (nav) nav.style.display = holder.offsetParent === null ? 'none' : '';
+
+    /**
+     * Rebuild when the panel underneath has been replaced.
+     *
+     * Krunker swaps the whole holder for a tab change, and not every tab
+     * fires a hook that reaches sync() — the client's own tab does not. The
+     * index was left listing the previous tab's sections while the panel
+     * showed this one's, and since show() never ran for the new panel every
+     * section was visible at once.
+     *
+     * The sections we built from are the test: once the first of them is off
+     * the document, what is on screen is not what this index describes.
+     */
+    const built = groups[0]?.[0];
+    if (!built || !built.isConnected) sync();
   }
 
   function sync(): void {
+    syncing = true;
+    try {
+      build();
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function build(): void {
     const holder = document.getElementById(HOLDER_ID);
     if (!holder) {
       detach();
