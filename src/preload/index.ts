@@ -16,6 +16,7 @@ import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installNameHighlights } from './name-highlights';
+import { installRankedPanel } from './ranked/panel';
 import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { toggleAltManager } from './accounts/modal';
@@ -109,6 +110,10 @@ async function bootstrap(): Promise<void> {
     setHardpointCounter(cfg.ui.hardpointCounter);
 
     installNameHighlights();
+
+    // Picks the queue back up after a reload: main has been running it the
+    // whole time, so this asks what state it is in rather than starting one.
+    installRankedPanel();
 
     // The built-in scripts hook things the game builds later, so they wait
     // for the page like everything else here rather than running at preload.

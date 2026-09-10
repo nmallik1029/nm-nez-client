@@ -1,6 +1,7 @@
 import { ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
+import { toggleRankedPanel } from './ranked/panel';
 import { defineStyle } from './style';
 
 /**
@@ -27,16 +28,19 @@ const REGIONS_SELECTOR = '[class*="queue-all-regions-container"]';
 function buildButton(): HTMLElement {
   const button = document.createElement('div');
   button.id = BUTTON_ID;
-  button.title = 'Open the external ranked queue. Keeps queueing with the game closed';
-  // The usual "open in new window" glyph, inline so there's no asset to load
-  // and nothing to 404.
+  button.title = 'Ranked queue. Keeps queueing through a reload or a server change';
+  // A stopwatch rather than the old "opens a window" arrow, because it does
+  // not open a window any more.
   button.innerHTML =
-    '<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4 11 13"/>' +
-    '<path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+    '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/>' +
+    '<path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>';
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
-    ipcRenderer.send(IPC.rankedOpen);
+    // Shift opens the old separate window, which is still the right answer
+    // for queueing with the game itself closed.
+    if (event.shiftKey) ipcRenderer.send(IPC.rankedOpen);
+    else toggleRankedPanel();
   });
   return button;
 }

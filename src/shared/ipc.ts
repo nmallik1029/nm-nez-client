@@ -48,6 +48,15 @@ export const IPC = {
   rankedSetRegions: 'ranked:set-regions',
   /** Main -> queue window. Current queue state. */
   rankedState: 'ranked:state',
+  /**
+   * Renderer -> main. What the queue is doing right now.
+   *
+   * The queue lives in main and keeps running across a reload or a jump to
+   * another server, so a freshly loaded page has to ask rather than wait for
+   * the next push — otherwise an already-running queue looks idle until it
+   * happens to change state.
+   */
+  rankedCurrent: 'ranked:current',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

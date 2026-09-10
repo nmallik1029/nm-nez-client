@@ -88,6 +88,14 @@ const rankedQueue = new RankedQueue({
   },
 });
 
+/**
+ * The last state pushed, so a page that has just reloaded can ask for it.
+ *
+ * Kept here rather than recomputed, because the labels are decorated on the
+ * way out and a reader wants exactly what the last push carried.
+ */
+let lastRankedState: Record<string, unknown> = { status: 'idle' };
+
 /** Decorate raw state with labels the window can render directly. */
 function pushRankedState(state: QueueState): void {
   const ranked = config.get('ranked');
@@ -110,6 +118,12 @@ function pushRankedState(state: QueueState): void {
   }
 
   rankedWindow?.send(IPC.rankedState, decorated);
+  // The game page shows the same queue inline, so it gets the same state.
+  // Both can be open at once and neither owns the queue.
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send(IPC.rankedState, decorated);
+  }
+  lastRankedState = decorated;
 }
 
 // ── Self-update ──
@@ -249,6 +263,9 @@ function installRankedIpc(): void {
   });
 
   ipcMain.on(IPC.rankedStop, () => rankedQueue.stop());
+
+  // Asked for on page load. See the channel's note in shared/ipc.ts.
+  ipcMain.handle(IPC.rankedCurrent, () => lastRankedState);
 
   ipcMain.on(IPC.rankedSetRegions, (_event, regions: unknown) => {
     if (!Array.isArray(regions)) return;

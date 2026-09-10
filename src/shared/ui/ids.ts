@@ -38,6 +38,10 @@ export const UI_IDS = {
   /** The rule between our own header controls and Krunker's nav. */
   headerSeparator: 'kc-header-sep',
   scriptsModal: 'kc-scripts-modal',
+  /** The ranked queue, in the page rather than its own window. */
+  rankedPanel: 'kc-ranked-panel',
+  /** Shown while the queue runs and the panel is shut. */
+  rankedPill: 'kc-ranked-pill',
   /** The update prompt, bottom right. */
   updatePanel: 'kc-update',
   /** Client wordmark and version at the top of Krunker's left menu. */
@@ -63,6 +67,7 @@ export const STYLE_IDS = {
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
   scriptsModal: 'kc-scripts-modal-css',
+  rankedPanel: 'kc-ranked-panel-css',
   hardpointCounter: 'kc-hp-counter-css',
   sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',

@@ -191,6 +191,70 @@ const hardpointCounter = `
   font-variant-numeric:tabular-nums}
 `;
 
+/**
+ * The inline ranked queue: a panel, and a pill for while it is shut.
+ *
+ * Same shell as the other client windows. The pill is the part that matters
+ * for the feature — the queue survives the panel closing, so there has to be
+ * something on screen saying so.
+ */
+const rankedPanel = `
+#${UI_IDS.rankedPanel}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
+  background:var(--nm-game-scrim);
+  display:flex;align-items:center;justify-content:center}
+#${UI_IDS.rankedPanel}{width:min(460px,92vw);display:flex;flex-direction:column;
+  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);font-family:var(--nm-font-display)}
+#${UI_IDS.rankedPanel} .hd{padding:14px 18px;
+  border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
+#${UI_IDS.rankedPanel} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
+  letter-spacing:var(--nm-track-xl);font-weight:normal}
+#${UI_IDS.rankedPanel} .bd{padding:18px;display:flex;flex-direction:column;gap:14px}
+#${UI_IDS.rankedPanel} .line{display:flex;align-items:center;gap:8px}
+#${UI_IDS.rankedPanel} .dot{width:8px;height:8px;flex:0 0 auto;
+  background:var(--nm-game-text-dim);transition:background var(--nm-fast)}
+#${UI_IDS.rankedPanel} .dot.on{background:var(--nm-ok)}
+#${UI_IDS.rankedPanel} .status{font-size:var(--nm-fs-md);
+  letter-spacing:var(--nm-track-lg);text-transform:uppercase;color:var(--nm-game-text-dim)}
+#${UI_IDS.rankedPanel} .timer{font-size:var(--nm-fs-display);line-height:var(--nm-lh-tight);
+  font-variant-numeric:tabular-nums}
+#${UI_IDS.rankedPanel} .regions{display:flex;gap:8px;flex-wrap:wrap}
+#${UI_IDS.rankedPanel} .regions label{display:flex;align-items:center;gap:6px;
+  padding:8px 12px;cursor:pointer;font-size:var(--nm-fs-md);
+  background:var(--nm-game-row-bg);
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.rankedPanel} .go{font-family:inherit;cursor:pointer;padding:12px 18px;
+  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track-md);
+  text-transform:uppercase;
+  border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text)}
+#${UI_IDS.rankedPanel} .go:hover:not(:disabled){background:var(--nm-game-btn-bg-hover);
+  color:var(--nm-game-text)}
+#${UI_IDS.rankedPanel} .go.live{border-color:var(--nm-ok-border);color:var(--nm-ok)}
+#${UI_IDS.rankedPanel} .go:disabled{opacity:.4;cursor:default}
+#${UI_IDS.rankedPanel} .note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
+  line-height:var(--nm-lh)}
+#${UI_IDS.rankedPanel} .note.bad{color:var(--nm-bad-text)}
+
+/* The pill. Top centre, out of the way of everything the menu draws. */
+#${UI_IDS.rankedPill}{position:fixed;top:64px;left:50%;transform:translateX(-50%);
+  z-index:var(--nm-z-toast);display:flex;align-items:center;gap:10px;
+  padding:9px 12px;background:var(--nm-game-bg);
+  border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);font-family:var(--nm-font-display);
+  font-size:var(--nm-fs-md)}
+#${UI_IDS.rankedPill} i{width:8px;height:8px;flex:0 0 auto;background:var(--nm-ok)}
+#${UI_IDS.rankedPill} .txt{font-variant-numeric:tabular-nums}
+#${UI_IDS.rankedPill} button{font-family:inherit;cursor:pointer;padding:4px 10px;
+  font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track-md);text-transform:uppercase;
+  border:var(--nm-bw) solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text)}
+#${UI_IDS.rankedPill} button:hover{background:var(--nm-game-btn-bg-hover);
+  color:var(--nm-game-text)}
+#${UI_IDS.rankedPill} .stop{border-color:var(--nm-bad-border);color:var(--nm-bad-text)}
+`;
+
 const altModal = `
 #${UI_IDS.altModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
   background:var(--nm-game-scrim);
@@ -1410,6 +1474,7 @@ export const SHEETS = {
   watermark,
   queueButton,
   altModal,
+  rankedPanel,
   hardpointCounter,
   scriptsModal,
   changelog,
