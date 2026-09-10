@@ -30,6 +30,32 @@ export const KRUNKER_URLS = {
  */
 export const PLAYER_LIST_WINDOW_INDEX = 22;
 
+/**
+ * Where player names are drawn, for the two surfaces worth colouring.
+ *
+ * Both put the clan tag in a nested span rather than in the name text, so
+ * the two can be styled apart without parsing anything. Read off the running
+ * game in a live match; the shapes were:
+ *
+ *   <div class="leaderItem">
+ *     <div class="leaderCounter">2.</div>
+ *     <div class="leaderName">Player_3<span style="color:#fff"> [X]</span></div>
+ *     <div class="leaderScore">0</div>
+ *
+ *   <td class="pListName">
+ *     <span class="pListPing material-icons" ...>signal_cellular_alt</span>
+ *     <a onclick='openPlayerProfile("Player_3")'>Player_3<span> [X]</span></a>
+ *
+ * `leaderNameM` is your own row; the player list gives your own name as bare
+ * text in the cell with no anchor around it, which is why that selector takes
+ * the cell and the anchor both.
+ */
+export const KRUNKER_NAMES = {
+  leaderContainerId: 'leaderContainer',
+  leaderNameSelector: '.leaderName, .leaderNameM',
+  playerListNameSelector: '.pListName > a, .pListName',
+} as const;
+
 /** DOM ids Krunker renders that we read or overwrite. */
 export const KRUNKER_DOM_IDS = {
   hudPing: 'pingText',

@@ -15,6 +15,7 @@ import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { setHardpointCounter } from './hud/hardpoint-counter';
+import { installNameHighlights } from './name-highlights';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
@@ -105,6 +106,8 @@ async function bootstrap(): Promise<void> {
     if (cfg.ui.perfHud) hud.show();
 
     setHardpointCounter(cfg.ui.hardpointCounter);
+
+    installNameHighlights();
 
     settingsTab = hookKrunkerSettings({
       config: cfg,

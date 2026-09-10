@@ -20,19 +20,35 @@ export interface FriendHighlight {
   readonly name: string;
   /** Any CSS colour. Hex is what these are written in. */
   readonly color: string;
+  /**
+   * Weight as well as colour. Off when left out.
+   *
+   * Optional because this list gets edited by hand between matches, and a
+   * required field turns "add a friend quickly" into a build error over
+   * something that is false most of the time.
+   */
+  readonly isBolded?: boolean;
 }
 
 export interface ClanHighlight {
   /** Clan tag without its brackets, as it appears in `Name [TAG]`. */
   readonly tag: string;
   readonly color: string;
-  /** Clans get weight as well as colour; people are colour alone. */
-  readonly bold: boolean;
+  /** Same as a friend's: optional, off when left out. */
+  readonly isBolded?: boolean;
 }
 
-/** What to draw a given player in, once friend and clan have been weighed. */
+/**
+ * What to draw a given player in, once friend and clan have been weighed.
+ *
+ * Two colours rather than one because Krunker draws the clan tag as its own
+ * span beside the name, and the two can come from different rules: a friend
+ * keeps their own colour while their clan tag keeps the clan's. Null on
+ * either means leave that part as the game has it.
+ */
 export interface Highlight {
-  readonly color: string;
+  readonly nameColor: string | null;
+  readonly clanColor: string | null;
   readonly bold: boolean;
 }
 
@@ -64,26 +80,32 @@ function sameName(a: string, b: string): boolean {
 /**
  * How to draw this player, or null to leave them as Krunker has them.
  *
- * A friend outranks their clan. If someone is in the list by name, that is a
- * deliberate choice about that person and it should not be overridden by a
- * clan rule that happens to also match them. They keep the clan's weight
- * though, so a bolded clan still reads as bolded.
+ * Takes the name and clan apart rather than a display string, because both
+ * places this is used already have them as separate elements and joining
+ * them up just to split them again would be silly.
+ *
+ * A friend outranks their clan on colour: naming a person is the more
+ * specific choice of the two. Bold is an or, not a precedence — a bolded
+ * friend is bold whatever their clan says, and a bolded clan bolds its
+ * members whether or not they are also named individually.
  */
 export function highlightFor(
-  display: string,
+  name: string,
+  clan: string | null,
   // Taken as arguments so the rules can be exercised without the real lists
   // having anyone in them. Callers pass nothing and get the lists below.
   friends: readonly FriendHighlight[] = FRIENDS,
   clans: readonly ClanHighlight[] = CLANS,
 ): Highlight | null {
-  const { name, clan } = parsePlayerName(display);
-
   const clanRule = clan === null ? undefined : clans.find((c) => sameName(c.tag, clan));
   const friend = friends.find((f) => sameName(f.name, name));
+  if (!friend && !clanRule) return null;
 
-  if (friend) return { color: friend.color, bold: clanRule?.bold ?? false };
-  if (clanRule) return { color: clanRule.color, bold: clanRule.bold };
-  return null;
+  return {
+    nameColor: friend?.color ?? clanRule?.color ?? null,
+    clanColor: clanRule?.color ?? null,
+    bold: (friend?.isBolded ?? false) || (clanRule?.isBolded ?? false),
+  };
 }
 
 // ── the lists ────────────────────────────────────────────────────────────
@@ -92,10 +114,13 @@ export function highlightFor(
 
 /** Friends, by in-game name. */
 export const FRIENDS: readonly FriendHighlight[] = [
-  // { name: 'illegal', color: '#48eaff' },
+  // { name: 'illegal', color: '#48eaff', isBolded: true },
+  { name: 'iliegai', color: '#578cf0', isBolded: true},
+  { name: 'drainciity', color: '#c24658'}
 ];
 
 /** Clans, by tag, without the brackets Krunker draws around them. */
 export const CLANS: readonly ClanHighlight[] = [
-  // { tag: 'Fame', color: '#e4552e', bold: true },
+  // { tag: 'Fame', color: '#e4552e', isBolded: true },
+  { tag: 'Fame', color: '#ff0000', isBolded: true }
 ];

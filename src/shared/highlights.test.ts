@@ -7,13 +7,13 @@ import {
 } from './highlights';
 
 const FRIENDS: readonly FriendHighlight[] = [
-  { name: 'illegal', color: '#48eaff' },
-  { name: 'uggie333', color: '#9eeb56' },
+  { name: 'illegal', color: '#48eaff', isBolded: false },
+  { name: 'bolded_pal', color: '#9eeb56', isBolded: true },
 ];
 
 const CLANS: readonly ClanHighlight[] = [
-  { tag: 'Fame', color: '#e4552e', bold: true },
-  { tag: 'YBG', color: '#c76bd6', bold: false },
+  { tag: 'Fame', color: '#e4552e', isBolded: true },
+  { tag: 'YBG', color: '#c76bd6', isBolded: false },
 ];
 
 describe('parsePlayerName', () => {
@@ -38,43 +38,53 @@ describe('parsePlayerName', () => {
 });
 
 describe('highlightFor', () => {
+  const of = (name: string, clan: string | null = null) =>
+    highlightFor(name, clan, FRIENDS, CLANS);
+
   it('colours a friend', () => {
-    expect(highlightFor('illegal', FRIENDS, CLANS)).toEqual({ color: '#48eaff', bold: false });
+    expect(of('illegal')).toEqual({ nameColor: '#48eaff', clanColor: null, bold: false });
   });
 
-  it('colours a clan member who is not a friend', () => {
-    expect(highlightFor('someone [Fame]', FRIENDS, CLANS)).toEqual({
-      color: '#e4552e',
+  it('colours a clan member who is not a friend, name and tag alike', () => {
+    expect(of('someone', 'Fame')).toEqual({
+      nameColor: '#e4552e',
+      clanColor: '#e4552e',
       bold: true,
     });
   });
 
-  it('lets a friend keep their own colour over their clan', () => {
-    // Naming someone individually is the more specific choice of the two.
-    expect(highlightFor('illegal [Fame]', FRIENDS, CLANS)).toEqual({
-      color: '#48eaff',
+  it(`lets a friend keep their own colour while the tag keeps the clan's`, () => {
+    expect(of('illegal', 'Fame')).toEqual({
+      nameColor: '#48eaff',
+      clanColor: '#e4552e',
       bold: true,
     });
   });
 
-  it('carries the clan weight onto a friend, so a bold clan stays bold', () => {
-    expect(highlightFor('illegal [YBG]', FRIENDS, CLANS)?.bold).toBe(false);
-    expect(highlightFor('illegal [Fame]', FRIENDS, CLANS)?.bold).toBe(true);
+  it('bolds a friend marked bold whatever their clan says', () => {
+    // The clan is explicitly not bold; the person is.
+    expect(of('bolded_pal', 'YBG')?.bold).toBe(true);
+    expect(of('bolded_pal')?.bold).toBe(true);
+  });
+
+  it('bolds a member of a bolded clan who is not marked bold themselves', () => {
+    expect(of('illegal', 'Fame')?.bold).toBe(true);
+    expect(of('illegal', 'YBG')?.bold).toBe(false);
   });
 
   it('ignores case on both names and tags', () => {
-    expect(highlightFor('ILLEGAL', FRIENDS, CLANS)?.color).toBe('#48eaff');
-    expect(highlightFor('someone [FAME]', FRIENDS, CLANS)?.color).toBe('#e4552e');
+    expect(of('ILLEGAL')?.nameColor).toBe('#48eaff');
+    expect(of('someone', 'FAME')?.nameColor).toBe('#e4552e');
   });
 
   it('leaves everyone else alone', () => {
-    expect(highlightFor('a stranger', FRIENDS, CLANS)).toBeNull();
-    expect(highlightFor('a stranger [NotOurs]', FRIENDS, CLANS)).toBeNull();
+    expect(of('a stranger')).toBeNull();
+    expect(of('a stranger', 'NotOurs')).toBeNull();
   });
 
   it('matches the whole name, not part of it', () => {
     // "illegal" must not light up "illegally" or "notillegal".
-    expect(highlightFor('illegally', FRIENDS, CLANS)).toBeNull();
-    expect(highlightFor('notillegal', FRIENDS, CLANS)).toBeNull();
+    expect(of('illegally')).toBeNull();
+    expect(of('notillegal')).toBeNull();
   });
 });
