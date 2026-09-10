@@ -23,6 +23,8 @@ export const UI_IDS = {
   /** Queue launcher in Krunker's ranked footer. */
   queueButton: 'kc-ranked-launch',
   altModal: 'kc-alt-modal',
+  /** Section index down the left of the settings window. */
+  sectionNav: 'kc-sectnav',
   changelogModal: 'kc-changelog-modal',
   /** The changelog row added to Krunker's left menu. */
   changelogItem: 'kc-changelog-item',
@@ -51,6 +53,7 @@ export const STYLE_IDS = {
   scan: 'kc-scan-css',
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
+  sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',
   menuButtons: 'kc-class-buttons-css',
   chatTags: 'kc-chat-tags',
