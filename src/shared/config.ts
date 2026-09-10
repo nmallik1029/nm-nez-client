@@ -93,6 +93,7 @@ export interface FeatureConfig {
    * exactly as the game ships it, with no reload.
    */
   menuSkin: boolean;
+
   /**
    * Messages to keep. Krunker prunes old ones hard, so this puts them back and
    * trims to this number instead. 0 leaves the game's behaviour alone.

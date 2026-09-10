@@ -1,6 +1,7 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
+import { setHudStyle } from './hud-skin';
 import { toggleScripts } from './scripts/modal';
 import { toggleStyle } from './style';
 
@@ -430,6 +431,10 @@ export function setMenuSkin(on: boolean): void {
   // a menu in one palette opening a settings window in another is worse than
   // either on its own.
   toggleStyle(STYLE_IDS.krunkerWindows, SHEETS.krunkerWindows, on);
+  // And the in-game HUD. One look rather than a menu skin you then have to
+  // find a second switch for: a client that restyles the menu and leaves the
+  // match looking like stock is two half-decisions.
+  setHudStyle(on);
   apply();
 }
 
