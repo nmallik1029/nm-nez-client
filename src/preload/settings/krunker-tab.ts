@@ -8,6 +8,7 @@ import {
   prettyMap,
   REGIONS,
 } from '../../shared/matchmaker';
+import { SHEETS, STYLE_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 import { createKeybindRows, type KeybindRows } from './keybind-rows';
 import { attachTooltip, hideTooltip } from './tooltip';
@@ -252,78 +253,6 @@ const FOLDERS: { id: OpenableFolder; label: string }[] = [
   { id: 'screenshots', label: 'Screenshots' },
 ];
 
-/**
- * Only what Krunker has no class for. Everything structural is the game's own
- * CSS, and keeping this small matters: the more we restyle, the further out of
- * step we drift when they change their theme.
- */
-const CSS = `
-/* Matches Krunker's own convention of flagging a setting with a red asterisk
-   (Antialiasing, No Textures, Map Details). Red = needs a client restart,
-   blue = needs a page reload; the tooltip on the row spells out which. */
-.kc-tagline{display:inline-block;margin-left:6px;font-size:16px;line-height:0;
-  vertical-align:-1px;font-weight:700}
-.kc-tag-restart{color:var(--nm-restart)}
-.kc-tag-reload{color:var(--nm-reload)}
-/* Krunker's rows rely on their .setBodH parent for the card background, and
-   its control is floated rather than laid out, so force label-left /
-   buttons-right onto one line instead of letting them stack. */
-.kc-note{font-size:12px;color:var(--nm-game-text-dim);padding-right:2px}
-.kc-actionrow{display:flex;align-items:center;justify-content:space-between;
-  gap:14px;flex-wrap:wrap}
-.kc-actionbtns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-/* Krunker's own .setting-input-wrapper carries float rules that reorder its
-   children and interact badly with anything we add, so the numeric row does
-   not use it. The row lays itself out, the same way .kc-actionrow does,
-   rather than leaning on the game's float behaviour. */
-.kc-numrow{display:flex;align-items:center;justify-content:space-between;gap:14px}
-.kc-chiprow{display:block}
-.kc-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.kc-chip{padding:7px 14px;border-radius:var(--nm-radius-sm);border:1px solid var(--nm-border);
-  background:var(--nm-surface);
-  color:var(--nm-text-dim);font-size:14px;cursor:pointer;font-family:inherit;line-height:1.5}
-.kc-chip:hover{border-color:var(--nm-border-hover);color:var(--nm-text-mid)}
-.kc-chip.on{background:var(--nm-accent-bg);border-color:var(--nm-accent-border);
-  color:var(--nm-text-hi)}
-
-/* Map picker: a tile grid with Krunker's own hosted previews. */
-.kc-maprow{display:block}
-.kc-maphead{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.kc-mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(158px,1fr));
-  gap:8px;margin-top:10px}
-.kc-maptile{display:flex;align-items:center;gap:9px;padding:7px 10px;
-  border-radius:var(--nm-radius);
-  border:1px solid var(--nm-border);background:var(--nm-surface);cursor:pointer;
-  font-size:14px;color:var(--nm-text-body)}
-.kc-maptile:hover{border-color:var(--nm-border-hover);color:var(--nm-text-hi)}
-.kc-maptile.on{background:var(--nm-accent-bg-soft);border-color:var(--nm-accent-border);
-  color:var(--nm-text-hi)}
-.kc-maptile img{width:38px;height:26px;object-fit:cover;border-radius:var(--nm-radius-2xs);
-  flex:none;background:var(--nm-surface-sunken);image-rendering:auto}
-.kc-maptile .kc-mapname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.kc-maptile input[type=checkbox]{accent-color:var(--nm-accent);width:15px;height:15px;flex:none;
-  pointer-events:none}
-.kc-numrow .kc-numctl{display:flex;align-items:center;gap:10px;flex:none}
-.kc-numrow .kc-numctl .sliderM{width:230px;margin:0;display:block}
-.kc-numrow .kc-numctl .sliderVal{width:66px;text-align:center;margin:0}
-/* Krunker sizes .settingsBtn for short labels like "Reset" and clips anything
-   longer to an ellipsis. Let ours size to their text instead. */
-.kc-actionbtns .settingsBtn{width:auto;min-width:0;max-width:none;padding:0 14px;
-  overflow:visible;text-overflow:clip;white-space:nowrap;
-  display:inline-flex;align-items:center;justify-content:center}
-.kc-keywrap{display:flex;align-items:center;gap:8px}
-.kc-keyicon{min-width:104px;text-align:center;cursor:pointer;user-select:none}
-.kc-keyicon.kc-capturing{background:var(--nm-accent-bg);color:var(--nm-text-hi);
-  border-color:var(--nm-accent)}
-.kc-keyicon.kc-clash{border-color:var(--nm-danger-border);color:var(--nm-danger-soft)}
-.kc-unbind{color:var(--nm-danger);cursor:pointer;font-size:20px}
-.kc-unbind:hover{color:var(--nm-danger-hover)}
-.kc-reset{color:var(--nm-warn);cursor:pointer;font-size:20px}
-.kc-reset:hover{color:var(--nm-warn-hover)}
-.kc-setbod-collapsed{display:none !important}
-.kc-hidden{display:none !important}
-`;
-
 export interface SettingsTab {
   /** Open Krunker's settings window on the Client tab. */
   open(): void;
@@ -334,7 +263,7 @@ export interface SettingsTab {
 }
 
 export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
-  defineStyle('kc-settings-style', CSS);
+  defineStyle(STYLE_IDS.settings, SHEETS.settings);
 
   let hooked = false;
   let restartNeeded = false;

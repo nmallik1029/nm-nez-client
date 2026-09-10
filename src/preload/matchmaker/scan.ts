@@ -11,6 +11,7 @@ import {
   sortLobbies,
   type Lobby,
 } from '../../shared/matchmaker';
+import { SCAN_TIMING, SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 
 /**
@@ -33,133 +34,10 @@ import { defineStyle } from '../style';
  * so you never see the page swap as a flash.
  */
 
-const OVERLAY_ID = 'kc-scan';
-/** How long a rejected line takes to tumble off. Outlives the tick, so a few overlap. */
-const FALL_MS = 780;
-const LANDING_PAUSE_MS = 460;
-/** Duration of the map-image expansion. */
-const EXPAND_MS = 720;
-/** Give preloading this long, then start anyway. Not worth stalling the sweep. */
-const PRELOAD_BUDGET_MS = 450;
+const OVERLAY_ID = UI_IDS.scan;
 
-const THUMB_W = 52;
-const THUMB_H = 34;
-
-const CSS = `
-#kc-scan{position:fixed;inset:0;z-index:2147483260;display:none;pointer-events:none;
-  font-family:var(--nm-font);overflow:hidden}
-#kc-scan.on{display:block}
-
-/*
- * GameFont is a pixel face, so everything here gets positioned on whole pixels
- * from JS rather than with percentages or translateX(-50%). Centring by
- * transform lands the text on a fractional offset (590.27px, when I measured
- * it), and a pixel font antialiased across two columns looks doubled and
- * smeared.
- */
-#kc-scan .sc-stage{position:absolute;left:0;right:0;height:0}
-#kc-scan .sc-line{position:absolute;top:0;white-space:nowrap;font-size:28px;
-  letter-spacing:.04em;color:var(--nm-scan-text);display:flex;align-items:center;gap:14px;
-  text-shadow:0 3px 10px var(--nm-shadow),0 0 2px var(--nm-shadow-strong)}
-
-/* Fixed box whether or not the image has loaded, so text never shifts. */
-#kc-scan .sc-thumb{width:${THUMB_W}px;height:${THUMB_H}px;flex:none;
-  border-radius:var(--nm-radius-xs);
-  object-fit:cover;background:var(--nm-scan-thumb-bg);
-  box-shadow:0 3px 10px var(--nm-shadow-softer)}
-
-/* Rejected: drift left and down, redden, fade. */
-@keyframes kc-fall{
-  0%  {opacity:1;   transform:translate(0,0) rotate(0deg)}
-  15% {opacity:.95; color:var(--nm-scan-reject)}
-  100%{opacity:0;   transform:translate(-120%,120px) rotate(-10deg);
-       color:var(--nm-scan-reject-end)}
-}
-#kc-scan .sc-line.out{animation:kc-fall ${FALL_MS}ms cubic-bezier(.25,.6,.5,1) forwards}
-#kc-scan .sc-line.out .sc-thumb{filter:grayscale(1) brightness(.6)}
-
-/* Cut a tumble short once the outcome is known. */
-#kc-scan .sc-line.out.clear{animation-play-state:paused;
-  transition:opacity 130ms linear;opacity:0}
-
-/* Accepted: colour and glow only. scale() would resample the pixel font. */
-@keyframes kc-land{
-  0%  {color:var(--nm-scan-text);
-       text-shadow:0 3px 10px var(--nm-shadow)}
-  45% {color:var(--nm-scan-accept-peak);
-       text-shadow:0 0 26px var(--nm-scan-glow-peak),0 3px 10px var(--nm-shadow-soft)}
-  100%{color:var(--nm-scan-accept);
-       text-shadow:0 0 20px var(--nm-scan-glow),0 3px 10px var(--nm-shadow-soft)}
-}
-#kc-scan .sc-line.hit{animation:kc-land 420ms ease-out forwards}
-#kc-scan .sc-line.hit .sc-thumb{box-shadow:0 0 22px var(--nm-scan-glow-thumb)}
-/* The line steps aside as its map image takes over. */
-#kc-scan .sc-line.fading{transition:opacity 260ms ease-out;opacity:0}
-
-/*
- * The reveal: green floods out from the matched line and covers the screen.
- *
- * This used to grow the map preview instead and it never really worked.
- * Krunker's previews are 200x80 with no larger variant anywhere, so filling
- * 1920px meant about a 10x upscale, and that looked like mush however I
- * layered it. Flat colour has no resolution to run out of.
- *
- * Transform only, so the compositor can do it without relayout every frame.
- */
-#kc-scan .sc-flood{position:absolute;width:10px;height:10px;border-radius:50%;
-  background:var(--nm-scan-flood);transform:translate(-50%,-50%) scale(0);opacity:.92}
-@keyframes kc-flood{
-  0%  {transform:translate(-50%,-50%) scale(0);   opacity:.55}
-  100%{transform:translate(-50%,-50%) scale(560); opacity:1}
-}
-#kc-scan .sc-flood.go{animation:kc-flood ${EXPAND_MS}ms cubic-bezier(.4,0,.7,1) forwards}
-
-#kc-scan .sc-note{position:absolute;white-space:nowrap;font-size:15px;
-  color:var(--nm-scan-note);letter-spacing:.04em;
-  text-shadow:0 2px 8px var(--nm-shadow)}
-#kc-scan .sc-note.bad{color:var(--nm-danger-soft)}
-
-/*
- * Krunker puts its own prompts exactly where the scan text goes. At 1920x1009,
- * #spectButton sits at 428-453 and the note at 435-455. They get hidden for
- * the length of the scan rather than moving our text, since their position
- * moves with the viewport and we'd just collide somewhere else instead.
- *
- * Opacity, not only visibility. The spectate toggle's knob is
- * .sliderSml::before and it still measured as visible with its own element
- * hidden; a universal selector matches elements and never pseudo-elements, so
- * "#spectButton *" can't reach it. Opacity covers the whole subtree,
- * pseudo-elements included, and a descendant can't override an ancestor's
- * opacity the way it can override visibility.
- *
- * transition:none matters as well. visibility is transitionable and the toggle
- * carries a 0.4s transition that would otherwise hold up the hide.
- */
-html.kc-scanning #spectButtonHolder,
-html.kc-scanning #spectButtonHolder *,
-html.kc-scanning #spectButton,
-html.kc-scanning #spectButton *,
-html.kc-scanning .sliderSml,
-html.kc-scanning #instructionHider,
-html.kc-scanning #instructionHider *,
-html.kc-scanning #instructions{
-  visibility:hidden !important;
-  opacity:0 !important;
-  transition:none !important;
-  animation:none !important;
-}
-html.kc-scanning #spectButton::before,
-html.kc-scanning #spectButton::after,
-html.kc-scanning .switchsml::before,
-html.kc-scanning .switchsml::after,
-html.kc-scanning .sliderSml::before,
-html.kc-scanning .sliderSml::after{
-  visibility:hidden !important;
-  opacity:0 !important;
-  transition:none !important;
-  animation:none !important;
-}
-`;
+// Geometry and timings live with the stylesheet that animates to them.
+const { fallMs, landingPauseMs, expandMs, preloadBudgetMs } = SCAN_TIMING;
 
 export interface MatchSearchDeps {
   readonly getFilter: () => MatchmakerFilter;
@@ -217,7 +95,7 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
   let active = false;
 
   function build(): HTMLElement {
-    defineStyle('kc-scan-css', CSS);
+    defineStyle(STYLE_IDS.scan, SHEETS.scan);
 
     const root = document.createElement('div');
     root.id = OVERLAY_ID;
@@ -290,7 +168,7 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
     const outgoing = current;
     if (outgoing) {
       outgoing.classList.add('out');
-      setTimeout(() => outgoing.remove(), FALL_MS);
+      setTimeout(() => outgoing.remove(), fallMs);
     }
 
     const line = document.createElement('div');
@@ -405,7 +283,7 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
       if (icon !== null) needed.add(icon);
     }
 
-    await preloadImages([...needed], PRELOAD_BUDGET_MS);
+    await preloadImages([...needed], preloadBudgetMs);
     if (generation !== runId) return;
 
     for (const index of plan.indices) {
@@ -436,12 +314,12 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
         : `${best.region} · joining`,
     );
 
-    await sleep(LANDING_PAUSE_MS);
+    await sleep(landingPauseMs);
     if (generation !== runId) return;
 
     floodGreen();
 
-    await sleep(EXPAND_MS);
+    await sleep(expandMs);
     if (generation !== runId) return;
 
     active = false;

@@ -1,5 +1,6 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG, type ChangeKind } from '../shared/changelog';
+import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { defineStyle } from './style';
 
 /**
@@ -16,51 +17,12 @@ import { defineStyle } from './style';
  * type, the hover and the hash, whatever the hash is this build.
  */
 
-const ITEM_ID = 'kc-changelog-item';
-const MODAL_ID = 'kc-changelog-modal';
-const STYLE_ID = 'kc-changelog-css';
+const ITEM_ID = UI_IDS.changelogItem;
+const MODAL_ID = UI_IDS.changelogModal;
 const CONTAINER_ID = 'menuItemContainer';
 
 /** Material icon name. Matches the game's own outlined set. */
 const ICON = 'description';
-
-const CSS = `
-#${MODAL_ID}-backdrop{position:fixed;inset:0;z-index:100000;background:var(--nm-game-scrim);
-  display:flex;align-items:center;justify-content:center}
-#${MODAL_ID}{width:min(620px,92vw);max-height:80vh;display:flex;flex-direction:column;
-  background:var(--nm-game-bg);border:2px solid var(--nm-game-border);color:var(--nm-game-text);
-  font-family:var(--nm-font-display)}
-#${MODAL_ID} .hd{padding:14px 18px;border-bottom:2px solid var(--nm-game-border);
-  background:var(--nm-game-bg-head)}
-#${MODAL_ID} .hd h2{margin:0;font-size:19px;letter-spacing:.12em;font-weight:normal}
-#${MODAL_ID} .bd{overflow-y:auto;padding:6px 18px 18px}
-/* One clickable row per version; the changes hang below it. */
-#${MODAL_ID} .ver{display:flex;align-items:baseline;gap:10px;cursor:pointer;
-  margin-top:8px;padding:10px 2px;border-bottom:2px solid var(--nm-game-rule);
-  transition:color .12s}
-#${MODAL_ID} .ver:hover{background:var(--nm-game-row-hover)}
-#${MODAL_ID} .ver .caret{flex:0 0 14px;font-size:11px;color:var(--nm-game-text-faint);
-  transition:transform .12s}
-#${MODAL_ID} .ver.open .caret{transform:rotate(90deg)}
-#${MODAL_ID} .ver .v{font-size:17px;letter-spacing:.08em}
-#${MODAL_ID} .ver .d{font-size:12px;color:var(--nm-game-text-faint)}
-#${MODAL_ID} .ver .n{margin-left:auto;font-size:11px;color:var(--nm-game-text-fainter)}
-#${MODAL_ID} ul{list-style:none;margin:0;padding:4px 0 10px}
-#${MODAL_ID} ul[hidden]{display:none}
-#${MODAL_ID} li{display:flex;gap:10px;padding:5px 0;font-size:13px;line-height:1.5;
-  color:var(--nm-game-text-body)}
-/*
- * Uniform tag column. min-width:0 is the load-bearing part: a flex item
- * defaults to min-width:auto, so "CHANGED" refused to shrink into the basis
- * and shoved its own line's text further right than the shorter tags.
- * Centring makes the narrower words sit evenly in the same box.
- */
-#${MODAL_ID} .tag{flex:0 0 74px;min-width:0;text-align:center;
-  font-size:11px;letter-spacing:.06em;padding-top:2px}
-#${MODAL_ID} .tag.added{color:var(--nm-ok)}
-#${MODAL_ID} .tag.fixed{color:var(--nm-tag-fixed)}
-#${MODAL_ID} .tag.changed{color:var(--nm-tag-changed)}
-`;
 
 let closeModal: (() => void) | null = null;
 
@@ -141,7 +103,7 @@ export function showPatchNotes(version: string): void {
 }
 
 function open(expandVersion: string | null): void {
-  defineStyle(STYLE_ID, CSS);
+  defineStyle(STYLE_IDS.changelog, SHEETS.changelog);
 
   const backdrop = document.createElement('div');
   backdrop.id = `${MODAL_ID}-backdrop`;

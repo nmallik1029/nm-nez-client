@@ -1,4 +1,5 @@
 import type { HudCorner } from '../../shared/config';
+import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 import { FrameStats } from './frame-stats';
 
@@ -19,30 +20,7 @@ export interface PerfHudOptions {
 
 const REPAINT_INTERVAL_MS = 250;
 
-const ID = 'kc-perf-hud';
-
-/**
- * A stylesheet rather than the inline styles this used to set from JS.
- *
- * Inline styles beat every rule a theme could write short of `!important`, so
- * the HUD was the one client surface no theme could touch. Corners and
- * visibility are classes for the same reason: nothing here writes to
- * `element.style` any more.
- */
-const CSS = `
-#${ID}{position:fixed;z-index:2147483000;display:none;padding:5px 8px;
-  border-radius:var(--nm-radius-sm);background:var(--nm-hud-bg);color:var(--nm-text);
-  font:600 11px/1.45 var(--nm-font-mono);letter-spacing:.02em;
-  pointer-events:none;white-space:pre;
-  /* Keep the HUD out of page layout entirely. It shouldn't be able to force a
-     reflow of the game UI under it. */
-  contain:layout style paint}
-#${ID}.kc-hud-on{display:block}
-#${ID}.kc-hud-top-left{top:8px;left:8px}
-#${ID}.kc-hud-top-right{top:8px;right:8px}
-#${ID}.kc-hud-bottom-left{bottom:8px;left:8px}
-#${ID}.kc-hud-bottom-right{bottom:8px;right:8px}
-`;
+const ID = UI_IDS.perfHud;
 
 const CORNER_CLASSES: Record<HudCorner, string> = {
   'top-left': 'kc-hud-top-left',
@@ -63,7 +41,7 @@ export interface PerfHud {
 export function createPerfHud(initial: PerfHudOptions): PerfHud {
   const stats = new FrameStats(1000);
 
-  defineStyle(`${ID}-css`, CSS);
+  defineStyle(STYLE_IDS.perfHud, SHEETS.perfHud);
 
   const root = document.createElement('div');
   root.id = ID;

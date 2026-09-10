@@ -6,6 +6,7 @@ import {
   isTeamMode,
   overflowCount,
 } from '../shared/chat';
+import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { defineStyle, toggleStyle } from './style';
 
 /**
@@ -23,21 +24,6 @@ import { defineStyle, toggleStyle } from './style';
  *     you down mid-read. If you've scrolled up, that scroll gets undone and
  *     your position held.
  */
-
-const MERGE_STYLE_ID = 'kc-chat-merge';
-/** Krunker hides the inactive channel. Overriding display shows both. */
-const MERGE_CSS = `#${KRUNKER_DOM_IDS.chatList} > * { display: block !important; }`;
-
-/**
- * The [T]/[M] prefixes. A stylesheet rather than the inline `cssText` this used
- * to set per message, so the colours live with every other colour and a theme
- * can reach them.
- */
-const TAG_CSS = `
-.kc-chat-tag{float:left;margin-right:4px;font-weight:bold}
-.kc-chat-tag.kc-chat-team{color:var(--nm-chat-team)}
-.kc-chat-tag.kc-chat-all{color:var(--nm-chat-all)}
-`;
 
 export interface ChatOptions {
   /** Show both channels with [T]/[M] prefixes. */
@@ -81,7 +67,7 @@ function currentMode(): string | undefined {
 }
 
 function syncMergeStyle(): void {
-  toggleStyle(MERGE_STYLE_ID, MERGE_CSS, options.merged);
+  toggleStyle(STYLE_IDS.chatMerge, SHEETS.chatMerge, options.merged);
 }
 
 function tagMessage(node: HTMLElement, teamMode: boolean): boolean {
@@ -251,7 +237,7 @@ export function attachChat(): boolean {
 
 /** Poll for the chat element, then attach. Gives up instead of spinning forever. */
 export function initChat(initial: ChatOptions): void {
-  defineStyle('kc-chat-tags', TAG_CSS);
+  defineStyle(STYLE_IDS.chatTags, SHEETS.chatTags);
   setChatOptions(initial);
 
   if (attachChat()) return;

@@ -2,6 +2,7 @@ import { ipcRenderer } from 'electron';
 import { BRANDING } from '../shared/branding';
 import { IPC, type UpdateState } from '../shared/ipc';
 import { defineStyle } from './style';
+import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 
 /**
  * The update prompt.
@@ -20,35 +21,6 @@ import { defineStyle } from './style';
  * other overlay here.
  */
 
-const ID = 'kc-update';
-const STYLE_ID = 'kc-update-css';
-
-const CSS = `
-#${ID}{position:fixed;right:18px;bottom:18px;z-index:100001;width:320px;
-  background:var(--nm-game-bg);border:2px solid var(--nm-game-border);
-  font-family:'GameFont',Impact,'Arial Black',sans-serif;
-  color:var(--nm-game-text);box-shadow:0 6px 24px var(--nm-shadow-mid);
-  transform:translateY(12px);opacity:0;transition:opacity .16s,transform .16s}
-#${ID}.kc-in{opacity:1;transform:translateY(0)}
-#${ID} .hd{padding:11px 14px;background:var(--nm-game-bg-head);border-bottom:2px solid var(--nm-game-border);
-  font-size:14px;letter-spacing:.1em}
-#${ID} .bd{padding:13px 14px 14px}
-#${ID} .msg{font-size:13px;line-height:1.5;color:var(--nm-game-text-body)}
-#${ID} .ver{color:var(--nm-ok)}
-#${ID} .row{display:flex;gap:8px;margin-top:13px}
-#${ID} button{flex:1;padding:8px 10px;cursor:pointer;font:inherit;font-size:12px;
-  letter-spacing:.06em;color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
-  border:2px solid var(--nm-upd-btn-border);transition:background .12s}
-#${ID} button:hover{background:var(--nm-upd-btn-bg-hover)}
-#${ID} button.go{background:var(--nm-upd-go-bg);border-color:var(--nm-upd-go-border)}
-#${ID} button.go:hover{background:var(--nm-upd-go-bg-hover)}
-/* Track is always drawn so the panel doesn't resize when the bar appears. */
-#${ID} .bar{height:6px;background:var(--nm-upd-btn-bg);
-  border:1px solid var(--nm-upd-btn-border);margin-top:12px}
-#${ID} .bar i{display:block;height:100%;width:0;background:var(--nm-upd-go-border);
-  transition:width .2s}
-`;
-
 let panel: HTMLDivElement | null = null;
 /** Dismissed for this session; a later state change should not bring it back. */
 let dismissed = false;
@@ -60,10 +32,10 @@ function close(): void {
 
 function ensurePanel(): HTMLDivElement {
   if (panel?.isConnected) return panel;
-  defineStyle(STYLE_ID, CSS);
+  defineStyle(STYLE_IDS.update, SHEETS.update);
 
   const el = document.createElement('div');
-  el.id = ID;
+  el.id = UI_IDS.updatePanel;
   const head = document.createElement('div');
   head.className = 'hd';
   head.textContent = `${BRANDING.productName} UPDATE`;

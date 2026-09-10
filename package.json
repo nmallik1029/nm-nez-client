@@ -21,6 +21,7 @@
     "start": "npm run build && set \"ELECTRON_RUN_AS_NODE=\" && electron .",
     "dist": "npm run verify && npm run build && electron-builder --win --publish never",
     "clean": "rimraf dist out",
+    "tokens:dev": "node scripts/dev-tokens.mjs",
     "postinstall": "node scripts/fetch-electron.mjs",
     "electron:patch": "node scripts/fetch-electron.mjs --force"
   },

@@ -1,5 +1,6 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG } from '../shared/changelog';
+import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { defineStyle } from './style';
 
 /**
@@ -19,23 +20,9 @@ import { defineStyle } from './style';
  * can't disagree with the newest entry in the panel.
  */
 
-const ID = 'nm-hud-version';
-const STYLE_ID = 'nm-hud-version-css';
+const ID = UI_IDS.watermark;
 
 const VERSION = CHANGELOG[0]?.version ?? '';
-
-/*
- * Both blocks match #matchInfo's own rules. The current layout draws a hard
- * four-way outline because the text sits straight on the map. The older one is
- * bigger and goes without.
- */
-const CSS = `
-#${ID}{display:block;color:var(--nm-watermark-text);font-size:12px;margin-bottom:5px;
-  text-shadow:var(--nm-watermark-outline) -1px -1px 0,var(--nm-watermark-outline) 1px -1px 0,
-    var(--nm-watermark-outline) -1px 1px 0,var(--nm-watermark-outline) 1px 1px 0}
-#topLeftMatchData:has(> #matchInfo.topLeftOld) > #${ID}{
-  font-size:15px;margin-bottom:2px;text-shadow:unset}
-`;
 
 /** Returns false only while the HUD stack is not in the document yet. */
 function place(): boolean {
@@ -44,7 +31,7 @@ function place(): boolean {
   if (!row || !info || info.parentElement !== row) return false;
   if (document.getElementById(ID)) return true;
 
-  defineStyle(STYLE_ID, CSS);
+  defineStyle(STYLE_IDS.watermark, SHEETS.watermark);
   const line = document.createElement('div');
   line.id = ID;
   line.textContent = VERSION === '' ? BRANDING.productName : `${BRANDING.productName} ${VERSION}`;

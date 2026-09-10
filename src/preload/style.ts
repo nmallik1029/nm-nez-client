@@ -1,4 +1,4 @@
-import { PALETTE_CSS } from '../shared/palette';
+import { STYLE_IDS, TOKENS_CSS } from '../shared/ui';
 
 /**
  * One way to get a stylesheet into the page.
@@ -9,19 +9,17 @@ import { PALETTE_CSS } from '../shared/palette';
  * the active theme in tree order and made them the one thing a theme couldn't
  * restyle. Going through here means the cascade has a single shape:
  *
- *   head: [palette] [component styles, in definition order] ... [active theme]
+ *   head: [tokens] [component styles, in definition order] ... [active theme]
  *
  * The theme is re-appended on every change (`themes.ts`) so it stays last and
  * wins on equal specificity. That ordering is what lets a theme override a
- * palette token, so it is worth not breaking.
+ * token, so it is worth not breaking.
  *
  * A preload runs at document-start, where `documentElement` exists but `head`
  * often does not yet. Anything defined before then is queued and flushed in
  * definition order once the document is ready, rather than being dropped or
  * landing somewhere that reorders it.
  */
-
-const PALETTE_ID = 'nm-palette';
 
 const nodes = new Map<string, HTMLStyleElement>();
 
@@ -88,13 +86,13 @@ export function toggleStyle(id: string, css: string, on: boolean): void {
 }
 
 /**
- * Put the palette in first, so every token is resolvable by the time any
+ * Put the tokens in first, so every `var()` is resolvable by the time any
  * component stylesheet lands.
  *
  * Called at module scope from the preload entry rather than from inside its
  * async bootstrap, which starts with an `await` and so could otherwise resume
  * after another surface had already defined its styles.
  */
-export function installPalette(): void {
-  defineStyle(PALETTE_ID, PALETTE_CSS);
+export function installTokens(): void {
+  defineStyle(STYLE_IDS.tokens, TOKENS_CSS);
 }

@@ -1,3 +1,4 @@
+import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 
 /**
@@ -20,17 +21,6 @@ const GAP_PX = 8;
  * letter-spacing compared to a normal UI font, and it has no real weight axis,
  * so font-weight buys nothing here and risks a synthesised bold.
  */
-const CSS = `
-#kc-tip{position:fixed;z-index:2147483400;max-width:300px;padding:7px 10px;
-  border-radius:var(--nm-radius-sm);background:var(--nm-popover-bg);
-  border:1px solid var(--nm-popover-border);color:var(--nm-popover-text);
-  font-family:var(--nm-font);font-size:13px;line-height:1.55;
-  white-space:pre-line;
-  pointer-events:none;opacity:0;transition:opacity .1s;
-  box-shadow:0 6px 18px var(--nm-shadow-mid)}
-#kc-tip.kc-tip-show{opacity:1}
-.kc-tip-target{cursor:help}
-`;
 
 let tip: HTMLDivElement | null = null;
 let showTimer: ReturnType<typeof setTimeout> | null = null;
@@ -39,10 +29,10 @@ function ensure(): HTMLDivElement | null {
   if (tip?.isConnected) return tip;
   if (!document.documentElement) return null;
 
-  defineStyle('kc-tip-style', CSS);
+  defineStyle(STYLE_IDS.tooltip, SHEETS.tooltip);
 
   tip = document.createElement('div');
-  tip.id = 'kc-tip';
+  tip.id = UI_IDS.tooltip;
 
   document.documentElement.append(tip);
   return tip;
