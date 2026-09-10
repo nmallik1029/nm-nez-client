@@ -20,6 +20,16 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     date: '2026-09-10',
     changes: [
       {
+        kind: 'fixed',
+        text: 'The NM/NEZ look no longer switches itself off in a comp lobby. Every HUD rule was excluding Krunker’s comp menu state along with its main menu, so hosting or joining a comp game dropped the theme until the round started. It now covers a match, the comp lobby, spectate and the end screen — everything but the main menu.',
+      },
+    ],
+  },
+  {
+    version: '0.1.31',
+    date: '2026-09-10',
+    changes: [
+      {
         kind: 'added',
         text: 'A Scripts button in the top bar, next to Settings. It opens an empty window for now — quality-of-life and fun scripts go in there as they are written.',
       },
