@@ -873,7 +873,13 @@ const menuSkin = `
  * In LAYOUT pixels: the label measures about 85 on screen at this size, and
  * the whole UI is scaled 0.869, so it needs ~98 of these.
  */
-#inviteButton{min-width:104px !important;text-align:right !important}
+/* justify-content, not text-align. Krunker makes this button a flex
+   container, and in one of those the label is an anonymous flex item that
+   text-align cannot move — it is applied and simply does nothing. Measured
+   with the alignment "set": the glyphs sat 39.6px short of the box's right
+   edge, so the gap to the divider was 50px against Join's 10.4. */
+#inviteButton{min-width:104px !important;
+  justify-content:flex-end !important;text-align:right !important}
 /* Clicking Invite swaps its label to "Copied URL" and back a moment later,
    and the row twitched each way.
    Measured on the running client rather than guessed at, twice: the font

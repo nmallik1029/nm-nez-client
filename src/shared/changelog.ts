@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.23',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Invite really is the same distance from the divider as Join now. 0.1.22 claimed to even them up and did not.',
+      },
+    ],
+  },
+  {
     version: '0.1.22',
     date: '2026-09-10',
     changes: [
