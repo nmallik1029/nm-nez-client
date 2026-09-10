@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.24',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The client is set in Krunker’s own font throughout. The menu labels, the settings rows and the performance readout were all in a second typeface, which made the whole thing look like two programs stapled together.',
+      },
+    ],
+  },
+  {
     version: '0.1.23',
     date: '2026-09-10',
     changes: [
