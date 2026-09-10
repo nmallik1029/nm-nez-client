@@ -69,10 +69,22 @@ export interface FeatureConfig {
   betterChat: boolean;
   /**
    * Hide the game's own menu promos: battle pass and daily spin rows, the
-   * Twitch drops overlay, the top-corner slots. Not the same thing as
-   * hideAdContainers, since none of this is third-party advertising.
+   * Twitch drops overlay, the top-corner slots. The season logo, the signup
+   * rewards button, the register-now pitch and the end-of-match "Join
+   * Krunker today" banner are taken out of the document rather than hidden.
+   * Not the same thing as hideAdContainers, since none of this is
+   * third-party advertising.
    */
   hideMenuPromos: boolean;
+  /**
+   * Restyle Krunker's main menu: one accent instead of five button colours, a
+   * gradient backdrop instead of a text shadow on every label, and the frame
+   * rate and ping set as numbers rather than prose.
+   *
+   * Paint only. It never moves anything the game lays out, so turning it off
+   * puts the menu back exactly as Krunker ships it.
+   */
+  menuSkin: boolean;
   /**
    * Messages to keep. Krunker prunes old ones hard, so this puts them back and
    * trims to this number instead. 0 leaves the game's behaviour alone.
@@ -228,6 +240,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     userscripts: false,
     betterChat: true,
     hideMenuPromos: true,
+    menuSkin: true,
     chatHistoryLimit: 200,
     activeTheme: '',
   },

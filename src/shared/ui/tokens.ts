@@ -467,6 +467,98 @@ const LAYER = `
 `;
 
 /**
+ * The main-menu skin.
+ *
+ * Its own group rather than an extension of `--nm-kr-*`, and the distinction
+ * matters: that group exists to *match* Krunker's greys because we are drawing
+ * onto its surfaces. This one *replaces* how the menu looks, which is the
+ * opposite intent, and folding the two together would leave every future edit
+ * ambiguous about which was meant.
+ *
+ * The neutrals are warm on purpose — hue around 38 degrees, chroma barely off
+ * zero. The menu renders over a live map, and Krunker's maps are sand, brick
+ * and rust far more often than they are anything cool; a neutral mixed toward
+ * blue reads as a system dialog dropped on top of the game. Bone rather than
+ * pure white for the same reason.
+ *
+ * One accent. Status colours are not it: the frame counter already carries
+ * Krunker's own green-to-red, and that is semantic, so the skin leaves it be.
+ */
+const MENU = `
+  --nm-menu-ink:#0c0b0a;
+  --nm-menu-line:#2e2a23;
+  --nm-menu-line-hi:#4a4238;
+  --nm-menu-bone:#f2eee6;
+  --nm-menu-bone-hi:#fff;
+  --nm-menu-ash:#9a9285;
+  --nm-menu-ash-dim:#6e675d;
+  --nm-menu-ember:#e4552e;
+  --nm-menu-fill:rgba(12,11,10,.42);
+  --nm-menu-wash:rgba(242,238,230,.09);
+  --nm-menu-ember-wash:rgba(228,85,46,.12);
+`;
+
+/**
+ * The backdrop's four stops.
+ *
+ * A ladder rather than one value because the three gradients meet in the
+ * corners: the left edge has to fade to nothing by the time it reaches the
+ * centre while the bottom is still near-opaque under the play row. Collapsing
+ * them puts a visible seam diagonally across the screen.
+ */
+const MENU_SCRIM = `
+  --nm-menu-scrim:rgba(12,11,10,.94);
+  --nm-menu-scrim-mid:rgba(12,11,10,.7);
+  --nm-menu-scrim-soft:rgba(12,11,10,.5);
+  --nm-menu-scrim-0:rgba(12,11,10,0);
+  --nm-menu-cta-shadow:rgba(12,11,10,.9);
+`;
+
+/**
+ * The menu's own face and its one bespoke measurement.
+ *
+ * Bahnschrift is Microsoft's DIN 1451 — road-signage lettering, which is the
+ * right register for labels read at a glance and never studied. It ships with
+ * Windows 10 and 11 and this client is Windows-only, so there is no download
+ * and no fallback flash. Krunker's own GameFont is kept for headings and
+ * buttons; replacing it is what would stop this looking like Krunker.
+ *
+ * The tracking step is here rather than in `TYPE_DETAIL` because nothing else
+ * in the client is set this wide — it belongs to one label, and putting it on
+ * the shared scale would invite someone to reach for it elsewhere.
+ */
+const MENU_TYPE = `
+  --nm-menu-font:'Bahnschrift','DIN Alternate','Segoe UI',system-ui,sans-serif;
+  --nm-menu-track-cta:.42em;
+`;
+
+/**
+ * The backdrop sits below every layer of the menu it grounds.
+ *
+ * Negative rather than zero. Krunker's menu mixes positioned and in-flow
+ * elements, and a positioned child at z-index 0 paints above the in-flow ones
+ * — which would put the scrim over the nav instead of behind it. The negative
+ * layer paints after the parent's background and before all of its content,
+ * which is exactly what a backdrop is. `#menuHolder` sets its own z-index, so
+ * this cannot escape below the menu and swallow the game.
+ */
+const MENU_LAYER = `
+  --nm-menu-z-scrim:-1;
+`;
+
+/**
+ * How long the click-to-play label takes to breathe.
+ *
+ * Krunker pulses it at 0.8s on a `scale()`, which is the single loudest thing
+ * on an otherwise still screen. This is slow enough to read as ambient rather
+ * than as something demanding a click, and it drives opacity instead of size
+ * so it never nudges the layout around it.
+ */
+const MENU_MOTION = `
+  --nm-menu-breathe:3.4s;
+`;
+
+/**
  * Every token as one `:root` block.
  *
  * Injected first by `preload/style.ts` for the game window, and interpolated
@@ -486,6 +578,11 @@ export const TOKENS_CSS = `:root{${[
   SCAN,
   UPDATE,
   QUEUE_WINDOW,
+  MENU,
+  MENU_SCRIM,
+  MENU_TYPE,
+  MENU_LAYER,
+  MENU_MOTION,
   SHADOW,
   FONT,
   TYPE_SCALE,

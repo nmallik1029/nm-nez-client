@@ -33,6 +33,13 @@ export const UI_IDS = {
   altManagerButton: 'kc-alt-manager-button',
   /** The update prompt, bottom right. */
   updatePanel: 'kc-update',
+  /**
+   * Backdrop for the menu skin: one element, three gradients, behind the whole
+   * of Krunker's menu. It exists because the game draws its menu straight onto
+   * a live 3D render, and every label pays for that with a twelve-layer text
+   * shadow.
+   */
+  menuScrim: 'kc-menu-scrim',
 } as const;
 
 /**
@@ -59,4 +66,5 @@ export const STYLE_IDS = {
   chatTags: 'kc-chat-tags',
   chatMerge: 'kc-chat-merge',
   update: 'kc-update-css',
+  menuSkin: 'kc-menu-skin-css',
 } as const;

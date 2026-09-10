@@ -649,6 +649,182 @@ const update = `
   background:var(--nm-upd-go-border);transition:width var(--nm-slow)}
 `;
 
+/**
+ * The main-menu skin.
+ *
+ * ONE RULE, and breaking it is how this got shipped broken the first time:
+ * every declaration here is paint. Colour, background, border, font, tracking,
+ * case, shadow. Nothing in this sheet may set position, top/right/bottom/left,
+ * width, height or display on a container Krunker lays out.
+ *
+ * The reason is concrete. `#subLogoButtons` is absolutely positioned by the
+ * game and holds the match info AND all five play buttons; overriding its
+ * left/right/width to make the row span the frame deleted the play row
+ * outright. The buttons are the point of the screen. A skin is not worth that,
+ * so the skin restyles boxes where they are and leaves the boxes alone.
+ *
+ * Hiding a leaf (the rewards button, the ping icon) is fine — that is what the
+ * promo hiding already does. Reversing the two lines inside the class card is
+ * fine too: that element is already a flex column, so the order flips without
+ * the box changing.
+ *
+ * Specificity: Krunker styles its menu by ID and marks the button colours
+ * `!important`, so a bare class rule here silently never applies. Anything
+ * that has to win says so, and leans on an ID selector to outrank the game's
+ * own `!important` rather than hoping cascade order is enough.
+ *
+ * Selectors were read off the running client, not guessed. The menu's newer
+ * parts are Svelte-compiled and their classes carry a per-build hash
+ * (`menuItem svelte-fgmdj8`), so nothing here matches a hash — only ids and
+ * the stable half of a class name.
+ */
+const menuSkin = `
+/* One node, three gradients, no hit-testing, painted below the whole menu. */
+#${UI_IDS.menuScrim}{position:absolute;inset:0;pointer-events:none;
+  z-index:var(--nm-menu-z-scrim);
+  background-image:
+    linear-gradient(180deg,var(--nm-menu-scrim),var(--nm-menu-scrim-0)),
+    linear-gradient(90deg,var(--nm-menu-scrim),var(--nm-menu-scrim-soft) 46%,var(--nm-menu-scrim-0)),
+    linear-gradient(0deg,var(--nm-menu-scrim) 38%,var(--nm-menu-scrim-mid) 70%,var(--nm-menu-scrim-0));
+  background-repeat:no-repeat;
+  background-size:100% 17%,21% 100%,100% 40%;
+  background-position:top,left,bottom}
+
+/* ---- top bar ---- */
+#signupRewardsButton{display:none !important}
+#playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  text-shadow:none !important;transition:color var(--nm-fast)}
+#playerHeaderEl .ph-item:hover .ph-label,#playerHeaderEl .nav-item:hover .nav-label{
+  color:var(--nm-menu-bone) !important}
+/* Icon text is the ligature name, so uppercase must never reach it. */
+#playerHeaderEl .ph-icon,#playerHeaderEl .nav-mat-icon{text-transform:none !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+#playerHeaderEl .verticalSeparator{background:var(--nm-menu-line-hi) !important;opacity:1 !important}
+
+/* ---- left rail ---- */
+/* An inset shadow rather than a positioned pseudo-element: same 2px bar, but
+   it needs no containing block, so nothing here has to touch position. */
+#menuItemContainer .menuItem{transition:background var(--nm-fast),box-shadow var(--nm-fast)}
+#menuItemContainer .menuItem:hover{background:var(--nm-menu-wash) !important;
+  box-shadow:inset 2px 0 0 var(--nm-menu-ember)}
+#menuItemContainer .menuItemTitle{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-md) !important;letter-spacing:var(--nm-track-xl) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  text-shadow:none !important;transition:color var(--nm-fast)}
+#menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone) !important}
+#menuItemContainer .menuItemIcon{text-transform:none !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+#menuItemContainer .sidebarDivider{background:var(--nm-menu-line) !important;opacity:1 !important}
+
+/* ---- click to play ---- */
+/* Krunker pulses this on scale() at 36px. Wide tracking and an opacity
+   breathe say the same thing without being the loudest object on screen. */
+#instructions{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xl) !important;
+  letter-spacing:var(--nm-menu-track-cta) !important;text-indent:var(--nm-menu-track-cta) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
+  text-shadow:0 2px 18px var(--nm-menu-cta-shadow) !important;
+  animation:kc-menu-breathe var(--nm-menu-breathe) ease-in-out infinite !important}
+@keyframes kc-menu-breathe{0%,100%{opacity:.8}50%{opacity:1}}
+
+/* ---- match info ---- */
+/* "Now Playing:" is a bare text node with no element of its own, so zeroing
+   the parent and restoring the child is the only way to drop just that half. */
+#mapInfoHld{font-size:0 !important}
+#mapInfoHld #mapInfo{font-family:var(--nm-font-display) !important;
+  font-size:var(--nm-fs-7xl) !important;color:var(--nm-menu-bone) !important;
+  text-shadow:none !important;letter-spacing:var(--nm-track-xs) !important}
+#menuRegionLabel{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
+  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+#matchInfoHolder .match-action-btn{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-3xl) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  text-shadow:none !important;transition:color var(--nm-fast)}
+#matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone) !important}
+#matchInfoHolder .match-action-sep{color:var(--nm-menu-line-hi) !important;text-shadow:none !important}
+
+/* ---- telemetry ---- */
+/* Same trick as the map name: the unit is a text node beside the numeral, so
+   the small size goes on the parent and the numeral takes its own back.
+   #menuFPS keeps the colour Krunker sets inline on it, deliberately — that is
+   already a green-to-red threshold and it is the one status colour on this
+   screen worth reading. */
+#menuFPSDisplay,#menuPingDisplay{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-3xl) !important;
+  text-transform:uppercase !important;color:var(--nm-menu-ash-dim) !important;
+  text-shadow:none !important}
+#menuFPS,#menuPingText{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-7xl) !important;letter-spacing:var(--nm-track-xs) !important;
+  font-variant-numeric:tabular-nums;text-shadow:none !important}
+#menuPingText{color:var(--nm-menu-bone) !important}
+#menuPingText::after{content:' MS';font-size:var(--nm-fs-2xs);
+  letter-spacing:var(--nm-track-3xl);color:var(--nm-menu-ash-dim)}
+#menuPingIcon{display:none !important}
+
+/* ---- play row: one primary, one accent, three quiet ---- */
+/* Krunker ships five buttons in five hues, two of them the same red for
+   different actions, and nothing marking the one you press every time. */
+#subLogoButtons > .button{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+  border-radius:0 !important;background:var(--nm-menu-fill) !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
+#subLogoButtons > .button:hover{transform:none !important;color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+#subLogoButtons > .button:active{transform:none !important}
+#subLogoButtons > #menuBtnQuickMatch.button{background:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;color:var(--nm-menu-ink) !important}
+#subLogoButtons > #menuBtnQuickMatch.button:hover{background:var(--nm-menu-bone-hi) !important;
+  border-color:var(--nm-menu-bone-hi) !important;color:var(--nm-menu-ink) !important}
+#subLogoButtons > #menuBtnRanked.button{border-color:var(--nm-menu-ember) !important;
+  color:var(--nm-menu-ember) !important;background:var(--nm-menu-ember-wash) !important}
+#subLogoButtons > #menuBtnRanked.button:hover{background:var(--nm-menu-ember) !important;
+  border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important}
+#menuBtnRanked .menuItemRankedLabel{background:var(--nm-menu-ember) !important;
+  color:var(--nm-menu-ink) !important;border-radius:0 !important;transform:none !important;
+  animation:none !important;font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-lg) !important;
+  font-weight:400 !important;text-shadow:none !important}
+
+/* ---- class card ---- */
+/* The weapon is the headline and the class is its subtitle, so the class goes
+   under it. Already a flex column, so reversing changes order and nothing else. */
+#menuClassContainerInfo{flex-direction:column-reverse !important}
+#menuClassName{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
+  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+#menuClassSubtext{color:var(--nm-menu-bone) !important;text-shadow:none !important}
+#menuClassContainer .button{font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-2xl) !important;letter-spacing:var(--nm-track-xl) !important;
+  text-transform:uppercase !important;border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+  border-radius:0 !important;background:var(--nm-menu-fill) !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
+#menuClassContainer .button:hover{color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important;
+  filter:none !important;transform:none !important}
+#menuClassContainer .button .material-icons{text-transform:none !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+
+/* ---- alt manager, once it has moved into the header ---- */
+/* menu-buttons.ts copies Krunker's 449px button rule onto this element as an
+   inline style so it matches the class card. In the header that is absurd, and
+   an inline width only loses to !important. */
+.headerBarRight #${UI_IDS.altManagerButton}{width:auto !important;height:auto !important;
+  margin:0 0 0 var(--nm-gap-lg) !important;padding:7px 14px !important;
+  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
+  letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
+  line-height:1 !important;border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
+  border-radius:0 !important;background:var(--nm-menu-fill) !important;
+  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  transform:none !important}
+.headerBarRight #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important;
+  transform:none !important;filter:none !important}
+`;
+
 export const SHEETS = {
   toast,
   tooltip,
@@ -664,4 +840,5 @@ export const SHEETS = {
   sectionNav,
   scan,
   update,
+  menuSkin,
 } as const;
