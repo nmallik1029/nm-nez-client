@@ -23,9 +23,13 @@ import { defineStyle } from '../style';
  *    is found at runtime by walking up from the holder. If nothing scrollable
  *    turns up, the nav simply doesn't appear — a settings panel with no index
  *    is the status quo, a broken one is not.
- *  - The nav is a sibling of the scroll container, not a child of it. Inside,
- *    it would scroll away with the content; outside, `position:absolute`
- *    against a `position:relative` parent pins it with no scroll handler.
+ *  - The nav goes INSIDE `#settHolder`, never against the scroller's parent.
+ *    The scroller can be several levels up — in the live game it resolved to a
+ *    page-level wrapper, and positioning against that parent put the nav in
+ *    the top-left corner of the page, over Krunker's own menu. A child of the
+ *    holder cannot land outside the settings window whatever the scroller
+ *    turns out to be. `position: sticky` still pins it, because sticky
+ *    resolves against the nearest scrolling ancestor rather than the parent.
  */
 
 const HOLDER_ID = 'settHolder';
@@ -111,8 +115,7 @@ export function createSectionNav(): SectionNav {
     measuredHeight = 0;
     if (rafId !== null) cancelAnimationFrame(rafId);
     rafId = null;
-    scroller?.classList.remove('kc-has-sectnav');
-    host?.classList.remove('kc-sectnav-host');
+    host?.classList.remove('kc-has-sectnav');
     scroller = null;
     host = null;
     holderEl = null;
@@ -205,16 +208,24 @@ export function createSectionNav(): SectionNav {
 
     detach();
     scroller = found;
-
     holderEl = holder;
-    host = scroller.parentElement;
-    if (!host) {
-      scroller = null;
-      holderEl = null;
-      return;
-    }
-    host.classList.add('kc-sectnav-host');
-    scroller.classList.add('kc-has-sectnav');
+    host = holder;
+
+    /**
+     * Mounted INSIDE the holder, never against the scroller's parent.
+     *
+     * The scroller can be an ancestor several levels up — in the live game it
+     * resolved to a page-level wrapper — and positioning against that parent
+     * put the whole nav in the top-left corner of the page, on top of
+     * Krunker's own menu. A child of the holder cannot land outside the
+     * settings window whatever the scroller turns out to be, which is the
+     * property worth having when the surrounding DOM is not ours.
+     *
+     * Pinning still works: `position: sticky` resolves against the nearest
+     * scrolling ancestor, not against the parent, so it holds whether the
+     * holder scrolls itself or something above it does.
+     */
+    holder.classList.add('kc-has-sectnav');
 
     nav = document.createElement('div');
     nav.id = UI_IDS.sectionNav;
@@ -232,7 +243,7 @@ export function createSectionNav(): SectionNav {
       return item;
     });
 
-    host.insertBefore(nav, scroller);
+    holder.insertBefore(nav, holder.firstChild);
 
     tops = measure(headers);
     measuredHeight = scroller.scrollHeight;

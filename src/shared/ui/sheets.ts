@@ -348,26 +348,55 @@ const settings = `
  * appear to shift.
  */
 const sectionNav = `
-.kc-sectnav-host{position:relative}
-.kc-has-sectnav{padding-left:180px}
-#${UI_IDS.sectionNav}{position:absolute;left:0;top:0;bottom:0;width:168px;
-  overflow-y:auto;overscroll-behavior:contain;padding:6px 8px 6px 0;
-  box-sizing:border-box;
+/* The holder reserves a left column; the nav floats back into it. Padding
+   rather than a flex or grid rewrite, because the rows inside are Krunker's
+   and rearranging their container is how this breaks on their next update. */
+.kc-has-sectnav{padding-left:190px !important}
+#${UI_IDS.sectionNav}{position:sticky;top:0;float:left;
+  width:172px;margin-left:-190px;
+  max-height:78vh;overflow-y:auto;overscroll-behavior:contain;
+  padding:2px 12px 2px 0;box-sizing:border-box;
   border-right:var(--nm-bw) solid var(--nm-border);
-  font-family:var(--nm-font);font-size:var(--nm-fs-md)}
-/* Krunker's own scrollbars are heavy; this one should read as a rule, not a
-   second piece of chrome next to the panel's real scrollbar. */
+  font-family:var(--nm-font);font-size:var(--nm-fs-md);
+  /* Above the rows, so a wide row can't paint over the index. */
+  z-index:var(--nm-z-raise)}
+/* No scrollbar of its own: one panel should not show two. */
 #${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
-.kc-sectnav-item{padding:7px 10px;margin-bottom:2px;border-radius:var(--nm-radius-sm);
+.kc-sectnav-item{padding:8px 12px;margin:0 0 1px;border-radius:var(--nm-radius-sm);
   color:var(--nm-text-dim);cursor:pointer;white-space:nowrap;overflow:hidden;
-  text-overflow:ellipsis;
+  text-overflow:ellipsis;line-height:var(--nm-lh-tight);
   border-left:var(--nm-bw-thick) solid transparent;
   transition:color var(--nm-fast),background var(--nm-fast)}
 .kc-sectnav-item:hover{color:var(--nm-text-mid);background:var(--nm-surface)}
 /* The marker is a left rule rather than a filled pill: the rows to the right
-   are already busy, and a solid block here competes with them. */
+   are already busy, and a solid block here would compete with them. */
 .kc-sectnav-item.kc-sectnav-on{color:var(--nm-text-hi);background:var(--nm-surface);
   border-left-color:var(--nm-accent)}
+
+/*
+ * Quieter settings rows.
+ *
+ * Krunker draws every category as a raised card with a heavy header bar and
+ * boxes every control, which at this density reads as noise — the screenshot
+ * that prompted this has eleven outlined boxes stacked down one column. This
+ * flattens the cards to a hairline rule per section and lets the rows breathe,
+ * without touching their structure: same elements, same classes, same
+ * behaviour, so the game's own controls keep working.
+ */
+.kc-has-sectnav .setHed{background:none !important;border:0 !important;
+  box-shadow:none !important;
+  padding:22px 2px 10px !important;margin:0 !important;
+  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-xs) !important;
+  color:var(--nm-text-hi) !important;
+  border-bottom:var(--nm-bw) solid var(--nm-border) !important}
+.kc-has-sectnav .setBodH{background:none !important;border:0 !important;
+  box-shadow:none !important;padding:2px 0 !important;margin:0 !important}
+.kc-has-sectnav .setting{border:0 !important;background:none !important;
+  padding:9px 2px !important}
+/* Zebra instead of borders: it separates rows without adding another outline. */
+.kc-has-sectnav .setBodH > .setting:nth-child(even){background:var(--nm-surface) !important;
+  border-radius:var(--nm-radius-sm) !important;padding-left:10px !important;
+  padding-right:10px !important}
 `;
 
 /**
