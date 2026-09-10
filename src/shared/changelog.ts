@@ -41,7 +41,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'fixed',
-        text: 'The settings window is as tall as whatever section you are on, instead of a fixed height with a screenful of nothing under it. It grows downward from the same place, so nothing shifts as you move between sections.',
+        text: 'The settings window is as tall as whatever section you are on, instead of a fixed height with a screenful of nothing under it, and it stays centred on screen.',
       },
     ],
   },

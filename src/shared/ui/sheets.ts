@@ -357,22 +357,16 @@ const sectionNav = `
    earlier attempt at exactly this. */
 #settHolder.kc-has-sectnav{position:relative !important;padding-left:190px !important}
 /*
- * Anchor the settings window by its TOP rather than its middle.
+ * The window stays centred, and stays as tall as whatever section is on it.
  *
- * Krunker centres it with translate(-50%,-50%), so its height changing moves
- * it — and with one section on screen at a time the height changes on every
- * click. Measured, the window travelled 308px between sections and the index
- * went with it.
- *
- * A floor under the height was the first answer and it was the wrong one: it
- * stopped the jump by leaving a screenful of dead space under a short section.
- * Growing downward from a fixed top costs nothing and does the same job.
- *
- * Scoped with :has() so only the settings behave this way; the loadout and
- * customize windows stay centred.
+ * Two earlier attempts at the same problem, both worse: a floor under the
+ * height stopped it moving by leaving a screenful of dead space under a short
+ * section, and anchoring the top stopped that but left the window sitting
+ * high on the screen. Centred and content-sized is what was wanted; the index
+ * is placed against the window and re-placed whenever it resizes, so it
+ * follows rather than drifting.
  */
-#menuWindow:has(#settHolder.kc-has-sectnav){top:7% !important;
-  transform:translate(-50%,0) !important;max-height:86vh !important}
+#menuWindow:has(#settHolder.kc-has-sectnav){max-height:86vh !important}
 /*
  * Held in place by a transform, set from script each frame.
  *
@@ -1000,8 +994,9 @@ const krunkerWindows = `
 #windowHolder.popupWin,#popupBack,#guidePopupH{background:var(--nm-menu-scrim) !important}
 /* Krunker pads the window 20px all round. On the right that left the row
    hairlines stopping short of the edge with the scrollbar just past them,
-   which reads as a black bar rather than as margin. */
-#menuWindow{padding-right:8px !important}
+   which reads as a black bar rather than as margin. Zero, so the rows run to
+   the scrollbar and there is no strip left to notice. */
+#menuWindow{padding-right:0 !important}
 #menuWindow,#menuWindow.dark,#popupContent,#policePopC,#guidePopup,.kc-menu-modal{
   background:var(--nm-menu-panel) !important;
   border:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
