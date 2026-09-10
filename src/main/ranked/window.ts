@@ -111,7 +111,7 @@ html,body{height:100%;overflow:hidden;-webkit-user-select:none;
 </style></head>
 <body>
   <div class="frame" id="frame">
-    <div class="head"><span class="t">LOCK TF IN</span></div>
+    <div class="head"><span class="t">Ranked Queue</span></div>
     <div class="body">
       <div id="timer">00:00:00</div>
       <button id="go">START QUEUE</button>

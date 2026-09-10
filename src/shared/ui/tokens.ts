@@ -96,6 +96,15 @@ const POPOVER = `
   --nm-toast-bg:rgba(12,13,16,.9);
   --nm-toast-border:#2b2e36;
   --nm-hud-bg:rgba(10,11,13,.72);
+  /*
+   * The hardpoint count, and the one place the client uses amber.
+   *
+   * Its own token rather than --nm-warn, which is a near neighbour: that one
+   * means something is wrong, and a count of how many enemies are on the
+   * point does not. Sharing it would recolour this the next time a warning
+   * gets retuned. Both clients this feature came from use the same value.
+   */
+  --nm-hp-count:#ffc107;
 `;
 
 /**

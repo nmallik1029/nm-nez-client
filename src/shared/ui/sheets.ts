@@ -163,7 +163,7 @@ const hardpointCounter = `
 #${UI_IDS.hardpointCounter} .greyInner{display:flex;align-items:center;gap:6px}
 #${UI_IDS.hardpointCounter} .lbl{color:var(--nm-text);font-size:var(--nm-fs-xs);
   letter-spacing:var(--nm-track-md);text-transform:uppercase}
-#${UI_IDS.hardpointCounter} .val{color:var(--nm-accent);font-size:var(--nm-fs-5xl);
+#${UI_IDS.hardpointCounter} .val{color:var(--nm-hp-count);font-size:var(--nm-fs-5xl);
   font-weight:bold;min-width:14px;text-align:center;
   /* Tabular so 1 and 4 are the same width; the strip beside it must not
      shuffle every time the count changes. */
