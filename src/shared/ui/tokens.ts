@@ -556,6 +556,7 @@ const MENU_LAYER = `
  */
 const MENU_MOTION = `
   --nm-menu-breathe:3.4s;
+  --nm-menu-arrow:.34s;
 `;
 
 /**
