@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.33',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'added',
+        text: 'Hardpoint enemy counter: how many of them are standing on the point, beside the other counters top right. Nothing in the game reports that, so it is worked out from how fast their score is climbing — Hardpoint pays 10 a second for each player on the point. Hardpoint only, and there is a switch for it in Settings under Interface.',
+      },
+      {
+        kind: 'added',
+        text: 'Friends and clans can have their own colours on the leaderboard and the player list. Names go in src/shared/highlights.ts with a colour each and an optional bold; clans go in by tag. A friend keeps their own colour and their clan tag keeps the clan’s, so someone who is both shows both.',
+      },
+    ],
+  },
+  {
     version: '0.1.32',
     date: '2026-09-10',
     changes: [

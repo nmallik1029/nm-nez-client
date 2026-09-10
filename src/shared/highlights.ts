@@ -115,12 +115,10 @@ export function highlightFor(
 /** Friends, by in-game name. */
 export const FRIENDS: readonly FriendHighlight[] = [
   // { name: 'illegal', color: '#48eaff', isBolded: true },
-  { name: 'iliegai', color: '#578cf0', isBolded: true},
   { name: 'drainciity', color: '#c24658'}
 ];
 
 /** Clans, by tag, without the brackets Krunker draws around them. */
 export const CLANS: readonly ClanHighlight[] = [
   // { tag: 'Fame', color: '#e4552e', isBolded: true },
-  { tag: 'Fame', color: '#ff0000', isBolded: true }
 ];
