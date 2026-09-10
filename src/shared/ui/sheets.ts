@@ -73,8 +73,12 @@ const perfHud = `
   border-radius:var(--nm-radius-sm);background:var(--nm-hud-bg);color:var(--nm-text);
   /* Longhands, not the font shorthand: a raw line-height hidden in a shorthand
      is the one place the token guard cannot see it. */
-  font-weight:600;font-size:var(--nm-fs-2xs);line-height:var(--nm-lh-mono);
-  font-family:var(--nm-font-mono);letter-spacing:var(--nm-track-xs);
+  font-weight:600;font-size:var(--nm-fs-2xs);line-height:var(--nm-lh-hud);
+  font-family:var(--nm-font);letter-spacing:var(--nm-track-xs);
+  /* GameFont is not a monospace face, so ask for even digits explicitly.
+     Without this the numbers change width as they count and the box, being
+     pinned to a corner, twitches on its free edge every frame. */
+  font-variant-numeric:tabular-nums;
   pointer-events:none;white-space:pre;
   /* Keep the HUD out of page layout entirely. It shouldn't be able to force a
      reflow of the game UI under it. */
