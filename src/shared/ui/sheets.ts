@@ -720,6 +720,20 @@ const menuSkin = `
 #playerHeaderEl .ph-icon,#playerHeaderEl .nav-mat-icon{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 #playerHeaderEl .verticalSeparator{background:var(--nm-menu-line-hi) !important;opacity:1 !important}
+/* Notifications, and the separators that only existed to fence it off. */
+#playerHeaderEl .headerBarRight [class*="nav-notif-section"],
+#playerHeaderEl .headerBarRight .verticalSeparator{display:none !important}
+/* Settings and More Krunker are labels now, so their icons go with them. One
+   rule rather than matching ligature text per item. */
+#playerHeaderEl .headerBarRight [class*="nav-mat-icon"]{display:none !important}
+/* Krunker draws a box behind a hovered nav item. The label is the affordance;
+   the box makes these read as buttons next to the plain Changelog link. */
+#playerHeaderEl .headerBarRight [class*="nav-item"]{background:none !important}
+#playerHeaderEl .headerBarRight [class*="nav-item"]:hover{background:none !important;
+  box-shadow:none !important;transform:none !important}
+/* The gap either side of the divider has to be the divider's own, or the two
+   buttons sit at different distances from it. */
+#signedOutHeaderBar [class*="verticalSeparator"]{margin:0 14px !important}
 
 /* ---- left rail ---- */
 /* An inset shadow rather than a positioned pseudo-element: same 2px bar, but
@@ -727,9 +741,10 @@ const menuSkin = `
 /* Krunker nudges the row sideways on hover. Pinning both the transform and the
    left padding in BOTH states is what stops it; the row lights up instead. */
 #menuItemContainer .menuItem{position:relative !important;transform:none !important;
-  padding-left:16px !important;transition:background var(--nm-fast)}
-#menuItemContainer .menuItem:hover{transform:none !important;padding-left:16px !important;
-  background:var(--nm-menu-wash) !important}
+  padding:9px 12px 9px 16px !important;margin:0 !important;
+  transition:background var(--nm-fast)}
+#menuItemContainer .menuItem:hover{transform:none !important;
+  padding:9px 12px 9px 16px !important;background:var(--nm-menu-wash) !important}
 /* The marker starts as a bare vertical stroke and turns into a chevron: same
    element throughout, so it reads as one mark moving rather than two states
    swapping. Borders rather than a filled box, because a chevron is two edges
@@ -753,10 +768,16 @@ const menuSkin = `
 #menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone) !important}
 #menuItemContainer .menuItemIcon{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
-#menuItemContainer .sidebarDivider{background:var(--nm-menu-line) !important;opacity:1 !important;
-  height:1px !important;margin:10px 0 !important}
+/* Krunker groups the list with rules, which is what made the gaps uneven.
+   Every row now sits on the same rhythm and the grouping goes. */
+#menuItemContainer .sidebarDivider{display:none !important}
 /* An empty promo row sat between two of the entries and read as a dead gap. */
 #updateAd{display:none !important}
+/* The "spin available" pill hanging off Store. Matched as "any element inside
+   the label" and "anything in the row that is not the icon or the label", so
+   it does not depend on the pill's own Svelte-hashed class. */
+#menuBtnShop > *{display:none !important}
+#menuItemShop > :not([class*="menuItemIcon"]):not([class*="menuItemTitle"]){display:none !important}
 
 /* ---- client wordmark, above Krunker's menu list ---- */
 #${UI_IDS.menuMark}{display:flex;align-items:baseline;gap:9px;
@@ -881,7 +902,7 @@ const menuSkin = `
    inline style so it matches the class card. In the header that is absurd, and
    an inline width only loses to !important. */
 #playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;
-  margin-left:var(--nm-gap-lg) !important;color:var(--nm-menu-ash) !important;
+  margin-left:0 !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transform:none !important}
 #playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
   transform:none !important;filter:none !important}
