@@ -64,6 +64,8 @@ export interface SettingsTabDeps {
   readonly setCaptureLock: (locked: boolean) => void;
   readonly openFolder: (folder: OpenableFolder) => void;
   readonly relaunch: () => void;
+  /** Ask main to look for a new release right now. */
+  readonly checkForUpdates: () => void;
   readonly reloadPage: () => void;
   /** Re-read the swap folder; resolves with the new file count. */
   readonly rescanSwap: () => Promise<number>;
@@ -250,6 +252,7 @@ const FOLDERS: { id: OpenableFolder; label: string }[] = [
   { id: 'scripts', label: 'Scripts' },
   { id: 'screenshots', label: 'Screenshots' },
 ];
+
 
 export interface SettingsTab {
   /** Open Krunker's settings window on the Client tab. */
@@ -464,6 +467,18 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       ),
     );
 
+    // Only offered where it can work. The portable exe and `npm start` have
+    // no install to replace, so the row says why rather than showing a button
+    // that only ever produces an error.
+    body.appendChild(
+      actionRow(
+        `Version ${deps.capabilities.version || '?'}`,
+        deps.capabilities.canUpdate
+          ? [gameButton('Check for updates', deps.checkForUpdates)]
+          : [staticNote('Portable build, update by downloading again')],
+      ),
+    );
+
     // Only there when something is actually pending, so the tab isn't sitting
     // with a permanent Restart button inviting a pointless one.
     const pending: HTMLElement[] = [];
@@ -472,6 +487,14 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     if (pending.length > 0) body.appendChild(actionRow('Apply changes', pending));
 
     return [body];
+  }
+
+  /** Where a button would go, when there is nothing to press. */
+  function staticNote(text: string): HTMLElement {
+    const el = document.createElement('span');
+    el.className = 'kc-note';
+    el.textContent = text;
+    return el;
   }
 
   function actionRow(label: string, buttons: HTMLElement[]): HTMLElement {

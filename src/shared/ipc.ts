@@ -62,6 +62,17 @@ export const IPC = {
   /** Renderer -> main. Decrypt one account so the page can sign in with it. */
   accountsReveal: 'accounts:reveal',
 
+  /** Renderer -> main. Look for a new release now. */
+  updateCheck: 'update:check',
+  /** Renderer -> main. Start downloading the release we found. */
+  updateDownload: 'update:download',
+  /** Renderer -> main. Quit and run the installer. Does not return. */
+  updateInstall: 'update:install',
+  /** Renderer -> main. Record that the patch notes for this version were shown. */
+  updateNotesSeen: 'update:notes-seen',
+  /** Main -> renderer. Where the update is up to; see UpdateState. */
+  updateState: 'update:state',
+
   /** Renderer -> main. Userscript sources from the scripts folder. */
   userscriptsGet: 'userscripts:get',
   /** Renderer -> main. Suspend global hotkeys while the rebind dialog captures. */
@@ -93,6 +104,22 @@ export interface ScanResult {
   readonly error?: string;
 }
 
+/**
+ * Where an update has got to.
+ *
+ * One shape for the whole flow rather than a channel per event, because the
+ * UI is a single panel that swaps between these and a flat union is what it
+ * actually switches on.
+ */
+export type UpdateState =
+  | { readonly status: 'idle' }
+  | { readonly status: 'checking' }
+  | { readonly status: 'none'; readonly version: string }
+  | { readonly status: 'available'; readonly version: string }
+  | { readonly status: 'downloading'; readonly version: string; readonly percent: number }
+  | { readonly status: 'ready'; readonly version: string }
+  | { readonly status: 'error'; readonly message: string };
+
 /** What the binary we're running on supports. */
 export interface Capabilities {
   /**
@@ -105,6 +132,17 @@ export interface Capabilities {
    * save button rather than writing passwords somewhere readable.
    */
   readonly canStoreAccounts: boolean;
+  /**
+   * This build can update itself, i.e. it's a packaged NSIS install.
+   * False for `npm start` and for the portable exe, which has nowhere to
+   * install to. The UI hides the update controls rather than offering a
+   * button that can only fail.
+   */
+  readonly canUpdate: boolean;
+  /** Running version, so the renderer can tell when it has changed. */
+  readonly version: string;
+  /** Version the patch notes were last shown for. '' on a fresh install. */
+  readonly lastSeenVersion: string;
 }
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC];

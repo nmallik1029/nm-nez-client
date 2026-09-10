@@ -124,6 +124,19 @@ export interface UiConfig {
   hideAdContainers: boolean;
 }
 
+export interface UpdateConfig {
+  /** Look for a new release shortly after launch. */
+  autoCheck: boolean;
+  /**
+   * Version the patch notes were last shown for.
+   *
+   * Not a setting, just somewhere to remember it. Empty on a fresh install,
+   * which is how the notes are kept from popping up the very first time you
+   * open the client, when there is nothing new to read.
+   */
+  lastSeenVersion: string;
+}
+
 export interface WindowConfig {
   width: number;
   height: number;
@@ -142,6 +155,7 @@ export interface AppConfig {
   hotkeys: HotkeyConfig;
   matchmaker: MatchmakerFilter;
   ranked: RankedConfig;
+  updates: UpdateConfig;
   window: WindowConfig;
   /**
    * Saved accounts, encrypted.
@@ -164,6 +178,7 @@ export const CONFIG_SECTIONS: readonly (keyof AppConfig)[] = [
   'hotkeys',
   'matchmaker',
   'ranked',
+  'updates',
   'window',
 ];
 
@@ -236,6 +251,10 @@ export const DEFAULT_CONFIG: AppConfig = {
     // haven't picked anything yet looks broken, not unconfigured.
     maps: RANKED_MAPS.map((m) => m.id),
     regions: RANKED_REGIONS.map((r) => r.id),
+  },
+  updates: {
+    autoCheck: true,
+    lastSeenVersion: '',
   },
   window: {
     width: 1600,

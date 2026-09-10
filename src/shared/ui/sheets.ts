@@ -126,7 +126,7 @@ const altModal = `
 #${UI_IDS.altModal} .hd{display:flex;align-items:center;justify-content:space-between;
   padding:14px 18px;border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
-#${UI_IDS.altModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-xl);
+#${UI_IDS.altModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-2xl);
   font-weight:normal}
 #${UI_IDS.altModal} .bd{overflow-y:auto;padding:14px 18px 18px}
 /* Column so the button sits on its own line: inline after wrapped text, it
@@ -148,7 +148,7 @@ const altModal = `
 #${UI_IDS.altModal} button{font-family:inherit;cursor:pointer;
   border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
   background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);padding:7px 14px;
-  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track)}
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-md)}
 #${UI_IDS.altModal} button:hover{background:var(--nm-game-btn-bg-hover);
   color:var(--nm-game-text)}
 #${UI_IDS.altModal} button.go{border-color:var(--nm-ok-border);color:var(--nm-ok)}
@@ -191,7 +191,7 @@ const changelog = `
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
 #${UI_IDS.changelogModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
-  letter-spacing:var(--nm-track-xl);font-weight:normal}
+  letter-spacing:var(--nm-track-2xl);font-weight:normal}
 #${UI_IDS.changelogModal} .bd{overflow-y:auto;padding:6px 18px 18px}
 /* One clickable row per version; the changes hang below it. */
 #${UI_IDS.changelogModal} .ver{display:flex;align-items:baseline;gap:var(--nm-gap);
@@ -217,10 +217,48 @@ const changelog = `
  * Centring makes the narrower words sit evenly in the same box.
  */
 #${UI_IDS.changelogModal} .tag{flex:0 0 74px;min-width:0;text-align:center;
-  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track);padding-top:2px}
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);padding-top:2px}
 #${UI_IDS.changelogModal} .tag.added{color:var(--nm-ok)}
 #${UI_IDS.changelogModal} .tag.fixed{color:var(--nm-tag-fixed)}
 #${UI_IDS.changelogModal} .tag.changed{color:var(--nm-tag-changed)}
+`;
+
+/**
+ * The update prompt: one panel, bottom right, that walks the whole flow.
+ *
+ * Chrome is the shared `--nm-game-*` group, so it reads as the same surface as
+ * the changelog it opens alongside. It sits one layer above the modals because
+ * it can be showing while one is open and still needs to be reachable.
+ */
+const update = `
+#${UI_IDS.update}{position:fixed;right:18px;bottom:18px;z-index:var(--nm-z-update);width:320px;
+  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  font-family:var(--nm-font-display);
+  color:var(--nm-game-text);box-shadow:0 6px 24px var(--nm-shadow-mid);
+  transform:translateY(12px);opacity:0;
+  transition:opacity var(--nm-med),transform var(--nm-med)}
+#${UI_IDS.update}.kc-in{opacity:1;transform:translateY(0)}
+#${UI_IDS.update} .hd{padding:11px 14px;background:var(--nm-game-bg-head);
+  border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
+  font-size:var(--nm-fs-lg);letter-spacing:var(--nm-track-xl)}
+#${UI_IDS.update} .bd{padding:13px 14px 14px}
+#${UI_IDS.update} .msg{font-size:var(--nm-fs-md);line-height:var(--nm-lh);
+  color:var(--nm-game-text-body)}
+#${UI_IDS.update} .ver{color:var(--nm-ok)}
+#${UI_IDS.update} .row{display:flex;gap:var(--nm-gap-sm);margin-top:13px}
+#${UI_IDS.update} button{flex:1;padding:8px 10px;cursor:pointer;font:inherit;
+  font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-md);color:var(--nm-game-text);background:var(--nm-upd-btn-bg);
+  border:var(--nm-bw-thick) solid var(--nm-upd-btn-border);
+  transition:background var(--nm-fast)}
+#${UI_IDS.update} button:hover{background:var(--nm-upd-btn-bg-hover)}
+#${UI_IDS.update} button.go{background:var(--nm-upd-go-bg);border-color:var(--nm-upd-go-border)}
+#${UI_IDS.update} button.go:hover{background:var(--nm-upd-go-bg-hover)}
+/* Track is always drawn so the panel doesn't resize when the bar appears. */
+#${UI_IDS.update} .bar{height:6px;background:var(--nm-upd-btn-bg);
+  border:var(--nm-bw) solid var(--nm-upd-btn-border);margin-top:12px}
+#${UI_IDS.update} .bar i{display:block;height:100%;width:0;
+  background:var(--nm-upd-go-border);transition:width var(--nm-slow)}
 `;
 
 /** Loadout and Customize side by side, with Alt Manager on the row below. */
@@ -271,6 +309,8 @@ const settings = `
   vertical-align:-1px;font-weight:700}
 .kc-tag-restart{color:var(--nm-restart)}
 .kc-tag-reload{color:var(--nm-reload)}
+/* Quiet secondary text on an action row, e.g. the update check's result. */
+.kc-note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);padding-right:2px}
 /* Krunker's rows rely on their .setBodH parent for the card background, and
    its control is floated rather than laid out, so force label-left /
    buttons-right onto one line instead of letting them stack. */
@@ -460,6 +500,7 @@ export const SHEETS = {
   queueButton,
   altModal,
   changelog,
+  update,
   menuButtons,
   chatTags,
   chatMerge,

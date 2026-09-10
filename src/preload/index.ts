@@ -9,7 +9,7 @@ import {
   setMenuPromoHiding,
   setRawInput,
 } from './fixes';
-import { installChangelogItem } from './changelog';
+import { installChangelogItem, showPatchNotes } from './changelog';
 import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
@@ -22,6 +22,7 @@ import { installTokens } from './style';
 import { activeTheme, knownThemes, setActiveTheme, setThemes } from './themes';
 import { showToast } from './toast';
 import { installWatermark } from './watermark';
+import { checkForUpdatesNow, installUpdatePrompt } from './update';
 
 /**
  * Runs in the page's main world (contextIsolation is off) ahead of Krunker's
@@ -71,7 +72,15 @@ async function bootstrap(): Promise<void> {
   const capabilities: Capabilities = await ipcRenderer
     .invoke(IPC.capabilities)
     .then((c: unknown) => c as Capabilities)
-    .catch((): Capabilities => ({ liveFrameCap: false, canStoreAccounts: false }));
+    .catch(
+      (): Capabilities => ({
+        liveFrameCap: false,
+        canStoreAccounts: false,
+        canUpdate: false,
+        version: '',
+        lastSeenVersion: '',
+      }),
+    );
 
   const cfg = config;
   installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
@@ -112,6 +121,7 @@ async function bootstrap(): Promise<void> {
       relaunch: () => {
         void ipcRenderer.invoke(IPC.relaunch);
       },
+      checkForUpdates: checkForUpdatesNow,
       reloadPage: () => window.location.reload(),
       rescanSwap: () => ipcRenderer.invoke(IPC.swapperRescan) as Promise<number>,
       getThemes: knownThemes,
@@ -144,6 +154,9 @@ async function bootstrap(): Promise<void> {
 
     // Adds a changelog row at the top of Krunker's own left menu.
     installChangelogItem();
+
+    installUpdatePrompt();
+    announceUpdate(capabilities);
 
     // Splits Loadout/Customize into one row and adds Alt Manager below.
     installMenuButtons({
@@ -286,6 +299,29 @@ ipcRenderer.on(IPC.themesChanged, (_event, themes: unknown) => {
   // Rebuild the dropdown too, in case a file appeared or vanished.
   settingsTab?.refresh();
 });
+
+/**
+ * Show what changed, once, after an update.
+ *
+ * The version is compared against the one the notes were last shown for
+ * rather than against anything the updater says, so this fires whichever way
+ * the new build arrived: through the in-client updater, or by running a fresh
+ * installer over the top.
+ *
+ * A blank lastSeenVersion means a fresh install, and there is nothing to
+ * catch up on then, so it records the version and stays quiet.
+ */
+function announceUpdate(capabilities: Capabilities): void {
+  const { version, lastSeenVersion } = capabilities;
+  if (version === '' || version === lastSeenVersion) return;
+
+  if (lastSeenVersion !== '') {
+    // A beat after the menu settles, or the panel opens against a page that
+    // is still building itself.
+    setTimeout(() => showPatchNotes(version), 1200);
+  }
+  void ipcRenderer.invoke(IPC.updateNotesSeen, version);
+}
 
 function onDomReady(fn: () => void): void {
   if (document.readyState === 'loading') {

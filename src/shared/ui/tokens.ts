@@ -174,6 +174,23 @@ const QUEUE_BUTTON = `
 `;
 
 /**
+ * The update prompt.
+ *
+ * Only the buttons live here. The panel chrome reuses the `--nm-game-*`
+ * group, because it is meant to read as the same surface as the changelog it
+ * opens alongside, and a second set of near-identical greys would be two
+ * things to keep in step instead of one.
+ */
+const UPDATE = `
+  --nm-upd-btn-bg:#2a2a2a;
+  --nm-upd-btn-border:#3f3f3f;
+  --nm-upd-btn-bg-hover:#343434;
+  --nm-upd-go-bg:#2f6b3f;
+  --nm-upd-go-border:#3f8a52;
+  --nm-upd-go-bg-hover:#38804b;
+`;
+
+/**
  * The match-scan overlay.
  *
  * Its own group because the greens here are a deliberate ladder rather than
@@ -341,11 +358,12 @@ const TYPE_DETAIL = `
   --nm-lh-loose:1.55;
   --nm-track-xs:.02em;
   --nm-track-sm:.04em;
-  --nm-track:.06em;
+  --nm-track-md:.06em;
   --nm-track-lg:.08em;
-  --nm-track-xl:.12em;
-  --nm-track-2xl:.14em;
-  --nm-track-3xl:.2em;
+  --nm-track-xl:.1em;
+  --nm-track-2xl:.12em;
+  --nm-track-3xl:.14em;
+  --nm-track-4xl:.2em;
 `;
 
 /**
@@ -390,6 +408,7 @@ const MOTION = `
   --nm-fast:.12s;
   --nm-quick:.1s;
   --nm-med:.16s;
+  --nm-slow:.2s;
   --nm-blink:1.4s;
   --nm-scan-land:420ms;
   --nm-scan-fade:260ms;
@@ -410,6 +429,7 @@ const MOTION = `
  */
 const LAYER = `
   --nm-z-modal:100000;
+  --nm-z-update:100001;
   --nm-z-hud:2147483000;
   --nm-z-toast:2147483200;
   --nm-z-scan:2147483260;
@@ -433,6 +453,7 @@ export const TOKENS_CSS = `:root{${[
   WATERMARK,
   QUEUE_BUTTON,
   SCAN,
+  UPDATE,
   QUEUE_WINDOW,
   SHADOW,
   FONT,

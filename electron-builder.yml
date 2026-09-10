@@ -19,6 +19,18 @@ directories:
   output: out
   buildResources: build
 
+# Where the updater looks. This does two things at build time: writes
+# app-update.yml into the package so the client knows which repo to ask, and
+# emits latest.yml next to the installer, which is the manifest it reads to
+# find out what the newest version is.
+#
+# Only the NSIS installer can self-update. A portable exe has no install
+# directory to replace, so those users have to download again by hand.
+publish:
+  provider: github
+  owner: nmallik1029
+  repo: nm-nez-client
+
 # No runtime dependencies, so this is the whole payload. The clients we cribbed
 # from keep about 24 node_modules paths in here by hand to satisfy
 # electron-store's transitive tree, and that list breaks quietly on any
