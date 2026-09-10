@@ -652,21 +652,19 @@ const update = `
 /**
  * The main-menu skin.
  *
- * ONE RULE, and breaking it is how this got shipped broken the first time:
- * every declaration here is paint. Colour, background, border, font, tracking,
- * case, shadow. Nothing in this sheet may set position, top/right/bottom/left,
- * width, height or display on a container Krunker lays out.
+ * Mostly paint, and where it does move a box it says why.
  *
- * The reason is concrete. `#subLogoButtons` is absolutely positioned by the
- * game and holds the match info AND all five play buttons; overriding its
- * left/right/width to make the row span the frame deleted the play row
- * outright. The buttons are the point of the screen. A skin is not worth that,
- * so the skin restyles boxes where they are and leaves the boxes alone.
+ * The one lesson worth carrying: an earlier cut set left/right on
+ * `#subLogoButtons` to make the play row span the frame, and the row vanished.
+ * Not because moving it is forbidden — because Krunker centres it with
+ * `left:50%` AND `transform:translate(-50%,0)`, so a full-width element got
+ * shifted half its new width off the side of the screen. The transform has to
+ * be cleared in the same rule. Read what the game already sets before
+ * overriding half of it.
  *
- * Hiding a leaf (the rewards button, the ping icon) is fine — that is what the
- * promo hiding already does. Reversing the two lines inside the class card is
- * fine too: that element is already a flex column, so the order flips without
- * the box changing.
+ * Hiding a leaf (the ping icon) is fine. Reversing the two lines inside the
+ * class card is fine too: that element is already a flex column, so the order
+ * flips without the box changing.
  *
  * Specificity: Krunker styles its menu by ID and marks the button colours
  * `!important`, so a bare class rule here silently never applies. Anything
@@ -692,6 +690,12 @@ const menuSkin = `
 
 /* ---- top bar ---- */
 #signupRewardsButton{display:none !important}
+/* The scrim is the ground now; a flat black bar on top of it reads as a seam. */
+#playerHeaderEl{background:none !important}
+#signedOutHeaderBar [class*="ph-login-wrap"]{border:var(--nm-bw) solid var(--nm-menu-line-hi);
+  padding:6px 13px;transition:border-color var(--nm-fast),background var(--nm-fast)}
+#signedOutHeaderBar [class*="ph-login-wrap"]:hover{border-color:var(--nm-menu-bone);
+  background:var(--nm-menu-wash)}
 #playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
   text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
@@ -717,6 +721,17 @@ const menuSkin = `
 #menuItemContainer .menuItemIcon{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 #menuItemContainer .sidebarDivider{background:var(--nm-menu-line) !important;opacity:1 !important}
+
+/* ---- client wordmark, above Krunker's menu list ---- */
+#${UI_IDS.menuMark}{display:flex;align-items:baseline;gap:9px;
+  padding:0 0 16px 14px;margin:0 20px 12px 0;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line)}
+#${UI_IDS.menuMark} b{font-family:var(--nm-font-display);font-size:var(--nm-fs-7xl);
+  font-weight:400;letter-spacing:var(--nm-track-xs);color:var(--nm-menu-bone)}
+#${UI_IDS.menuMark} b i{font-style:normal;color:var(--nm-menu-ember)}
+#${UI_IDS.menuMark} span{margin-left:auto;font-family:var(--nm-menu-font);
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-xl);
+  color:var(--nm-menu-ash);font-variant-numeric:tabular-nums}
 
 /* ---- click to play ---- */
 /* Krunker pulses this on scale() at 36px. Wide tracking and an opacity
@@ -763,6 +778,23 @@ const menuSkin = `
   letter-spacing:var(--nm-track-3xl);color:var(--nm-menu-ash-dim)}
 #menuPingIcon{display:none !important}
 
+/* ---- the command bar ---- */
+/* Krunker centres this with left:50% plus translate(-50%). Clearing left/right
+   without clearing the transform is what shifted it off screen. */
+#subLogoButtons{left:0 !important;right:0 !important;transform:none !important;
+  display:grid !important;grid-template-columns:repeat(5,1fr);
+  gap:var(--nm-gap);padding:0 26px;box-sizing:border-box}
+/* The match info spans the whole bar; the five buttons take a column each. */
+#matchInfoHolder{grid-column:1/-1;
+  border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;
+  padding-bottom:14px !important;margin-bottom:0 !important;gap:14px !important}
+/* Krunker's own margins would show up as gaps between grid cells. */
+#subLogoButtons > .button{margin:0 !important;width:auto !important}
+/* The class card would otherwise sit under the bar now that it reaches the
+   right edge. Its transform-origin is bottom right, so raising bottom moves it
+   straight up. */
+#menuClassContainer{bottom:300px !important}
+
 /* ---- play row: one primary, one accent, three quiet ---- */
 /* Krunker ships five buttons in five hues, two of them the same red for
    different actions, and nothing marking the one you press every time. */
@@ -807,11 +839,11 @@ const menuSkin = `
 #menuClassContainer .button .material-icons{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 
-/* ---- alt manager, once it has moved into the header ---- */
+/* ---- alt manager, once it has moved to the left end of the header ---- */
 /* menu-buttons.ts copies Krunker's 449px button rule onto this element as an
    inline style so it matches the class card. In the header that is absurd, and
    an inline width only loses to !important. */
-.headerBarRight #${UI_IDS.altManagerButton}{width:auto !important;height:auto !important;
+#playerHeaderEl #${UI_IDS.altManagerButton}{width:auto !important;height:auto !important;
   margin:0 0 0 var(--nm-gap-lg) !important;padding:7px 14px !important;
   font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
   letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
@@ -820,7 +852,7 @@ const menuSkin = `
   color:var(--nm-menu-ash) !important;text-shadow:none !important;
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   transform:none !important}
-.headerBarRight #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
+#playerHeaderEl #${UI_IDS.altManagerButton}:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important;
   transform:none !important;filter:none !important}
 `;
