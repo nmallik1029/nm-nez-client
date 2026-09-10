@@ -224,6 +224,8 @@ Typecheck, lint and tests. All three have to pass.
 | `npm run dist` | Verify, build, package a Windows installer |
 | `npm run electron:patch` | Force-reinstall the patched Electron |
 
+Shipping a release is its own checklist: [RELEASING.md](RELEASING.md).
+
 ### Layout
 
 ```
