@@ -39,6 +39,10 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
         kind: 'fixed',
         text: 'Manage Ads is really gone this time, and the dead black strip down the right of the window with it.',
       },
+      {
+        kind: 'fixed',
+        text: 'The settings window is as tall as whatever section you are on, instead of a fixed height with a screenful of nothing under it. It grows downward from the same place, so nothing shifts as you move between sections.',
+      },
     ],
   },
   {

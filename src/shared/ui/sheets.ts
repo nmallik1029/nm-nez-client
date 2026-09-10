@@ -355,12 +355,24 @@ const sectionNav = `
 /* The holder is the index's containing block. Said with an ID because
    Krunker's own #settHolder rule outranks a bare class, which is what beat an
    earlier attempt at exactly this. */
-/* A floor under the panel so it does not resize and re-centre every time you
-   pick a section. #menuWindow is centred with translate(-50%,-50%), so a
-   shorter section made the whole window jump — and the index, which is placed
-   against it, jumped with it. Measured: 308px of travel between sections. */
-#settHolder.kc-has-sectnav{position:relative !important;padding-left:190px !important;
-  min-height:74vh !important}
+#settHolder.kc-has-sectnav{position:relative !important;padding-left:190px !important}
+/*
+ * Anchor the settings window by its TOP rather than its middle.
+ *
+ * Krunker centres it with translate(-50%,-50%), so its height changing moves
+ * it — and with one section on screen at a time the height changes on every
+ * click. Measured, the window travelled 308px between sections and the index
+ * went with it.
+ *
+ * A floor under the height was the first answer and it was the wrong one: it
+ * stopped the jump by leaving a screenful of dead space under a short section.
+ * Growing downward from a fixed top costs nothing and does the same job.
+ *
+ * Scoped with :has() so only the settings behave this way; the loadout and
+ * customize windows stay centred.
+ */
+#menuWindow:has(#settHolder.kc-has-sectnav){top:7% !important;
+  transform:translate(-50%,0) !important;max-height:86vh !important}
 /*
  * Held in place by a transform, set from script each frame.
  *
