@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.9',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Krunker’s Default / Pro / Performance / Custom preset tiles are hidden. They sat above every tab and overwrote all your settings in one click.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The section list stays put while the settings scroll. It was still riding down the page.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Section names in the list match the sections. Some picked up the text of a dropdown sitting in the heading, and long names were cut off mid-word.',
+      },
+      {
+        kind: 'changed',
+        text: 'Settings rows are set a size smaller, so more fits on screen.',
+      },
+    ],
+  },
+  {
     version: '0.1.8',
     date: '2026-09-10',
     changes: [
