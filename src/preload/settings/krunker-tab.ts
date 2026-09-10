@@ -218,12 +218,6 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
     title: 'Interface',
     items: [
       {
-        section: 'features',
-        key: 'menuSkin',
-        label: 'Restyle the main menu',
-        hint: 'Gives the home screen one accent colour instead of five, grounds it so every label stops needing a heavy outline, and sets your FPS and ping as numbers you can read at a glance. Turn it off to get Krunker’s own menu back.',
-      },
-      {
         section: 'ui',
         key: 'realPing',
         label: 'Real ping',
@@ -425,7 +419,9 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     }
 
     const themeRows = buildThemeRows().filter((row) => matches(row, filter));
-    if (themeRows.length > 0) blocks.push(...category('Themes', themeRows));
+    // Always shown: the menu-style choice lives in here, and it is not
+    // conditional on anyone having dropped a .css in the themes folder.
+    blocks.push(...category('Themes', themeRows));
 
     // Shortcuts always render whole. Filtering individual keybind rows leaves
     // a category that looks broken rather than useful.
@@ -983,6 +979,29 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
   function buildThemeRows(): HTMLElement[] {
     const themes = deps.getThemes();
 
+    /**
+     * Which of the two menus you get.
+     *
+     * A choice rather than a checkbox, and in Themes rather than under
+     * Interface, because "how does the client look" is one question. Krunker's
+     * own is first and is what a fresh install gets: the game's look is what
+     * people came for, and rearranging it before they have asked is doing
+     * something to them rather than for them.
+     *
+     * No asterisk. Both directions apply immediately — the skin is a
+     * stylesheet plus a few element moves that are recorded and put back.
+     */
+    const styleRow = selectRow({
+      label: 'Menu style',
+      value: deps.config.features.menuSkin ? 'nmnez' : 'krunker',
+      options: [
+        ['krunker', 'Krunker (original)'],
+        ['nmnez', 'NM/NEZ'],
+      ],
+      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NEZ restyles the menu and the windows it opens: one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, and one settings section on screen at a time. Switches straight away, either way.',
+      onChange: (value) => deps.onChange('features', 'menuSkin', value === 'nmnez'),
+    });
+
     if (themes.length === 0) {
       const row = document.createElement('div');
       row.className = 'setting settName';
@@ -994,10 +1013,11 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         'Drop a .css file into the themes folder, via the Themes button above. It turns up here straight away.',
       );
       row.appendChild(title);
-      return [row];
+      return [styleRow, row];
     }
 
     return [
+      styleRow,
       selectRow({
         label: 'Theme',
         value: deps.getActiveTheme(),
