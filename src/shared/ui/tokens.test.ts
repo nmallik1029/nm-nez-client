@@ -28,6 +28,15 @@ import { TOKENS_CSS } from './tokens';
 const SRC = join(import.meta.dirname, '..', '..');
 /** The one file allowed to hold a raw design value. */
 const TOKENS_FILE = join(SRC, 'shared', 'ui', 'tokens.ts');
+/**
+ * Files holding colours that are data rather than design.
+ *
+ * `highlights.ts` is a list of friends and clans with the colour each should
+ * be drawn in. Those are not values on a scale and they do not belong in the
+ * token set: a token per person is not a design system, it is a phone book.
+ * Exempt from the colour rule only — the rest still apply.
+ */
+const COLOUR_DATA_FILES = new Set([join(SRC, 'shared', 'highlights.ts')]);
 
 /** Each rule: what to look for, and what to say when it turns up. */
 const BANNED: { what: string; pattern: RegExp; fix: string }[] = [
@@ -112,8 +121,11 @@ describe('design tokens', () => {
     expect(FILES.length).toBeGreaterThan(30);
   });
 
-  it.each(BANNED)('has no $what outside tokens.ts', ({ pattern, fix }) => {
-    const offenders = FILES.filter((file) => file !== TOKENS_FILE)
+  it.each(BANNED)('has no $what outside tokens.ts', ({ what, pattern, fix }) => {
+    const exempt = (file: string): boolean =>
+      file === TOKENS_FILE || (what === 'colour' && COLOUR_DATA_FILES.has(file));
+
+    const offenders = FILES.filter((file) => !exempt(file))
       .map((file) => ({ file, found: matches(withoutComments(readFileSync(file, 'utf8')), pattern) }))
       .filter((entry) => entry.found.length > 0)
       .map((entry) => `${relative(SRC, entry.file)}: ${entry.found.join(', ')} — ${fix}`);
