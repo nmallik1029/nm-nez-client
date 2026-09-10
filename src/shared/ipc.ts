@@ -118,6 +118,7 @@ export type UpdateState =
   | { readonly status: 'available'; readonly version: string }
   | { readonly status: 'downloading'; readonly version: string; readonly percent: number }
   | { readonly status: 'ready'; readonly version: string }
+  | { readonly status: 'installing'; readonly version: string }
   | { readonly status: 'error'; readonly message: string };
 
 /** What the binary we're running on supports. */

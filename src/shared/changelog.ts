@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.4',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Updates install without the setup wizard. Pressing Restart now applies the update and reopens the client on its own.',
+      },
+    ],
+  },
+  {
     version: '0.1.3',
     date: '2026-09-10',
     changes: [

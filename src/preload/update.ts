@@ -188,6 +188,10 @@ export function renderUpdateState(state: UpdateState, manual: boolean): void {
       return;
     }
 
+    case 'installing':
+      bd.append(message('Installing {v}. The client will reopen on its own.', state.version));
+      return;
+
     case 'error':
       bd.append(message(state.message));
       setTimeout(close, 4000);

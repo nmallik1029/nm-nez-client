@@ -122,10 +122,21 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
 
     install() {
       if (state.status !== 'ready') return;
-      // isSilent false so the NSIS UI shows: the build is unsigned, so a
-      // silent install looks indistinguishable from the client vanishing.
-      // isForceRunAfter true so it comes back up on its own.
-      autoUpdater.quitAndInstall(false, true);
+
+      /*
+       * Silent, so the update skips the installer wizard. That is only
+       * safe because the app installs per-user under LOCALAPPDATA, so
+       * there is no elevation prompt to answer and nothing for NSIS to
+       * ask about. A per-machine build could not do this.
+       *
+       * isForceRunAfter brings the client back up by itself.
+       */
+      set({ status: 'installing', version: state.version });
+
+      // A silent install puts nothing on screen, so the window vanishing
+      // with no explanation is all the user would get. The delay is for
+      // the renderer to paint the message first.
+      setTimeout(() => autoUpdater.quitAndInstall(true, true), 400);
     },
   };
 }
