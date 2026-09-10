@@ -9,6 +9,10 @@
  *
  * The rule: if a literal only makes sense because of how Krunker is built, it
  * goes here and not at the place that uses it.
+ *
+ * At the bottom of this file, under "Restyling Krunker", is the same idea for
+ * behaviour rather than values: what the game's own CSS and menu code do to a
+ * rule you write against them. Read it before restyling anything of theirs.
  */
 
 /** Origins we treat as the game itself. Anything else is untrusted. */
@@ -102,6 +106,96 @@ export const BLOCKABLE_ASSETS = {
     models: [64295, 64300, 64301, 64303],
   },
 } as const;
+
+/*
+ * ---------------------------------------------------------------------------
+ * Restyling Krunker: what its CSS does, and what that costs you
+ * ---------------------------------------------------------------------------
+ *
+ * Read before writing a rule against the game's own markup. Every item here
+ * was paid for — each one is a bug that shipped, or nearly did. All verified
+ * against the running client on 2026-09-10.
+ *
+ * 1. THE GAME STYLES BY ID, AND MARKS COLOUR !IMPORTANT.
+ *    `.buttonP { border: 4px solid ... !important }`, `#customizeButton
+ *    { width: 449px; font-size: 27px !important }`. A bare class rule of ours
+ *    silently never applies. Anything that has to win needs `!important` AND
+ *    an ID selector to outrank theirs. Cascade order is not enough. When a
+ *    rule "does nothing", check the computed style before rewriting it.
+ *
+ * 2. THINGS ARE CENTRED WITH left:50% PLUS A TRANSFORM.
+ *    `#subLogoButtons { left: 50%; transform: translate(-50%,0) scale(.95) }`.
+ *    Override left/right without clearing the transform and the element is
+ *    shifted half its NEW width off the side of the screen. It looks deleted;
+ *    it is off-canvas. Clear the transform in the same rule.
+ *
+ * 3. #menuClassContainer IS scale(0.7), transform-origin bottom right.
+ *    getBoundingClientRect() therefore reports 0.7x the CSS size — feeding a
+ *    measured width back into a style shrinks it every pass. Read the number
+ *    off the `#customizeButton` rule instead (see accounts/menu-buttons.ts).
+ *    Because the origin is the bottom right, `bottom` alone moves it.
+ *
+ * 4. THE NEWER MENU IS SVELTE, AND ITS CSS IS NOT IN ANY STYLESHEET.
+ *    Classes carry a per-build hash: `menuItem svelte-fgmdj8`. Match the
+ *    stable fragment with [class*="..."], never the hash. And the rules
+ *    themselves are injected from the JS bundle at runtime — none of the menu
+ *    component classes appear in main.css or bundledStyles.css, so you cannot
+ *    read them from the downloaded CSS. Read them off the live DOM.
+ *
+ * 5. main.css IS THE WHOLE GAME, NOT THE MENU.
+ *    ~2081 rules, of which roughly 38 touch the home menu. It also covers the
+ *    HUD, scoreboard, chat, shop and end screen. There is no "menu
+ *    stylesheet" to swap.
+ *
+ * 6. DO NOT REMOVE AN ELEMENT THE GAME LOOKS UP BY ID.
+ *    Taking `#gameNameHolder` out of the document made Krunker's menu setup
+ *    call getElementById on an id that no longer resolved; it threw partway
+ *    through, so the loading backdrop never faded and no play button was ever
+ *    wired up. Black screen, dead clicks, and CI green throughout. Prefer
+ *    `display:none` — it is not laid out, painted or hit-tested either, so
+ *    removal buys nothing and bets on their internals.
+ *
+ * 7. MATERIAL ICONS CARRY THE LIGATURE NAME AS TEXT.
+ *    `text-transform: uppercase` on an ancestor renders the words
+ *    "keyboard_arrow_down" instead of an arrow. Scope case changes to the
+ *    label element, and set `text-transform:none` on the icon anyway.
+ *
+ * 8. SOME LABELS ARE BARE TEXT NODES WITH NO ELEMENT.
+ *    "Now Playing:" in #mapInfoHld, " FPS" in #menuFPSDisplay. To restyle or
+ *    drop only that half: `font-size:0` on the parent, real size back on the
+ *    child element.
+ *
+ * 9. THE GAME SETS INLINE STYLES FROM ITS OWN JS.
+ *    #menuFPS gets its colour written inline as the number changes. A
+ *    stylesheet loses to that unless it says !important — which is sometimes
+ *    what you want, since that particular colour is a real threshold.
+ *
+ * 10. .bigShadowT AND .button:hover FIGHT BACK.
+ *     The first sets a twelve-layer text-shadow !important; the second forces
+ *     a white border !important and `transform: scale(0.95)`. Overriding the
+ *     look of a button means overriding all three.
+ *
+ * 11. THE MENU REBUILDS AS YOU NAVIGATE.
+ *     Anything injected has to be re-applied by a MutationObserver, not once
+ *     on load, or it is gone the first time a submenu opens and closes.
+ *
+ * 12. STACKING: #uiBase (z:1) holds #gameUI (z:1) and #fullMenHider (auto),
+ *     and #menuHolder (z:10) sits inside the latter, so the menu paints above
+ *     #instructionHolder. A backdrop added inside #menuHolder needs
+ *     `z-index:-1`, not 0 — a positioned child at 0 paints above its in-flow
+ *     siblings and would cover the nav instead of sitting behind it.
+ *
+ * 13. A SOLID DARK SCREEN MEANS MENU INIT THREW.
+ *     #instructionsFadeBG is a solid #222 that fades out when the menu is
+ *     ready. If it never fades, something earlier in their setup died — look
+ *     for a null from an element we moved or removed, not for a CSS bug.
+ *
+ * 14. NONE OF THIS IS REACHABLE FROM THE TEST SUITE.
+ *     typecheck, lint and the unit tests cannot see whether the menu loads.
+ *     Item 6 shipped through a fully green CI run. A change to the game's own
+ *     markup is verified by launching the client and looking at it, or it is
+ *     not verified.
+ */
 
 /** True when `url` is the game or one of its mirrors. */
 export function isKrunkerOrigin(url: string): boolean {

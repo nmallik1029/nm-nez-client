@@ -675,6 +675,10 @@ const update = `
  * parts are Svelte-compiled and their classes carry a per-build hash
  * (`menuItem svelte-fgmdj8`), so nothing here matches a hash — only ids and
  * the stable half of a class name.
+ *
+ * Before editing any of this, read "Restyling Krunker" at the bottom of
+ * `krunker/constants.ts`. It is the list of things the game's CSS does to a
+ * rule you write against it, and every entry on it is a bug that shipped.
  */
 const menuSkin = `
 /* One node, three gradients, no hit-testing, painted below the whole menu. */
