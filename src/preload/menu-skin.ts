@@ -45,6 +45,19 @@ const FOOTER_HIDDEN = ['contact', 'terms'];
 const FOOTER_MOVED = 'changelog';
 /** Marks the moved link so the sheet can style it as a header item. */
 const HEADER_LINK_CLASS = 'kc-menu-headerlink';
+/** Krunker's settings window. Its contents are built by its own script. */
+const SETTINGS_WINDOW_ID = 'menuWindow';
+/**
+ * Controls in the settings header, found by their label.
+ *
+ * Their markup is written by Krunker's script rather than shipped in the
+ * page, so there is no id or stable class to read off the source — the same
+ * problem the footer links had, and the same answer. Text is what they are.
+ */
+const SETTINGS_HIDDEN = ['manage ads'];
+const SETTINGS_RESTYLED = ['advanced'];
+/** Marks a header control the sheet then paints like the rest. */
+const SETTINGS_CONTROL_CLASS = 'kc-menu-setctl';
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
@@ -229,11 +242,43 @@ function placeFooterLinks(): void {
   }
 }
 
+/**
+ * The settings window's own header strip.
+ *
+ * Manage Ads goes. The Advanced switch keeps Krunker's blue because it is not
+ * one of the classes the sheet can reach, so it is tagged here and painted
+ * there.
+ *
+ * Scoped to the window and matched on exact label text, so a section that
+ * happens to be called "Advanced" further down the panel is not caught: this
+ * only looks at elements with no element children of their own.
+ */
+function placeSettingsChrome(): void {
+  const win = document.getElementById(SETTINGS_WINDOW_ID);
+  if (!win) return;
+
+  for (const el of win.querySelectorAll<HTMLElement>('.settingsBtn, .button, label, span, div')) {
+    if (el.childElementCount > 1) continue;
+    const label = (el.textContent ?? '').trim().toLowerCase();
+
+    if (SETTINGS_HIDDEN.includes(label)) {
+      if (enabled) el.style.display = 'none';
+      else el.style.removeProperty('display');
+      continue;
+    }
+
+    if (!SETTINGS_RESTYLED.includes(label)) continue;
+    if (enabled) el.classList.add(SETTINGS_CONTROL_CLASS);
+    else el.classList.remove(SETTINGS_CONTROL_CLASS);
+  }
+}
+
 function apply(): void {
   placeScrim();
   placeMark();
   placeAltManager();
   placeFooterLinks();
+  placeSettingsChrome();
 }
 
 /**

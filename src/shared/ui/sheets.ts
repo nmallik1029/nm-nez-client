@@ -1051,6 +1051,37 @@ const krunkerWindows = `
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
 #menuWindow .settingsBtn:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+/* Import, Export and Reset sat a size below the preset dropdown beside them.
+   One height across the strip, taken from the dropdown, which was right. */
+#menuWindow .settingsBtn,#menuWindow select,#menuWindow .kc-menu-setctl{
+  height:30px !important;min-height:30px !important;box-sizing:border-box !important;
+  display:inline-flex !important;align-items:center !important;justify-content:center !important;
+  padding:0 12px !important;width:auto !important;min-width:78px !important;
+  vertical-align:middle !important;margin:0 3px !important}
+/* The Advanced switch: Krunker's blue, on a control the sheet cannot name
+   because its markup is written by their script. menu-skin.ts tags it. */
+#menuWindow .kc-menu-setctl{background:var(--nm-menu-fill) !important;
+  border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
+  color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
+  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
+  text-transform:uppercase !important;text-shadow:none !important;gap:8px !important}
+#menuWindow .kc-menu-setctl:hover{color:var(--nm-menu-bone) !important;
+  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+
+/* ---- the section index, once the skin is on ---- */
+/* It is drawn in Krunker's greys by its own sheet, because without the skin
+   it sits on the game's grey panel. With the skin the panel is ours. */
+#menuWindow #${UI_IDS.sectionNav}{border-right-color:var(--nm-menu-line) !important;
+  font-family:var(--nm-menu-font) !important}
+#menuWindow .kc-sectnav-item{font-size:var(--nm-fs-md) !important;
+  letter-spacing:var(--nm-track-sm) !important;text-transform:uppercase !important;
+  color:var(--nm-menu-ash-dim) !important;background:none !important;
+  border-left-color:var(--nm-menu-scrim-0) !important}
+#menuWindow .kc-sectnav-item:hover{color:var(--nm-menu-bone) !important;
+  background:var(--nm-menu-wash) !important}
+#menuWindow .kc-sectnav-item.kc-sectnav-on{color:var(--nm-menu-bone) !important;
+  background:var(--nm-menu-wash) !important;
+  border-left-color:var(--nm-menu-ember) !important}
 
 /* ---- buttons inside a window ---- */
 #menuWindow .button,#popupContent .button,#policePopC .button,.metaPop .button,

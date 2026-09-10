@@ -16,6 +16,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.19',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'Manage Ads is gone from the settings header, and the Advanced switch no longer keeps Krunker’s blue.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Import, Export and Reset are the same height as the preset dropdown beside them instead of a size smaller.',
+      },
+      {
+        kind: 'changed',
+        text: 'The section index down the left of the settings is drawn in the skin’s own colours, with the accent marking where you are.',
+      },
+    ],
+  },
+  {
     version: '0.1.18',
     date: '2026-09-10',
     changes: [
