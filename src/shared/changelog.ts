@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.3',
+    date: '2026-09-10',
+    changes: [
+      { kind: 'changed', text: 'Splash screen for updates.' },
+    ],
+  },
+  {
     version: '0.1.2',
     date: '2026-09-10',
     changes: [
