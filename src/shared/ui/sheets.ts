@@ -129,13 +129,26 @@ const queueButton = `
 [class*="footer-controls"] > button[class*="start-button"]:not(#${UI_IDS.queueButton}){
   display:none !important}
 #${UI_IDS.queueButton}{display:inline-flex;align-items:center;justify-content:center;
-  width:38px;height:38px;margin:0 var(--nm-gap);border-radius:var(--nm-radius);cursor:pointer;
-  background:var(--nm-queue-bg);border:var(--nm-bw-thick) solid var(--nm-queue-border);
-  box-sizing:border-box;
-  transition:background var(--nm-fast),transform var(--nm-fast)}
-#${UI_IDS.queueButton}:hover{background:var(--nm-queue-bg-hover);transform:translateY(-1px)}
-#${UI_IDS.queueButton} svg{width:19px;height:19px;fill:none;stroke:var(--nm-queue-icon);
-  stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  width:130px;height:50px;margin:0 var(--nm-gap);border-radius:var(--nm-radius);cursor:pointer;
+  background:var(--nm-queue-bg);
+  box-sizing:border-box;color:black !important;text-shadow:none !important}
+/*
+ * No hover, and it takes !important to mean it.
+ *
+ * The button wears Krunker's start-button class so it keeps their type and
+ * metrics, which also brings their hover: a lift, a colour change and a
+ * background swap. An id beats a class on specificity, but not where theirs
+ * is declared !important, so this states every property their rule touches
+ * and pins it to the resting value.
+ */
+#${UI_IDS.queueButton}:hover,
+#${UI_IDS.queueButton}:focus,
+#${UI_IDS.queueButton}:active{
+  background:var(--nm-queue-bg) !important;
+  border-color:var(--nm-queue-border) !important;
+  color:var(--nm-text-hi) !important;
+  transform:none !important;filter:none !important;
+  box-shadow:none !important;animation:none !important}
 `;
 
 /**
