@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.39',
+    date: '2026-09-11',
+    changes: [
+      {
+        kind: 'added',
+        text: 'A setup walkthrough on your first launch after installing. Three questions: whether you want the NM/NZ look or the game exactly as it ships, which of the built-in scripts to switch on, and whether to load a stylesheet of your own. The look question shows you a screenshot of each, and picking one changes the menu behind the panel straight away so you can see what you are choosing. Every answer is a setting you can change later, and there is a Run walkthrough button in Settings if you want it again.',
+      },
+      {
+        kind: 'changed',
+        text: 'Finding a match is a loading bar now. It used to flick through every lobby it had rejected, map preview and all, which took about three and a half seconds and looked busier than it was. Title, bar, and a line telling you which region you are joining or what went wrong.',
+      },
+      {
+        kind: 'changed',
+        text: 'Custom CSS is off while Menu style is set to NM/NZ. That already styles the menu, the windows it opens and the in-game HUD, and a theme loads after all of it, so the two were fighting over anything they both touched. The picker says so and tells you which switch to flip; set Menu style to Krunker (original) and it comes back.',
+      },
+      {
+        kind: 'fixed',
+        text: 'The settings window no longer flashes the wrong layout for a moment every time you change tab. It was drawing the panel before the section list down the left had been worked out, then correcting itself about 50ms later.',
+      },
+    ],
+  },
+  {
     version: '0.1.38',
     date: '2026-09-10',
     changes: [
