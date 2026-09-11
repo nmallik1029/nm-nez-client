@@ -4,6 +4,19 @@ import { net, protocol } from 'electron';
 export const SWAP_SCHEME = 'swap';
 
 /**
+ * A reserved id answered with an empty 200, for assets we want gone.
+ *
+ * Blocking used to redirect to `data:,`. Chromium refuses that from a web
+ * origin -- the request fails with ERR_UNSAFE_REDIRECT rather than loading
+ * nothing, so the asset was not actually being blocked and the console filled
+ * with errors. Redirecting to this scheme works because it is registered as
+ * standard and secure, which is the same path every swapped file already
+ * takes.
+ */
+export const EMPTY_ID = 'empty';
+export const EMPTY_SWAP_URL = `${SWAP_SCHEME}://f/${EMPTY_ID}`;
+
+/**
  * Serves swapped files over a `swap://` scheme.
  *
  * URLs carry an opaque id rather than a path, and that's the whole point. Put
@@ -71,6 +84,8 @@ export function handleSwapProtocol(server: SwapServer): void {
   protocol.handle(SWAP_SCHEME, (request) => {
     // swap://f/<id>
     const id = new URL(request.url).pathname.replace(/^\/+/, '');
+    // Nothing on disk backs this one; it is the "load nothing" target.
+    if (id === EMPTY_ID) return new Response('', { status: 200 });
     const filePath = server.resolve(id);
     if (filePath === null) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(filePath).toString());

@@ -1,6 +1,7 @@
 import { KRUNKER_DOM_IDS } from '../krunker/constants';
 import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { defineStyle } from './style';
+import { coalesced } from './schedule';
 
 /**
  * Keeps the menu's chat clear of the buttons Krunker draws over it.
@@ -46,7 +47,6 @@ const MIN_HEIGHT_PX = 56;
  */
 const MIN_PLAUSIBLE_LIFT_PX = 60;
 
-let raf = 0;
 
 /**
  * How much smaller Krunker is drawing its UI than it has laid it out.
@@ -127,13 +127,7 @@ function applyLift(): void {
 }
 
 /** Coalesce the bursts of calls a resize or a menu rebuild produces. */
-function scheduleLift(): void {
-  if (raf !== 0) return;
-  raf = requestAnimationFrame(() => {
-    raf = 0;
-    applyLift();
-  });
-}
+const scheduleLift = coalesced(applyLift);
 
 /**
  * Krunker rebuilds the bottom block whenever the match info changes, and

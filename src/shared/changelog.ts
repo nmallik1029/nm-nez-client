@@ -16,6 +16,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.37',
+    date: '2026-09-10',
+    changes: [
+      { kind: 'added', text: 'YBG_Wallace now shows in their own colour on the leaderboard and player list.' },
+    ],
+  },
+  {
+    version: '0.1.36',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'The menu code no longer costs you frame time during a match. Five components reacted to every DOM change Krunker made — every killfeed line, chat message and ammo tick — and one of them measured element positions each time, which forces the browser to stop and re-layout the page. They now do their work once per frame instead, which is all any of them needed.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Hidden props are actually hidden. Blocked models were redirected in a way Chromium refuses, so the request failed and logged an error instead of loading nothing. Turf War banners in particular were never being blocked.',
+      },
+    ],
+  },
+  {
     version: '0.1.35',
     date: '2026-09-10',
     changes: [

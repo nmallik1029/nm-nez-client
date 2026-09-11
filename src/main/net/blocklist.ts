@@ -1,4 +1,5 @@
 import { BLOCKABLE_ASSETS } from '../../krunker/constants';
+import { EMPTY_SWAP_URL } from '../swapper/protocol';
 
 /**
  * Network-layer blocking, in two stages.
@@ -84,8 +85,15 @@ const CANCEL: RequestDecision = { kind: 'cancel' };
  * Blocked models get redirected here rather than cancelled. Cancel one and
  * Krunker's loader swaps in a placeholder; an empty body parses as zero
  * geometry and the prop just isn't there.
+ *
+ * This was `data:,` and did not work. Chromium refuses a redirect to a data
+ * URL from a web origin, so every blocked model failed with
+ * ERR_UNSAFE_REDIRECT instead of loading empty -- the block silently did
+ * nothing except log an error per asset. The swap scheme is registered
+ * standard and secure, which is why the resource swapper's own redirects have
+ * always worked, and this rides the same route.
  */
-const EMPTY_RESPONSE = 'data:,';
+const EMPTY_RESPONSE = EMPTY_SWAP_URL;
 
 export function isAdHost(url: string): boolean {
   if (AD_PATH_RE.test(url)) return true;

@@ -3,6 +3,7 @@ import { IPC } from '../shared/ipc';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { toggleRankedPanel } from './ranked/panel';
 import { defineStyle } from './style';
+import { coalesced } from './schedule';
 
 /**
  * Adds a launcher for the external queue into Krunker's own ranked panel.
@@ -134,6 +135,6 @@ export function installRankedLaunchButton(): void {
   const root = document.getElementById('uiBase') ?? document.body;
   if (!root) return;
 
-  const observer = new MutationObserver(() => place());
+  const observer = new MutationObserver(coalesced(place));
   observer.observe(root, { childList: true, subtree: true });
 }
