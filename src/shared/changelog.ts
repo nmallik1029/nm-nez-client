@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.38',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The menu has its colour back. The five buttons along the bottom are five colours again, the way Krunker draws them, and the menu list down the left is white rather than grey. The counts along the top keep the game’s own coding too — gold KR, a purple pickaxe, a green trophy — instead of every one of them the same grey.',
+      },
+      {
+        kind: 'changed',
+        text: 'Text through the menu and the settings window is back at the size Krunker sets it. The skin had been shrinking labels by about a third and spacing the letters out, which made the whole thing read as a different and more modern piece of software: Click to Play was a third the size the game draws it at. Nothing has moved, everything is just the size it should have been.',
+      },
+      {
+        kind: 'changed',
+        text: 'Rounded corners and thicker edges on the buttons, matching what Krunker puts on its own. Loadout, Customize and Alt Manager get a colour each to go with them.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Clicking Invite no longer nudges Join sideways. The button grows to fit “Copied URL” and the space set aside for it was too narrow.',
+      },
+    ],
+  },
+  {
     version: '0.1.37',
     date: '2026-09-10',
     changes: [
