@@ -54,7 +54,7 @@ const MIN_PLAUSIBLE_LIFT_PX = 60;
  * The game scales the whole interface to the window with a transform, so
  * `getBoundingClientRect` returns screen pixels while `bottom` is set in the
  * element's own unscaled ones. Mixing the two silently loses whatever the
- * scale is — around 15% at 1920x1080, which was enough to leave chat sitting
+ * scale is: around 15% at 1920x1080, which was enough to leave chat sitting
  * on the map name instead of above it.
  *
  * Read off the button block rather than parsed out of a transform matrix:

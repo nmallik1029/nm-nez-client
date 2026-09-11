@@ -19,8 +19,8 @@ import { TOKENS_CSS } from './tokens';
  * a test.
  *
  * What is *not* guarded, on purpose: padding, margin, and element width and
- * height. Those are mostly one-off geometry — `width:38px` on the queue button
- * is a fact about that button, not a design decision — and a rule forcing them
+ * height. Those are mostly one-off geometry, `width:38px` on the queue button
+ * is a fact about that button, not a design decision, and a rule forcing them
  * onto a scale would push the code towards a sixteen-step lookup table that
  * reads worse than the numbers it replaced.
  */
@@ -34,7 +34,7 @@ const TOKENS_FILE = join(SRC, 'shared', 'ui', 'tokens.ts');
  * `highlights.ts` is a list of friends and clans with the colour each should
  * be drawn in. Those are not values on a scale and they do not belong in the
  * token set: a token per person is not a design system, it is a phone book.
- * Exempt from the colour rule only — the rest still apply.
+ * Exempt from the colour rule only: the rest still apply.
  */
 const COLOUR_DATA_FILES = new Set([join(SRC, 'shared', 'highlights.ts')]);
 
@@ -128,7 +128,7 @@ describe('design tokens', () => {
     const offenders = FILES.filter((file) => !exempt(file))
       .map((file) => ({ file, found: matches(withoutComments(readFileSync(file, 'utf8')), pattern) }))
       .filter((entry) => entry.found.length > 0)
-      .map((entry) => `${relative(SRC, entry.file)}: ${entry.found.join(', ')} — ${fix}`);
+      .map((entry) => `${relative(SRC, entry.file)}: ${entry.found.join(', ')}, ${fix}`);
 
     expect(offenders).toEqual([]);
   });

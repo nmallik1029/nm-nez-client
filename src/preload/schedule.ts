@@ -7,7 +7,7 @@
  * runs once per batch, which in a round is dozens of times a second, on the
  * same main thread the frame is drawn on.
  *
- * Nothing any of these handlers do needs to happen more than once per frame —
+ * Nothing any of these handlers do needs to happen more than once per frame: 
  * they put a button back where it belongs, and the DOM is not painted between
  * batches anyway. Coalescing is therefore free: the work still lands before the
  * next paint, it just lands once.

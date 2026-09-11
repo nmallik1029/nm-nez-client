@@ -56,7 +56,7 @@ export default tseslint.config(
   {
     // The built-in userscripts. These are imported for their text and run in
     // the page through `new Function`, so they are not modules and not in a
-    // tsconfig project — the type-aware parser has no program for them and
+    // tsconfig project: the type-aware parser has no program for them and
     // errors out instead of linting.
     //
     // Still linted, just without types: they are the one place in the repo

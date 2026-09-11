@@ -20,7 +20,7 @@ export const BRANDING = {
    *
    * Still says nmnez after the rename to NM/NZ, deliberately. Windows keys
    * taskbar pinning off this, and the installer finds an existing install by
-   * it — change it and the next update lands beside the old client instead
+   * it: change it and the next update lands beside the old client instead
    * of over it, leaving everyone with two.
    */
   appId: 'com.nmnez.client',

@@ -6,7 +6,7 @@ import headshotSound from './headshot-sound.js?raw';
  * These are userscripts in the ordinary sense: plain `.js` files, run through
  * `new Function` in the page, no build step of their own. They live in the
  * repo rather than in the swap folder because we wrote them and they should
- * arrive with an update, but nothing about them is privileged — anything one
+ * arrive with an update, but nothing about them is privileged: anything one
  * of these can do, a file you drop in `scripts/` can do too.
  *
  * A script's body may end with `return <function>`, and if it does, that

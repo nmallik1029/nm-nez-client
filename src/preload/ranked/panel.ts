@@ -101,8 +101,8 @@ function syncPill(): void {
 
   const pill = existing ?? document.createElement('div');
   if (!existing) {
-    // The pill can be the first thing on screen — after a reload it appears
-    // without the panel ever having been opened — so it cannot rely on
+    // The pill can be the first thing on screen, after a reload it appears
+    // without the panel ever having been opened, so it cannot rely on
     // openPanel() having installed the sheet.
     defineStyle(STYLE_IDS.rankedPanel, SHEETS.rankedPanel);
     pill.id = PILL_ID;
@@ -237,7 +237,7 @@ function paintPanel(): void {
   if (note) {
     note.textContent =
       view.status === 'matched'
-        ? `${view.mapLabel ?? 'Match'} in ${view.regionLabel ?? 'your region'} — rejoin from Krunker's ranked menu.`
+        ? `${view.mapLabel ?? 'Match'} in ${view.regionLabel ?? 'your region'}, rejoin from Krunker's ranked menu.`
         : view.status === 'error'
           ? (view.message ?? 'Queue error')
           : 'Keeps queueing if you close this, reload, or switch servers.';

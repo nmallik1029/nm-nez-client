@@ -5,8 +5,8 @@ import { sectionRanges } from './section-nav';
  * The index shows one section at a time, so the only arithmetic left is
  * working out which of the holder's children belong to which section.
  *
- * The scroll-position helpers this file used to cover — `activeIndex` and
- * `isAtEnd` — are gone with the scrolling version of the index. They existed
+ * The scroll-position helpers this file used to cover, `activeIndex` and
+ * `isAtEnd`, are gone with the scrolling version of the index. They existed
  * to answer "which section am I looking at" while everything shared one long
  * column, and nothing asks that any more.
  */

@@ -1,16 +1,16 @@
 /*
- * Minimal HUD — a user-supplied theme, in a match only.
+ * Minimal HUD: a user-supplied theme, in a match only.
  *
  * Every selector below is prefixed `#uiBase:not(.onMenu)`, and that prefix is
- * the point. Krunker stamps its own state onto #uiBase — its main.css labels
+ * the point. Krunker stamps its own state onto #uiBase, its main.css labels
  * them in its own main.css as onMenu "NORMAL MENU", onCompMenu "COMP MENU",
- * onGame "IN-GAME", onSpect and onEndScrn — so "not the main menu" becomes
+ * onGame "IN-GAME", onSpect and onEndScrn, so "not the main menu" becomes
  * something the stylesheet says out loud, rather than a property maintained by
  * being careful about which selectors get added to it later.
  *
  * onCompMenu USED TO BE EXCLUDED HERE TOO, and that was wrong. The five states
  * are mutually exclusive, so excluding the comp menu did not make the match
- * safer — it only meant that hosting or joining a comp lobby dropped the theme
+ * safer: it only meant that hosting or joining a comp lobby dropped the theme
  * entirely, which reads exactly like something external blocking the client.
  * The comp lobby is one of ours to style; only the main menu is not.
  *
@@ -20,7 +20,7 @@
  * original and deleting whatever looked menu-shaped did not catch those.
  *
  * The record of what was cut from the original, and why, is in
- * preload/hud-skin.ts — comments in a .ts file get dropped by the bundler,
+ * preload/hud-skin.ts: comments in a .ts file get dropped by the bundler,
  * where comments in a stylesheet are injected into the page verbatim.
  */
 

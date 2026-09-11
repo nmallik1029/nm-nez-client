@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
  *
  * A theme is applied last in the cascade and the themes folder is watched
  * (`main/themes.ts`), so a token overridden in that file lands in the game the
- * moment you save — no reload, no restart, no `npm start`. Which makes a file
+ * moment you save: no reload, no restart, no `npm start`. Which makes a file
  * holding all of them a live editor for the client's whole look:
  *
  *   1. npm run tokens:dev

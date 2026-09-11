@@ -21,7 +21,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'changed',
-        text: 'The menu has its colour back. The five buttons along the bottom are five colours again, the way Krunker draws them, and the menu list down the left is white rather than grey. The counts along the top keep the game’s own coding too — gold KR, a purple pickaxe, a green trophy — instead of every one of them the same grey.',
+        text: 'The menu has its colour back. The five buttons along the bottom are five colours again, the way Krunker draws them, and the menu list down the left is white rather than grey. The counts along the top keep the game’s own coding too (gold KR, a purple pickaxe, a green trophy) instead of every one of them the same grey.',
       },
       {
         kind: 'changed',
@@ -50,7 +50,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'fixed',
-        text: 'The menu code no longer costs you frame time during a match. Five components reacted to every DOM change Krunker made — every killfeed line, chat message and ammo tick — and one of them measured element positions each time, which forces the browser to stop and re-layout the page. They now do their work once per frame instead, which is all any of them needed.',
+        text: 'The menu code no longer costs you frame time during a match. Five components reacted to every DOM change Krunker made (every killfeed line, chat message and ammo tick), and one of them measured element positions each time, which forces the browser to stop and re-layout the page. They now do their work once per frame instead, which is all any of them needed.',
       },
       {
         kind: 'fixed',
@@ -68,7 +68,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
       },
       {
         kind: 'changed',
-        text: 'Closing the panel no longer stops the queue. It carries on through a reload, a server change and closing the window, because it runs outside the page — a small readout shows the time elapsed while the panel is shut, under Click to Play on the menu and under the counters in a match.',
+        text: 'Closing the panel no longer stops the queue. It carries on through a reload, a server change and closing the window, because it runs outside the page. A small readout shows the time elapsed while the panel is shut, under Click to Play on the menu and under the counters in a match.',
       },
       {
         kind: 'added',
@@ -86,7 +86,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'changed',
-        text: 'The client is called NM/NZ now. Same client, shorter name — it is in the window title, the menu wordmark, the in-game watermark and the installer. Your settings, themes, swapped files and Krunker login all carry over untouched.',
+        text: 'The client is called NM/NZ now. Same client, shorter name: it is in the window title, the menu wordmark, the in-game watermark and the installer. Your settings, themes, swapped files and Krunker login all carry over untouched.',
       },
       {
         kind: 'changed',
@@ -100,7 +100,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'added',
-        text: 'Hardpoint enemy counter: how many of them are standing on the point, beside the other counters top right. Nothing in the game reports that, so it is worked out from how fast their score is climbing — Hardpoint pays 10 a second for each player on the point. Hardpoint only, and there is a switch for it in Settings under Interface.',
+        text: 'Hardpoint enemy counter: how many of them are standing on the point, beside the other counters top right. Nothing in the game reports that, so it is worked out from how fast their score is climbing: Hardpoint pays 10 a second for each player on the point. Hardpoint only, and there is a switch for it in Settings under Interface.',
       },
       {
         kind: 'added',
@@ -114,7 +114,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'fixed',
-        text: 'The NM/NZ look no longer switches itself off in a comp lobby. Every HUD rule was excluding Krunker’s comp menu state along with its main menu, so hosting or joining a comp game dropped the theme until the round started. It now covers a match, the comp lobby, spectate and the end screen — everything but the main menu.',
+        text: 'The NM/NZ look no longer switches itself off in a comp lobby. Every HUD rule was excluding Krunker’s comp menu state along with its main menu, so hosting or joining a comp game dropped the theme until the round started. It now covers a match, the comp lobby, spectate and the end screen, everything but the main menu.',
       },
     ],
   },
@@ -124,7 +124,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'added',
-        text: 'A Scripts button in the top bar, next to Settings. It opens an empty window for now — quality-of-life and fun scripts go in there as they are written.',
+        text: 'A Scripts button in the top bar, next to Settings. It opens an empty window for now. Quality-of-life and fun scripts go in there as they are written.',
       },
       {
         kind: 'changed',
@@ -148,7 +148,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'changed',
-        text: 'Picking NM/NZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match — the menu is untouched by it.',
+        text: 'Picking NM/NZ for Menu style now restyles the in-game HUD to match: no panels behind the ammo, timer, leaderboard or player block, your FPS and ping as bare figures, and a flatter chat box. It is one look rather than two switches, and it only applies in a match. The menu is untouched by it.',
       },
     ],
   },
@@ -188,7 +188,7 @@ export const CHANGELOG: readonly ChangelogEntry[] = [
     changes: [
       {
         kind: 'added',
-        text: 'Menu style, in Settings under Themes: Krunker (original) or NM/NZ. Original is what a fresh install gets — the game’s own look is what you came for, and it is not this client’s place to rearrange it before you have asked.',
+        text: 'Menu style, in Settings under Themes: Krunker (original) or NM/NZ. Original is what a fresh install gets: the game’s own look is what you came for, and it is not this client’s place to rearrange it before you have asked.',
       },
       {
         kind: 'changed',

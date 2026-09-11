@@ -48,7 +48,7 @@ function ding() {
  *
  * Only an increase is a kill. It going down is a new match or a round reset,
  * which re-baselines rather than dinging, and the very first reading only
- * sets the baseline — joining a match already on 12 kills is not 12 kills
+ * sets the baseline: joining a match already on 12 kills is not 12 kills
  * just now.
  */
 function onCount() {

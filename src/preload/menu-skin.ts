@@ -11,7 +11,7 @@ import { coalesced } from './schedule';
  *
  * Almost all of it is CSS, which is the whole design of this module. A skin
  * that is a stylesheet toggles in one assignment, costs nothing per frame, and
- * cannot leave the menu in a half-applied state — which matters on a client
+ * cannot leave the menu in a half-applied state, which matters on a client
  * whose entire reason to exist is frame pacing. What lives here is the work
  * CSS genuinely cannot do: Alt Manager, the wordmark, the match-actions line
  * and the footer links are DOM moves, not restyles.
@@ -35,7 +35,7 @@ let actionsHome: { parent: Element; nextSibling: ChildNode | null } | null = nul
 /**
  * Contact / Terms / Changelog, bottom right, under everything else.
  *
- * NOT `#baseLinks` — that one ships empty and lives inside the ad holder.
+ * NOT `#baseLinks`: that one ships empty and lives inside the ad holder.
  * These are spans, not anchors:
  *
  *   #termsInfo > span.terms x3
@@ -56,7 +56,7 @@ const SETTINGS_WINDOW_ID = 'menuWindow';
  * Controls in the settings header, found by their label.
  *
  * Their markup is written by Krunker's script rather than shipped in the
- * page, so there is no id or stable class to read off the source — the same
+ * page, so there is no id or stable class to read off the source: the same
  * problem the footer links had, and the same answer. Text is what they are.
  */
 const SETTINGS_HIDDEN = ['manage ads'];
@@ -103,7 +103,7 @@ const CLASS_CONTAINER_ID = 'menuClassContainer';
  * hidden one, so there is no login state left to get wrong. Appending to
  * `#playerHeaderEl` would be visible too, but that row is
  * `justify-content:space-between` and a third child drags the nav in off the
- * right edge — measured at 1385px to 732px on a 1920 viewport.
+ * right edge, measured at 1385px to 732px on a 1920 viewport.
  */
 const HEADER_NAV_SELECTOR = '.headerBarRight';
 
@@ -336,15 +336,15 @@ function placeSettingsChrome(): void {
  * Find Krunker's windows by their shape rather than by their name.
  *
  * The first version of the window sheet scoped every rule to a container id
- * taken from Krunker's stylesheet — `#menuWindow` and a handful of popups. The
+ * taken from Krunker's stylesheet: `#menuWindow` and a handful of popups. The
  * settings window happened to be on that list; the login modal was not, and
  * came through completely unstyled. Guessing at ids for markup written by
  * someone else's script is not a strategy that finishes.
  *
  * Krunker centres every one of these the same way: absolutely positioned,
  * `left:50%` with a `translate(-50%,-50%)`. The transform is not readable back
- * from computed style — it comes out as a matrix with the percentages already
- * resolved — so this measures the result instead. A positioned, visible box
+ * from computed style, it comes out as a matrix with the percentages already
+ * resolved, so this measures the result instead. A positioned, visible box
  * that is horizontally centred in the viewport and large enough to be a window
  * is one, whatever it is called.
  */
@@ -380,8 +380,8 @@ function tagModals(): void {
 /**
  * Invite and Join, moved up beside the map name.
  *
- * Krunker lays the match info out as two rows — the mode and map on the first,
- * these two on the second — which leaves them orphaned under a line they
+ * Krunker lays the match info out as two rows, the mode and map on the first,
+ * these two on the second, which leaves them orphaned under a line they
  * belong to. They go in next to the map name instead, and the wrapper gets a
  * class so the sheet can lay that pair out on one baseline.
  */
@@ -421,7 +421,7 @@ function apply(): void {
 }
 
 /**
- * Turn the skin on or off. Takes effect immediately — no reload, because
+ * Turn the skin on or off. Takes effect immediately: no reload, because
  * everything it does is a stylesheet and two element moves.
  */
 export function setMenuSkin(on: boolean): void {

@@ -185,7 +185,7 @@ export const BLOCKABLE_ASSETS = {
  * ---------------------------------------------------------------------------
  *
  * Read before writing a rule against the game's own markup. Every item here
- * was paid for — each one is a bug that shipped, or nearly did. All verified
+ * was paid for: each one is a bug that shipped, or nearly did. All verified
  * against the running client on 2026-09-10.
  *
  * 1. THE GAME STYLES BY ID, AND MARKS COLOUR !IMPORTANT.
@@ -202,7 +202,7 @@ export const BLOCKABLE_ASSETS = {
  *    it is off-canvas. Clear the transform in the same rule.
  *
  * 3. #menuClassContainer IS scale(0.7), transform-origin bottom right.
- *    getBoundingClientRect() therefore reports 0.7x the CSS size — feeding a
+ *    getBoundingClientRect() therefore reports 0.7x the CSS size: feeding a
  *    measured width back into a style shrinks it every pass. Read the number
  *    off the `#customizeButton` rule instead (see accounts/menu-buttons.ts).
  *    Because the origin is the bottom right, `bottom` alone moves it.
@@ -210,7 +210,7 @@ export const BLOCKABLE_ASSETS = {
  * 4. THE NEWER MENU IS SVELTE, AND ITS CSS IS NOT IN ANY STYLESHEET.
  *    Classes carry a per-build hash: `menuItem svelte-fgmdj8`. Match the
  *    stable fragment with [class*="..."], never the hash. And the rules
- *    themselves are injected from the JS bundle at runtime — none of the menu
+ *    themselves are injected from the JS bundle at runtime: none of the menu
  *    component classes appear in main.css or bundledStyles.css, so you cannot
  *    read them from the downloaded CSS. Read them off the live DOM.
  *
@@ -224,7 +224,7 @@ export const BLOCKABLE_ASSETS = {
  *    call getElementById on an id that no longer resolved; it threw partway
  *    through, so the loading backdrop never faded and no play button was ever
  *    wired up. Black screen, dead clicks, and CI green throughout. Prefer
- *    `display:none` — it is not laid out, painted or hit-tested either, so
+ *    `display:none`, it is not laid out, painted or hit-tested either, so
  *    removal buys nothing and bets on their internals.
  *
  * 7. MATERIAL ICONS CARRY THE LIGATURE NAME AS TEXT.
@@ -239,7 +239,7 @@ export const BLOCKABLE_ASSETS = {
  *
  * 9. THE GAME SETS INLINE STYLES FROM ITS OWN JS.
  *    #menuFPS gets its colour written inline as the number changes. A
- *    stylesheet loses to that unless it says !important — which is sometimes
+ *    stylesheet loses to that unless it says !important, which is sometimes
  *    what you want, since that particular colour is a real threshold.
  *
  * 10. .bigShadowT AND .button:hover FIGHT BACK.
@@ -254,12 +254,12 @@ export const BLOCKABLE_ASSETS = {
  * 12. STACKING: #uiBase (z:1) holds #gameUI (z:1) and #fullMenHider (auto),
  *     and #menuHolder (z:10) sits inside the latter, so the menu paints above
  *     #instructionHolder. A backdrop added inside #menuHolder needs
- *     `z-index:-1`, not 0 — a positioned child at 0 paints above its in-flow
+ *     `z-index:-1`, not 0, a positioned child at 0 paints above its in-flow
  *     siblings and would cover the nav instead of sitting behind it.
  *
  * 13. A SOLID DARK SCREEN MEANS MENU INIT THREW.
  *     #instructionsFadeBG is a solid #222 that fades out when the menu is
- *     ready. If it never fades, something earlier in their setup died — look
+ *     ready. If it never fades, something earlier in their setup died: look
  *     for a null from an element we moved or removed, not for a CSS bug.
  *
  * 14. NONE OF THIS IS REACHABLE FROM THE TEST SUITE.

@@ -227,15 +227,15 @@ function setPromoStyle(enabled: boolean): void {
  * off the live menu on 2026-09-10.
  *
  * The two ids carry no Svelte build hash, so they're matched exactly. The
- * tooltip has neither an id nor a stable class — "ph-tooltip svelte-zoii2u"
- * is hashed — so it's matched on the stable fragment and scoped to the header
+ * tooltip has neither an id nor a stable class, "ph-tooltip svelte-zoii2u"
+ * is hashed, so it's matched on the stable fragment and scoped to the header
  * bar, which keeps the rule off any other tooltip in the menu.
  */
 /**
  * Empty, deliberately.
  *
  * Everything that used to be listed here is hidden by `setPromoStyle` instead,
- * because taking a promo out of the document broke Krunker's own menu setup —
+ * because taking a promo out of the document broke Krunker's own menu setup: 
  * see the note on those selectors. The machinery below is kept because it is
  * the right tool for a promo that genuinely cannot be hidden with CSS, but
  * anything added here has to be checked against the menu actually loading.
@@ -269,8 +269,8 @@ const removedPromos = new Map<string, RemovedPromo>();
  * Svelte detaches a node with `parentNode.removeChild(node)`, which throws
  * when parentNode is null, and Krunker's menu is Svelte-compiled and tears
  * these components down on its own schedule. Reparenting into a holder that is
- * not in the document gets the element off the page — the part that actually
- * matters — while leaving it a parent to be detached from.
+ * not in the document gets the element off the page, the part that actually
+ * matters, while leaving it a parent to be detached from.
  */
 let promoBin: HTMLDivElement | null = null;
 
@@ -301,7 +301,7 @@ function removeMenuPromos(): void {
 
 /**
  * Elements only. Svelte marks its insertion points with comment nodes, and
- * moving those out would send the next render somewhere it can't be seen —
+ * moving those out would send the next render somewhere it can't be seen: 
  * including into markup we don't own.
  *
  * Nothing here is recorded for restore: the banner only exists during an end
@@ -379,7 +379,7 @@ function setPromoRemoval(enabled: boolean): void {
 /**
  * Both halves of the menu-promo setting: a stylesheet for the promos CSS can
  * cover, and node removal for the ones that come out of the page entirely.
- * Still reversible without a reload — the removed menu nodes go back where
+ * Still reversible without a reload: the removed menu nodes go back where
  * they came from.
  */
 export function setMenuPromoHiding(enabled: boolean): void {

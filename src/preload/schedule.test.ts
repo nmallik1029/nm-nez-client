@@ -4,7 +4,7 @@ import { coalesced } from './schedule';
 /**
  * The environment is `node`, so there is no real `requestAnimationFrame`. The
  * stub keeps the queued callbacks and runs them on demand, which is what makes
- * "did the burst collapse" observable at all — with a real rAF the test would
+ * "did the burst collapse" observable at all: with a real rAF the test would
  * only be able to assert timing.
  */
 function stubFrames(): { flush: () => void; queued: () => number } {

@@ -93,8 +93,8 @@ instead of failing with a confusing error. Restart the client to switch again.
 - **CSS themes.** Any `.css` in `swap/themes/`. Edit one in a text editor and it lands in
   the game when you save; the folder is watched.
 
-  Everything the client's look is made of — colour, type, spacing, radius, border
-  weight, motion, stacking order — is a `--nm-*` custom property on `:root`, and a theme
+  Everything the client's look is made of (colour, type, spacing, radius, border
+  weight, motion, stacking order) is a `--nm-*` custom property on `:root`, and a theme
   is loaded last, so overriding a token re-skins everything that uses it without having
   to match a single one of our selectors:
 

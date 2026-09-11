@@ -5,7 +5,7 @@ import { toggleStyle } from './style';
  * The minimal in-game HUD, as a stylesheet you can switch on.
  *
  * All of it is CSS, so this is one call either way and there is nothing to
- * put back — which is the difference between this and the menu skin, where a
+ * put back, which is the difference between this and the menu skin, where a
  * few elements genuinely have to move. Turning it off restores Krunker's own
  * HUD by removing the sheet, not by undoing anything.
  *
@@ -30,7 +30,7 @@ import { toggleStyle } from './style';
  *    drawing a replacement. They fight anything else that sizes those, and
  *    they hard-code English.
  *  - `#menuClassIcn`, `#menuClassName`, `#menuClassSubtext`,
- *    `#classPreviewCanvas`, `#menuClassNameTag` — the whole class card.
+ *    `#classPreviewCanvas`, `#menuClassNameTag`: the whole class card.
  *  - `#instructions` and its `::after`, which replaced CLICK TO PLAY.
  *  - `backdrop-filter: blur(3.3px)` on `.button, .menuItem`. Every menu
  *    button and row became a live blur layer, which on a client built around
@@ -40,7 +40,7 @@ import { toggleStyle } from './style';
  * Three more went as already broken rather than as conflicts:
  *
  *  - `--gameInfoColor`, `--healthTextColor` and `--debugColor` were `#fffff`
- *    — five digits. Not a colour; the browser drops the declaration.
+ *   , five digits. Not a colour; the browser drops the declaration.
  *  - `#matchInfo::after` drew a variable nothing defines, so it rendered
  *    nothing while `#matchInfo` itself was set to font-size 0. That hid the
  *    match info rather than restyling it.

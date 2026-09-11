@@ -4,7 +4,7 @@ import { STYLE_IDS, TOKENS_CSS } from '../shared/ui';
  * One way to get a stylesheet into the page.
  *
  * Every surface used to carry its own copy of "make a `<style>`, give it an
- * id, check it isn't already there, append it to head" — six of them, and two
+ * id, check it isn't already there, append it to head": six of them, and two
  * appended to `documentElement` instead, which quietly put those rules *after*
  * the active theme in tree order and made them the one thing a theme couldn't
  * restyle. Going through here means the cascade has a single shape:

@@ -29,8 +29,8 @@ const START_SELECTOR = 'button[class*="start-button"]';
 /**
  * The label their button wears when it is offering to start a search.
  *
- * That is the one state ours replaces. The button has at least one other —
- * rejoining a ranked game already in progress — and there is no version of
+ * That is the one state ours replaces. The button has at least one other, 
+ * rejoining a ranked game already in progress, and there is no version of
  * that we could provide, since only the game knows which match to put you
  * back into. Matching on the label rather than on some state flag because
  * the label is the only thing about it that is stable and readable.

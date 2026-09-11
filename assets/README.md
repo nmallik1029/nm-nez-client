@@ -18,7 +18,7 @@ Played when the ranked queue finds you a game.
 
 Drop an mp3 in beside this file with exactly that name. It ships with the
 client, so anyone who installs or updates gets it without having to find a
-folder — which is the whole reason it lives here and not in `swap/`.
+folder, which is the whole reason it lives here and not in `swap/`.
 
 A few seconds at most, and quiet. It plays over whatever you were doing.
 
