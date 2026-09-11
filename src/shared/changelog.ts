@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.37',
+    date: '2026-09-10',
+    changes: [
+      { kind: 'added', text: 'YBG_Wallace now shows in their own colour on the leaderboard and player list.' },
+    ],
+  },
+  {
     version: '0.1.36',
     date: '2026-09-10',
     changes: [
