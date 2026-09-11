@@ -25,6 +25,18 @@ const BUTTON_ID = UI_IDS.queueButton;
 const FOOTER_SELECTOR = '[class*="footer-controls"]';
 /** Krunker's own queue button, which ours stands in for. */
 const START_SELECTOR = 'button[class*="start-button"]';
+/**
+ * The label their button wears when it is offering to start a search.
+ *
+ * That is the one state ours replaces. The button has at least one other —
+ * rejoining a ranked game already in progress — and there is no version of
+ * that we could provide, since only the game knows which match to put you
+ * back into. Matching on the label rather than on some state flag because
+ * the label is the only thing about it that is stable and readable.
+ */
+const FIND_MATCH_LABEL = /find\s*match/i;
+/** Set on their button while it is doing a job ours cannot. */
+const REJOIN_ATTR = 'data-nm-rejoin';
 
 /**
  * Our button, wearing Krunker's own.
@@ -51,21 +63,45 @@ function buildButton(template: Element | null): HTMLElement {
   return button;
 }
 
+/**
+ * Decide which of the two buttons the footer is showing.
+ *
+ * Ours while theirs says FIND MATCH, theirs otherwise. Run on every pass,
+ * not just on insert, because the label changes underneath us: joining a
+ * ranked game turns FIND MATCH into a rejoin without rebuilding the footer.
+ */
+function chooseButton(footer: Element, ours: HTMLElement): void {
+  const theirs = footer.querySelector(`${START_SELECTOR}:not(#${BUTTON_ID})`);
+  if (!theirs) return;
+
+  const label = (theirs.textContent ?? '').trim();
+  // An empty label is a re-render in progress, not a state. Treating it as
+  // the rejoin state would flash their button on every update.
+  const offeringSearch = label === '' || FIND_MATCH_LABEL.test(label);
+
+  theirs.toggleAttribute(REJOIN_ATTR, !offeringSearch);
+  ours.style.display = offeringSearch ? '' : 'none';
+}
+
 function place(): void {
   const footer = document.querySelector(FOOTER_SELECTOR);
   if (!footer) return;
-  if (footer.querySelector(`#${BUTTON_ID}`)) return;
 
   defineStyle(STYLE_IDS.queueButton, SHEETS.queueButton);
 
-  // Krunker's own button is hidden by the sheet, not removed, so it is still
-  // here to copy a class list from and still here for Svelte to re-render.
-  const start = footer.querySelector(START_SELECTOR);
-  const button = buildButton(start);
+  let button = footer.querySelector<HTMLElement>(`#${BUTTON_ID}`);
+  if (!button) {
+    // Krunker's own button is hidden by the sheet rather than removed, so it
+    // is still here to copy a class list from and still here for Svelte to
+    // re-render.
+    const start = footer.querySelector(`${START_SELECTOR}:not(#${BUTTON_ID})`);
+    button = buildButton(start);
+    // Exactly where theirs was, so the footer reads the same.
+    if (start) start.insertAdjacentElement('beforebegin', button);
+    else footer.appendChild(button);
+  }
 
-  // Exactly where theirs was, so the footer reads the same.
-  if (start) start.insertAdjacentElement('beforebegin', button);
-  else footer.appendChild(button);
+  chooseButton(footer, button);
 }
 
 /**

@@ -38,6 +38,8 @@ interface RankedView {
 
 let view: RankedView = { status: 'idle' };
 let ticker: ReturnType<typeof setInterval> | null = null;
+/** Watches #uiBase for the menu/match class flip. */
+let screenWatcher: MutationObserver | null = null;
 /** Data URL for the match sound, or null if there is no file. */
 let matchSound: string | null = null;
 /** So a repeated 'matched' push does not fire the sound twice. */
@@ -104,7 +106,6 @@ function syncPill(): void {
     // openPanel() having installed the sheet.
     defineStyle(STYLE_IDS.rankedPanel, SHEETS.rankedPanel);
     pill.id = PILL_ID;
-    const dot = document.createElement('i');
     const text = document.createElement('span');
     text.className = 'txt';
     const open = document.createElement('button');
@@ -115,7 +116,7 @@ function syncPill(): void {
     stop.className = 'stop';
     stop.textContent = 'Stop';
     stop.addEventListener('click', () => ipcRenderer.send(IPC.rankedStop));
-    pill.append(dot, text, open, stop);
+    pill.append(text, open, stop);
     document.body.appendChild(pill);
   }
 
@@ -152,6 +153,10 @@ const PILL_GAP_PX = 12;
  */
 function positionPill(pill: HTMLElement): void {
   const onMenu = document.getElementById('uiBase')?.classList.contains('onMenu') === true;
+
+  // In a match the pointer is locked, so Open and Stop cannot be reached.
+  // Hiding them leaves the one thing that is still useful: the clock.
+  pill.classList.toggle('bare', !onMenu);
 
   if (onMenu) {
     const instructions = document.getElementById('instructions');
@@ -392,4 +397,18 @@ export function installRankedPanel(): void {
       syncPill();
     }, 1000);
   }
+
+  // Dying, spawning and backing out to the menu all move what the pill has
+  // to sit under, and all of them are a class change on #uiBase. Watching
+  // for it puts the pill in the right place on the same frame; on the ticker
+  // alone it spent up to a second in the old spot, which is the lag you see
+  // going in and out of a match.
+  const uiBase = document.getElementById('uiBase');
+  if (uiBase && screenWatcher === null) {
+    screenWatcher = new MutationObserver(() => syncPill());
+    screenWatcher.observe(uiBase, { attributes: true, attributeFilter: ['class'] });
+  }
+  // The HUD also settles over a few frames as it is built, so the anchor can
+  // move once more after the class lands.
+  window.addEventListener('resize', () => syncPill());
 }

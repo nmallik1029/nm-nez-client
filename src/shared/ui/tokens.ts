@@ -211,10 +211,18 @@ const WATERMARK = `
 
 /** The queue launcher wedged into Krunker's own ranked footer. */
 const QUEUE_BUTTON = `
-  --nm-queue-bg:#1f7a3d;
-  --nm-queue-bg-hover:#2a9a4f;
-  --nm-queue-border:#38c463;
-  --nm-queue-icon:#eafff1;
+  --nm-queue-bg:#5ce05a;
+  /* Dark text, because the fill is bright enough that white disappears. */
+  --nm-queue-text:#000;
+  /*
+   * The rejoin state, which is Krunker's own button rather than ours.
+   *
+   * The same button in every respect but the fill: one starts a search, the
+   * other drops you back into a match already waiting for you, and those
+   * want telling apart at a glance without looking like two different
+   * controls. Yellow is bright enough to take the same dark text.
+   */
+  --nm-rejoin-bg:#f0c420;
 `;
 
 /**

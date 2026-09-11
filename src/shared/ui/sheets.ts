@@ -125,13 +125,38 @@ const queueButton = `
  * the exclusion this rule hides the replacement along with the original and
  * the footer ends up with no queue button at all.
  */
-[class*="footer-controls"] > [class*="queue-all-regions-container"],
-[class*="footer-controls"] > button[class*="start-button"]:not(#${UI_IDS.queueButton}){
+[class*="footer-controls"] > [class*="queue-all-regions-container"]{display:none !important}
+/*
+ * Krunker's button is hidden only while it is offering FIND MATCH, which is
+ * the one job ours does better. It has a second state — rejoining a ranked
+ * game you are already in — and that one we have no replacement for, so it
+ * comes back. ranked-button.ts sets the attribute by reading their label.
+ */
+[class*="footer-controls"] > button[class*="start-button"]:not(#${UI_IDS.queueButton}):not([data-nm-rejoin]){
   display:none !important}
-#${UI_IDS.queueButton}{display:inline-flex;align-items:center;justify-content:center;
-  width:130px;height:50px;margin:0 var(--nm-gap);border-radius:var(--nm-radius);cursor:pointer;
-  background:var(--nm-queue-bg);
-  box-sizing:border-box;color:black !important;text-shadow:none !important}
+/*
+ * One shape, two fills.
+ *
+ * Both buttons are described by the same rule so they cannot drift apart:
+ * the rejoin state is meant to be the QUEUE button in a different colour,
+ * and the surest way to keep it that way is not to write it out twice. Only
+ * the background differs, further down.
+ *
+ * !important throughout because ours wears Krunker's start-button class to
+ * keep their type metrics, and theirs is their own button, so both are
+ * arguing with the game's own declarations.
+ */
+#${UI_IDS.queueButton},
+[class*="footer-controls"] > button[data-nm-rejoin]{
+  display:inline-flex !important;align-items:center !important;
+  justify-content:center !important;box-sizing:border-box !important;
+  padding:15px 40px !important;margin:0 !important;
+  border:none !important;border-radius:var(--nm-radius-xs) !important;
+  font-size:var(--nm-fs-7xl) !important;font-weight:bold !important;
+  text-transform:uppercase !important;text-shadow:none !important;
+  color:var(--nm-queue-text) !important;cursor:pointer !important}
+#${UI_IDS.queueButton}{background:var(--nm-queue-bg) !important}
+[class*="footer-controls"] > button[data-nm-rejoin]{background:var(--nm-rejoin-bg) !important}
 /*
  * No hover, and it takes !important to mean it.
  *
@@ -144,11 +169,18 @@ const queueButton = `
 #${UI_IDS.queueButton}:hover,
 #${UI_IDS.queueButton}:focus,
 #${UI_IDS.queueButton}:active{
-  background:var(--nm-queue-bg) !important;
-  border-color:var(--nm-queue-border) !important;
-  color:var(--nm-text-hi) !important;
-  transform:none !important;filter:none !important;
-  box-shadow:none !important;animation:none !important}
+  background:var(--nm-queue-bg) !important}
+[class*="footer-controls"] > button[data-nm-rejoin]:hover,
+[class*="footer-controls"] > button[data-nm-rejoin]:focus,
+[class*="footer-controls"] > button[data-nm-rejoin]:active{
+  background:var(--nm-rejoin-bg) !important}
+/* Everything else a hover would move, pinned for both. */
+#${UI_IDS.queueButton}:hover,#${UI_IDS.queueButton}:focus,#${UI_IDS.queueButton}:active,
+[class*="footer-controls"] > button[data-nm-rejoin]:hover,
+[class*="footer-controls"] > button[data-nm-rejoin]:focus,
+[class*="footer-controls"] > button[data-nm-rejoin]:active{
+  color:var(--nm-queue-text) !important;transform:none !important;
+  filter:none !important;box-shadow:none !important;animation:none !important}
 `;
 
 /**
@@ -299,11 +331,14 @@ const rankedPanel = `
  */
 #${UI_IDS.rankedPill}{position:fixed;top:196px;
   z-index:var(--nm-z-toast);display:flex;align-items:center;gap:10px;
-  padding:9px 12px;background:var(--nm-game-bg);
-  border:var(--nm-bw-thick) solid var(--nm-game-border);
   color:var(--nm-game-text);font-family:var(--nm-font-display);
-  font-size:var(--nm-fs-md)}
-#${UI_IDS.rankedPill} i{width:8px;height:8px;flex:0 0 auto;background:var(--nm-ok)}
+  font-size:var(--nm-fs-md);
+  /* No panel behind it, so the text carries its own legibility the way
+     Krunker's own HUD labels do. */
+  text-shadow:var(--nm-watermark-outline) -1px -1px 0,var(--nm-watermark-outline) 1px -1px 0,
+    var(--nm-watermark-outline) -1px 1px 0,var(--nm-watermark-outline) 1px 1px 0}
+/* In a match the pointer is locked, so the buttons are unreachable. */
+#${UI_IDS.rankedPill}.bare button{display:none}
 #${UI_IDS.rankedPill} .txt{font-variant-numeric:tabular-nums}
 #${UI_IDS.rankedPill} button{font-family:inherit;cursor:pointer;padding:4px 10px;
   font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track-md);text-transform:uppercase;
