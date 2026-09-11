@@ -35,6 +35,16 @@ const START_SELECTOR = 'button[class*="start-button"]';
  * the label is the only thing about it that is stable and readable.
  */
 const FIND_MATCH_LABEL = /find\s*match/i;
+/**
+ * Labels that are not a state, just the button between states.
+ *
+ * Krunker flashes LOADING... for a moment every time the ranked menu
+ * opens. Treating that as "not FIND MATCH, therefore rejoin" put a yellow
+ * REJOIN on screen for that moment, every single time. It means nothing is
+ * known yet, so it is handled as the resting case.
+ */
+const TRANSIENT_LABEL = /loading|\u2026|\.\.\./i;
+
 /** Set on their button while it is doing a job ours cannot. */
 const REJOIN_ATTR = 'data-nm-rejoin';
 
@@ -75,12 +85,18 @@ function chooseButton(footer: Element, ours: HTMLElement): void {
   if (!theirs) return;
 
   const label = (theirs.textContent ?? '').trim();
-  // An empty label is a re-render in progress, not a state. Treating it as
-  // the rejoin state would flash their button on every update.
-  const offeringSearch = label === '' || FIND_MATCH_LABEL.test(label);
+  // Empty or mid-transition is not a state. Treating either as the rejoin
+  // state flashes their button on screen on every update.
+  const unknown = label === '' || TRANSIENT_LABEL.test(label);
+  const offeringSearch = unknown || FIND_MATCH_LABEL.test(label);
 
   theirs.toggleAttribute(REJOIN_ATTR, !offeringSearch);
-  ours.style.display = offeringSearch ? '' : 'none';
+
+  // setProperty with important, because the rule the two buttons share sets
+  // display:inline-flex !important to beat Krunker's own. A plain inline
+  // display:none loses to that, which is how both ended up on screen at once.
+  if (offeringSearch) ours.style.removeProperty('display');
+  else ours.style.setProperty('display', 'none', 'important');
 }
 
 function place(): void {
