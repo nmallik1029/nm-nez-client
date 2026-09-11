@@ -112,6 +112,8 @@ function headerHome(): Element | null {
 
 let enabled = false;
 let observer: MutationObserver | null = null;
+/** Pending coalesced pass; 0 when none is scheduled. */
+let raf = 0;
 
 /**
  * Take out the backdrop this skin used to draw.
@@ -439,6 +441,29 @@ export function setMenuSkin(on: boolean): void {
 }
 
 /**
+ * Coalesce a mutation burst into one pass.
+ *
+ * This matters more here than anywhere else in the preload. The observer below
+ * watches #uiBase with subtree:true, and in a match that fires on every
+ * killfeed line, chat message, ammo tick and leaderboard update -- dozens of
+ * batches a second. `apply()` ends in `tagModals()`, which runs a six-selector
+ * querySelectorAll and then `getComputedStyle` plus `getBoundingClientRect` on
+ * each hit: two forced synchronous layouts per candidate, per batch, on the
+ * main thread. On a client built around frame pacing that is the worst possible
+ * place to spend time, and none of it is needed while a match is on screen.
+ *
+ * Same shape as `scheduleLift` in chat-place.ts. One pass per frame at most,
+ * whatever the mutation rate.
+ */
+function schedule(): void {
+  if (raf !== 0) return;
+  raf = requestAnimationFrame(() => {
+    raf = 0;
+    apply();
+  });
+}
+
+/**
  * Krunker rebuilds its menu markup as you navigate, same as its settings
  * window, so anything injected once is gone the first time you open a submenu
  * and come back. The observer puts it back.
@@ -446,7 +471,7 @@ export function setMenuSkin(on: boolean): void {
  * Installed once and left running even while the skin is off, because the
  * "off" path is what restores Alt Manager after a rebuild recreates it. Both
  * placements early-return once things are where they belong, so the steady
- * state is a couple of lookups per mutation batch.
+ * state is a couple of lookups per frame.
  */
 export function installMenuSkin(on: boolean): void {
   setMenuSkin(on);
@@ -455,6 +480,6 @@ export function installMenuSkin(on: boolean): void {
   const root = document.getElementById('uiBase') ?? document.body;
   if (!root) return;
 
-  observer = new MutationObserver(() => apply());
+  observer = new MutationObserver(schedule);
   observer.observe(root, { childList: true, subtree: true });
 }
