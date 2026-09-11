@@ -85,7 +85,7 @@ function sameName(a: string, b: string): boolean {
  * them up just to split them again would be silly.
  *
  * A friend outranks their clan on colour: naming a person is the more
- * specific choice of the two. Bold is an or, not a precedence — a bolded
+ * specific choice of the two. Bold is an or, not a precedence: a bolded
  * friend is bold whatever their clan says, and a bolded clan bolds its
  * members whether or not they are also named individually.
  */
@@ -117,6 +117,8 @@ export const FRIENDS: readonly FriendHighlight[] = [
   // { name: 'illegal', color: '#48eaff', isBolded: true },
   { name: 'drainciity', color: '#ccccff' },
   { name: 'YBG_Wallace', color: '#492769' },
+  { name: 'PvlseFN', color: '#ce9a46'},
+  { name: 'iliegai', color: '#a8ffec'}
 ];
 
 /** Clans, by tag, without the brackets Krunker draws around them. */
