@@ -12,7 +12,7 @@ import { defineStyle } from '../style';
  * that jumps has to answer three questions every time you touch it: where is
  * that section in scroll coordinates, how do I hold the index still while the
  * content moves under it, and which entry should be lit right now. Each of
- * those was wrong at least once, and the last of them cannot be right at all —
+ * those was wrong at least once, and the last of them cannot be right at all: 
  * an element inside a scrolling box that corrects its own position is a frame
  * behind by construction, which is exactly what the sliding was.
  *
@@ -26,8 +26,8 @@ import { defineStyle } from '../style';
  *  - `#settHolder` is rebuilt from scratch on every tab change and on every
  *    keystroke in the search box, so this is rebuilt from the DOM each time
  *    rather than held as state. `sync()` is cheap and idempotent.
- *  - The window is not laid out when Krunker's hooks fire — `#menuWindow`
- *    reports a height of zero at that moment — hence the retries.
+ *  - The window is not laid out when Krunker's hooks fire, `#menuWindow`
+ *    reports a height of zero at that moment, hence the retries.
  *  - The index is mounted OUTSIDE the scrolling box. Inside it, it scrolls
  *    with the content, and `position:fixed` does not save it either, because
  *    `#menuWindow` centres itself with a transform and a transformed ancestor
@@ -51,6 +51,33 @@ const RETRY_LIMIT = 20;
 const RETRY_MS = 50;
 
 /**
+ * Marks a panel that is waiting for its index. The sheet hides it.
+ *
+ * Without this a tab change shows the unindexed panel first and the
+ * indexed one a moment later, because Krunker's changeTab has not
+ * finished filling the holder when our microtask runs: build() finds too
+ * few sections to index, gives up, and the retry is what you see landing.
+ */
+const WAIT_CLASS = 'kc-sectnav-wait';
+/**
+ * How long the panel may stay hidden waiting to be indexed.
+ *
+ * A ceiling, not a target - the normal case clears in a frame or two.
+ * It exists so that a panel this cannot index ever (a tab with one
+ * section, a window Krunker reused for something else) ends up visible
+ * and plain rather than invisible, which is the failure worth avoiding.
+ */
+const WAIT_BUDGET_MS = 300;
+/**
+ * How many of the retries go on frames before falling back to the timer.
+ *
+ * The wait here is for Krunker to finish rendering, which takes a frame
+ * or two, not 50ms. Spending the first tries on rAF is what keeps the
+ * hidden window short enough not to read as a blink of its own.
+ */
+const FAST_RETRIES = 4;
+
+/**
  * Everything in a section header that is not its name.
  *
  * Two kinds of passenger, and both ended up in the index before this list
@@ -58,8 +85,8 @@ const RETRY_MS = 50;
  *
  *  - The collapse chevron is a `material-icons` ligature, so its text content
  *    is the ligature NAME (`keyboard_arrow_down`).
- *  - Krunker puts controls in some headers — the Controls tab's "Gameplay
- *    Settings" carries an All/dropdown — and their text ran straight into the
+ *  - Krunker puts controls in some headers, the Controls tab's "Gameplay
+ *    Settings" carries an All/dropdown, and their text ran straight into the
  *    label, giving entries that did not match any section on screen.
  *
  * Stripped by element rather than by matching strings, so a section genuinely
@@ -81,7 +108,7 @@ const HEADER_PASSENGERS = [
 
 /**
  * Krunker's own restart/reload legend, which sits in a bare `<span>` inside the
- * header it applies to — the General tab's Localization heading reads
+ * header it applies to: the General tab's Localization heading reads
  * "Localization * requires restart" in the DOM. It cannot be matched by class
  * because it has none, so it is matched by what it says.
  */
@@ -103,7 +130,7 @@ export function sectionLabel(header: Element): string {
 /**
  * Which run of children belongs to each section.
  *
- * The holder is a flat list — header, its rows, the next header, its rows —
+ * The holder is a flat list, header, its rows, the next header, its rows, 
  * with no element wrapping a section, so a section is a RANGE rather than a
  * subtree. `end` is exclusive. Anything before the first header belongs to no
  * section and is left alone, which is what keeps Krunker's own preamble in
@@ -144,7 +171,7 @@ function scrollContainer(start: HTMLElement): HTMLElement | null {
 /**
  * Visual pixels per layout pixel inside the settings window.
  *
- * Krunker scales its entire UI with a transform on `#uiBase` — matrix(0.869)
+ * Krunker scales its entire UI with a transform on `#uiBase`: matrix(0.869)
  * at the default UI Scale. `getBoundingClientRect` reports POST-transform
  * pixels while `top`/`left` are written in PRE-transform ones, so placing the
  * index means converting between them.
@@ -192,13 +219,42 @@ export function createSectionNav(): SectionNav {
    * Each element's own inline display, as Krunker left it.
    *
    * Krunker hides the sections that do not apply to you with an inline
-   * display:none — KPD and Developer on the General tab. Showing a section by
+   * display:none, KPD and Developer on the General tab. Showing a section by
    * blanking inline display therefore un-hid whichever of those had been
    * swept into its range, and they reappeared under the section above them.
    * Putting back what was there instead of clearing it keeps their hiding
    * intact.
    */
   const originalDisplay = new Map<HTMLElement, string>();
+  /** Watchdog that un-hides the panel whatever happens. */
+  let waitTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Hide the panel until it is indexed, or until the budget runs out. */
+  function hold(): void {
+    const holder = document.getElementById(HOLDER_ID);
+    if (!holder) return;
+    holder.classList.add(WAIT_CLASS);
+    if (waitTimer !== null) clearTimeout(waitTimer);
+    waitTimer = setTimeout(release, WAIT_BUDGET_MS);
+  }
+
+  /**
+   * Show the panel again.
+   *
+   * Queried rather than remembered, because the holder that was hidden is
+   * often not the element on screen by now - a tab change replaces it, and
+   * hiding one node then un-hiding a different one is how this would leave
+   * a blank panel behind.
+   */
+  function release(): void {
+    if (waitTimer !== null) {
+      clearTimeout(waitTimer);
+      waitTimer = null;
+    }
+    for (const el of document.querySelectorAll(`.${WAIT_CLASS}`)) {
+      el.classList.remove(WAIT_CLASS);
+    }
+  }
 
   function detach(): void {
     resize?.disconnect();
@@ -227,7 +283,7 @@ export function createSectionNav(): SectionNav {
    * Put the index beside the panel.
    *
    * Parked at 0,0 first so where that landed can be measured, then moved by
-   * the difference. The containing block is whatever it is — this does not
+   * the difference. The containing block is whatever it is: this does not
    * need to know, which is what stops it repeating the version that ended up
    * in the corner of the page.
    */
@@ -245,8 +301,8 @@ export function createSectionNav(): SectionNav {
   /**
    * Show the index exactly when the panel it belongs to is on screen.
    *
-   * Called from everything that could change the answer — the guard, the
-   * resize observer, and each section switch — because it used to be set in
+   * Called from everything that could change the answer, the guard, the
+   * resize observer, and each section switch, because it used to be set in
    * one place only. A tab change hides the panel for a moment while it is
    * rebuilt, the index was hidden with it, and nothing ever came back to
    * un-hide it: it stayed gone until something unrelated happened to fire.
@@ -292,7 +348,7 @@ export function createSectionNav(): SectionNav {
    * Take the index away when the settings are no longer what the window is
    * showing.
    *
-   * It lives outside the window — that is what stopped it scrolling — so
+   * It lives outside the window, that is what stopped it scrolling, so
    * nothing takes it down on its own. Krunker reuses the same window for its
    * changelog and everything else, and switching to one of those does not
    * always fire a hook that would call sync(), so the index sat on top of the
@@ -307,6 +363,7 @@ export function createSectionNav(): SectionNav {
 
     const holder = document.getElementById(HOLDER_ID);
     if (!holder || !holder.isConnected) {
+      release();
       detach();
       return;
     }
@@ -316,7 +373,7 @@ export function createSectionNav(): SectionNav {
      * Rebuild when the panel underneath has been replaced.
      *
      * Krunker swaps the whole holder for a tab change, and not every tab
-     * fires a hook that reaches sync() — the client's own tab does not. The
+     * fires a hook that reaches sync(): the client's own tab does not. The
      * index was left listing the previous tab's sections while the panel
      * showed this one's, and since show() never ran for the new panel every
      * section was visible at once.
@@ -325,7 +382,11 @@ export function createSectionNav(): SectionNav {
      * the document, what is on screen is not what this index describes.
      */
     const built = groups[0]?.[0];
-    if (!built || !built.isConnected) sync();
+    if (built && built.isConnected) return;
+    // The panel underneath has been swapped. Cover it while it is put
+    // back together, or the version without an index is what paints.
+    hold();
+    sync();
   }
 
   function sync(): void {
@@ -347,8 +408,8 @@ export function createSectionNav(): SectionNav {
 
     const found = scrollContainer(holder);
     const children = [...holder.children] as HTMLElement[];
-    // Krunker hides sections that do not apply to you — KPD and Developer on
-    // the General tab, for instance — and an index that lists them offers
+    // Krunker hides sections that do not apply to you, KPD and Developer on
+    // the General tab, for instance, and an index that lists them offers
     // pages with nothing on them. Read before anything is hidden here, which
     // is why detach() puts every display back first.
     const isHeader = children.map(
@@ -359,7 +420,7 @@ export function createSectionNav(): SectionNav {
     );
     const ranges = sectionRanges(isHeader);
 
-    // One section is not an index. Leave the window exactly as it was — and
+    // One section is not an index. Leave the window exactly as it was, and
     // try again shortly, because "not yet" and "never" look the same here.
     if (!found || ranges.length < 2) {
       detach();
@@ -387,7 +448,7 @@ export function createSectionNav(): SectionNav {
       const label = header ? sectionLabel(header) : '';
       item.textContent = label;
       // Long names wrap rather than being clipped, and the full one is on
-      // hover either way — an index you cannot read the end of is not much of
+      // hover either way, an index you cannot read the end of is not much of
       // an index.
       item.title = label;
       item.addEventListener('click', (event) => {
@@ -429,19 +490,34 @@ export function createSectionNav(): SectionNav {
     // the index has to go when it does.
     watch = new MutationObserver(guard);
     watch.observe(scroller, { childList: true, subtree: true });
+
+    // Indexed, so whatever was covering it can come off. Last, after
+    // show() has hidden the sections that are not open - reveal any
+    // earlier and the full column is what appears.
+    release();
   }
 
   /**
    * Try again shortly, for a settings window that has not finished opening.
    *
    * `sync()` runs off Krunker's own hooks, which fire before the window has
-   * laid out — measured on the running client, `#menuWindow` reports a height
+   * laid out: measured on the running client, `#menuWindow` reports a height
    * of zero at that point and the rows are not in yet.
    */
   function retrySoon(): void {
-    if (retries <= 0) return;
+    if (retries <= 0) {
+      // Not a panel this can index. Show it as Krunker drew it rather
+      // than leaving it behind the wait class.
+      release();
+      return;
+    }
     retries -= 1;
-    setTimeout(sync, RETRY_MS);
+    // Frames first. What the early tries are waiting for is Krunker
+    // finishing its render, which is a frame or two away, and 50ms of
+    // sitting on that is three frames of a covered panel where one would
+    // have done.
+    if (retries > RETRY_LIMIT - FAST_RETRIES) requestAnimationFrame(sync);
+    else setTimeout(sync, RETRY_MS);
   }
 
   defineStyle(STYLE_IDS.sectionNav, SHEETS.sectionNav);
@@ -451,8 +527,15 @@ export function createSectionNav(): SectionNav {
       // Armed on every call rather than once, because each hook that calls
       // sync is a fresh chance for the window to still be opening.
       retries = RETRY_LIMIT;
+      // Covered until it is indexed. Costs nothing when build() succeeds
+      // first time: release() runs in the same microtask, before a frame
+      // is painted, so nothing was ever hidden on screen.
+      hold();
       sync();
     },
-    destroy: detach,
+    destroy() {
+      release();
+      detach();
+    },
   };
 }

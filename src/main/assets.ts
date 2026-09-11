@@ -46,7 +46,7 @@ function readSound(full: string): string | null {
 /**
  * The match sound: the user's if they have one, otherwise the shipped one.
  *
- * The bundled copy is the point — someone who installs the client should
+ * The bundled copy is the point: someone who installs the client should
  * hear it without having to find a folder first. `swap/sounds` stays as an
  * override so anyone who wants their own is not stuck with ours.
  *
@@ -55,6 +55,48 @@ function readSound(full: string): string | null {
  */
 export function loadMatchSound(soundsDir: string, bundledDir: string): string | null {
   return readSound(join(soundsDir, MATCH_SOUND_FILE)) ?? readSound(join(bundledDir, MATCH_SOUND_FILE));
+}
+
+/**
+ * The two menu screenshots the walkthrough shows beside its look choices.
+ *
+ * Captured from the running client rather than drawn, because the point of
+ * them is to answer "what will this actually do to my menu" before the
+ * answer costs anything. 768x432 each, which is a quarter of the pixels of
+ * a 1080p grab and still legible at the size the cards give them.
+ *
+ * Bundled only. There is no swap override the way the match sound has one:
+ * a screenshot of our own menu is a fact about the client, not a
+ * preference, and one that someone had replaced would be a walkthrough
+ * quietly lying about what it is offering.
+ *
+ * Null when a file is missing. The cards then show their text alone, which
+ * is exactly what they showed before the pictures existed.
+ */
+const MAX_PREVIEW_BYTES = 2 * 1024 * 1024;
+
+export interface LookPreviews {
+  /** With the menu skin on. */
+  readonly nmnz: string | null;
+  /** With it off, i.e. the game as it ships. */
+  readonly krunker: string | null;
+}
+
+function readPreview(full: string): string | null {
+  try {
+    if (statSync(full).size > MAX_PREVIEW_BYTES) return null;
+    return `data:image/png;base64,${readFileSync(full).toString('base64')}`;
+  } catch {
+    // Not there, or unreadable.
+    return null;
+  }
+}
+
+export function loadLookPreviews(bundledDir: string): LookPreviews {
+  return {
+    nmnz: readPreview(join(bundledDir, 'look-nmnz.png')),
+    krunker: readPreview(join(bundledDir, 'look-krunker.png')),
+  };
 }
 
 /** All `.js` in the scripts folder. */

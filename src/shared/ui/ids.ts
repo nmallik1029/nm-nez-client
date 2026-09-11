@@ -46,6 +46,8 @@ export const UI_IDS = {
   updatePanel: 'kc-update',
   /** Client wordmark and version at the top of Krunker's left menu. */
   menuMark: 'kc-menu-mark',
+  /** The first-run walkthrough, drawn over the menu. */
+  setupWizard: 'kc-setup',
 } as const;
 
 /**
@@ -79,4 +81,5 @@ export const STYLE_IDS = {
   menuSkin: 'kc-menu-skin-css',
   krunkerWindows: 'kc-krunker-windows-css',
   hudMinimal: 'kc-hud-minimal-css',
+  setupWizard: 'kc-setup-css',
 } as const;

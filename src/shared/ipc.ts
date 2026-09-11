@@ -53,12 +53,17 @@ export const IPC = {
    *
    * The queue lives in main and keeps running across a reload or a jump to
    * another server, so a freshly loaded page has to ask rather than wait for
-   * the next push — otherwise an already-running queue looks idle until it
+   * the next push: otherwise an already-running queue looks idle until it
    * happens to change state.
    */
   rankedCurrent: 'ranked:current',
   /** Renderer -> main. The match-found sound as a data URL, or null. */
   rankedSound: 'ranked:sound',
+  /**
+   * Renderer -> main. The two menu screenshots the walkthrough shows,
+   * as data URLs. Either may be null if the file is missing.
+   */
+  setupPreviews: 'setup:previews',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

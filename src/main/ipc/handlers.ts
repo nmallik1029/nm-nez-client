@@ -10,7 +10,7 @@ import { createAccountStore } from '../accounts';
 import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
-import { loadMatchSound, loadUserscripts } from '../assets';
+import { loadLookPreviews, loadMatchSound, loadUserscripts } from '../assets';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
@@ -181,6 +181,8 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   registry.handle(IPC.rankedSound, () =>
     loadMatchSound(paths.sounds, join(app.getAppPath(), 'assets')),
   );
+
+  registry.handle(IPC.setupPreviews, () => loadLookPreviews(join(app.getAppPath(), 'assets')));
 
   registry.handle(IPC.swapperRescan, () => deps.rescanSwap());
 

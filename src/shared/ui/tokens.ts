@@ -12,7 +12,7 @@
  *  - No colour, font size, z-index, border weight or transition duration
  *    anywhere else. The test fails on one, and names the file it found it in.
  *  - No `var(--nm-*)` that nothing defines. That is a silent no-op at runtime
- *    — the property is simply dropped — so it has to be caught here.
+ *   , the property is simply dropped, so it has to be caught here.
  *  - No token nothing uses, so this file can't quietly fill up with values
  *    that stopped meaning anything two refactors ago.
  *
@@ -139,7 +139,7 @@ const GAME = `
 
 /**
  * Status colours inside the game skin: a muted sage for go/added/active and a
- * muted clay for delete/blocked. Desaturated on purpose — a saturated green
+ * muted clay for delete/blocked. Desaturated on purpose: a saturated green
  * button next to Krunker's own menu looks like a web page.
  */
 const GAME_STATUS = `
@@ -163,7 +163,7 @@ const GAME_STATUS = `
  *
  * The settings panel is the game's element, not ours: its background is that
  * mid grey, and a rule or a tint we add there has to sit on it. Reaching for
- * `--nm-surface` instead — a near-black tuned for our own floating panels —
+ * `--nm-surface` instead, a near-black tuned for our own floating panels, 
  * paints dark stripes on light grey, which is exactly the bug this group was
  * added to fix.
  *
@@ -243,25 +243,21 @@ const UPDATE = `
 `;
 
 /**
- * The match-scan overlay.
+ * The match-scan overlay: a title, a bar, and a line of status under it.
  *
- * Its own group because the greens here are a deliberate ladder rather than
- * one colour: a line brightens to `accept-peak` as it lands and settles on
- * `accept`, and the flood that covers the screen is a third step. Folding them
- * into one token would flatten the animation.
+ * This was eleven tokens when the overlay flicked through every rejected
+ * lobby: a ladder of greens for a line landing, a red pair for one being
+ * thrown away, a fill for the flood that covered the screen, a backing for
+ * the map thumbnails. None of that is drawn any more. What is left is the
+ * bar, and failure borrows the client danger colours rather than keeping
+ * its own red for one line of text.
  */
 const SCAN = `
   --nm-scan-text:#fff;
   --nm-scan-note:rgba(255,255,255,.66);
-  --nm-scan-reject:#e06060;
-  --nm-scan-reject-end:#8c3030;
-  --nm-scan-accept:#4ade80;
-  --nm-scan-accept-peak:#6ef29a;
-  --nm-scan-flood:#3ddc7f;
+  --nm-scan-track:rgba(255,255,255,.14);
+  --nm-scan-fill:#4ade80;
   --nm-scan-glow:rgba(74,222,128,.55);
-  --nm-scan-glow-thumb:rgba(74,222,128,.6);
-  --nm-scan-glow-peak:rgba(110,242,154,.75);
-  --nm-scan-thumb-bg:rgba(0,0,0,.45);
 `;
 
 /**
@@ -271,27 +267,42 @@ const SCAN = `
 export const GAME_WINDOW_BACKGROUND = '#000000';
 
 /**
- * The match-scan overlay's geometry and timings, as numbers.
+ * How long the match search takes, in the two legs the bar is drawn in.
  *
- * These are the values the animation and the code that drives it have to agree
- * on: the sweep waits `landingPauseMs` for a line to finish landing and
- * `expandMs` for the flood to cover the screen before it navigates, and a
- * rejected line is removed from the DOM after `fallMs` because that is exactly
- * how long its tumble lasts. Written once, read by both the stylesheet and
- * `preload/matchmaker/scan.ts`, so a change to one can't leave the other
- * behind. The durations also appear as `--nm-scan-*` tokens above; these are
- * the same numbers in the form `setTimeout` can use.
+ * Read by `preload/matchmaker/scan.ts`, which sets them on the bar as inline
+ * transition durations. The stylesheet cannot hold them: the two legs are
+ * different lengths and the second one starts whenever the lobby list
+ * happens to land, so the only place that knows is the code driving it.
+ *
+ * `SCAN_THUMB` used to sit here, sizing the map preview on each swept line.
+ * There are no lines and no previews now.
  */
-export const SCAN_THUMB = { width: 52, height: 34 } as const;
-
 export const SCAN_TIMING = {
-  /** How long a rejected line takes to tumble off. Outlives the tick, so a few overlap. */
-  fallMs: 780,
-  landingPauseMs: 460,
-  /** Duration of the flood that covers the screen. */
-  expandMs: 720,
-  /** Give preloading this long, then start anyway. Not worth stalling the sweep. */
-  preloadBudgetMs: 450,
+  /**
+   * The first leg: how long the bar takes to creep to 70% while the lobby
+   * list is being fetched.
+   *
+   * Longer than the request usually takes, deliberately. If it finished
+   * first the bar would stall at 70% and wait, which looks stuck; running
+   * slower than the work means the jump to full is what ends it.
+   */
+  searchMs: 900,
+  /**
+   * The crawl: 70% to 95%, entered if the list has still not arrived.
+   *
+   * Measured against the live endpoint, the fetch is usually a few hundred
+   * milliseconds and occasionally seconds. Without this the bar hit 70% at
+   * 900ms and sat there, which reads as hung rather than working. Six
+   * seconds of very slow travel is not a prediction, it is just something
+   * still moving while we wait.
+   */
+  crawlMs: 6000,
+  /** The last leg: wherever it got to, up to full, once there is an answer. */
+  completeMs: 250,
+  /** Held at full before the page goes, so the region is readable. */
+  holdMs: 260,
+  /** How long a failure stays on screen before the overlay drops. */
+  errorMs: 2200,
 } as const;
 
 /**
@@ -339,19 +350,15 @@ const QUEUE_WINDOW = `
 `;
 
 /**
- * Black at five alphas, for drop shadows and scrims.
+ * Black at three alphas, for drop shadows and scrims.
  *
- * A ladder rather than one value because the scan overlay layers a tight dark
- * halo under a wide soft one and needs them to differ. They are close enough
- * that collapsing the middle three would be invisible — which is the sort of
- * decision this file exists to make cheap, so it is left as a choice rather
- * than made here.
+ * It was five. The two in the middle existed because the scan overlay
+ * layered a tight dark halo under a wide soft one on every swept line, and
+ * that overlay is a title and a bar now with one shadow behind each.
  */
 const SHADOW = `
   --nm-shadow-strong:rgba(0,0,0,.9);
   --nm-shadow:rgba(0,0,0,.85);
-  --nm-shadow-soft:rgba(0,0,0,.8);
-  --nm-shadow-softer:rgba(0,0,0,.6);
   --nm-shadow-mid:rgba(0,0,0,.5);
 `;
 
@@ -377,7 +384,7 @@ const FONT = `
  *
  * Named by step rather than by role, because the same size does different jobs
  * on different surfaces and role names would end up lying. Sizes are the ones
- * that were already in use — this scale was read off the UI, not imposed on
+ * that were already in use: this scale was read off the UI, not imposed on
  * it, so nothing moved when it landed.
  *
  * `--nm-fs-md` is the workhorse: settings rows, buttons, tooltips, chat.
@@ -470,9 +477,12 @@ const SHAPE = `
 /**
  * How long things take.
  *
- * `--nm-fast` is the hover-feedback duration on nearly everything. The named
- * ones below it belong to a specific animation whose timing is tied to what
- * the JS is doing at the same moment, so they are not interchangeable with it.
+ * `--nm-fast` is the hover-feedback duration on nearly everything.
+ *
+ * The three --nm-scan-* steps that used to sit here went with the overlay
+ * they belonged to. Its bar is timed from SCAN_TIMING instead, set inline
+ * by the code, because the two legs are different lengths and the second
+ * one starts whenever the lobby list happens to land.
  */
 const MOTION = `
   --nm-fast:.12s;
@@ -480,9 +490,6 @@ const MOTION = `
   --nm-med:.16s;
   --nm-slow:.2s;
   --nm-blink:1.4s;
-  --nm-scan-land:420ms;
-  --nm-scan-fade:260ms;
-  --nm-scan-cut:130ms;
 `;
 
 /**
@@ -494,7 +501,7 @@ const MOTION = `
  * five files, the next overlay gets a number picked by guesswork and lands
  * under something it was supposed to cover.
  *
- * Modals are the exception and sit low on purpose — they open over the menu,
+ * Modals are the exception and sit low on purpose: they open over the menu,
  * not over gameplay, and a toast fired while one is up should still be read.
  */
 const LAYER = `
@@ -518,7 +525,7 @@ const LAYER = `
  * opposite intent, and folding the two together would leave every future edit
  * ambiguous about which was meant.
  *
- * The neutrals are warm on purpose — hue around 38 degrees, chroma barely off
+ * The neutrals are warm on purpose: hue around 38 degrees, chroma barely off
  * zero. The menu renders over a live map, and Krunker's maps are sand, brick
  * and rust far more often than they are anything cool; a neutral mixed toward
  * blue reads as a system dialog dropped on top of the game. Bone rather than
@@ -546,8 +553,8 @@ const MENU = `
  * Krunker's own button hues, for the five across the bottom of the menu.
  *
  * Read off the game's stylesheet rather than picked. It colours that row with
- * four classes — `.buttonP` purple, `.buttonPI` pink, `.buttonR` red and
- * `.buttonG` cyan, each a 4px border — and that coding is most of what makes
+ * four classes, `.buttonP` purple, `.buttonPI` pink, `.buttonR` red and
+ * `.buttonG` cyan, each a 4px border, and that coding is most of what makes
  * its menu readable at a glance. The skin used to flatten all five to one
  * grey, which is what made ours look like a different game's menu.
  *
@@ -556,7 +563,7 @@ const MENU = `
  * instead, which frees the pink for Find Game, so no two of the five match.
  *
  * `--nm-menu-red` also draws the "2x KR" badge. The game sets that at #ff4444,
- * three points off its own button red — close enough that a second token
+ * three points off its own button red: close enough that a second token
  * would be two values to keep in step for no visible difference.
  */
 const MENU_HUES = `

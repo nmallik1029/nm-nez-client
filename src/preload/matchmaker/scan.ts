@@ -1,43 +1,47 @@
 import { ipcRenderer } from 'electron';
 import type { MatchmakerFilter } from '../../shared/config';
 import { IPC, type ScanResult } from '../../shared/ipc';
-import {
-  joinUrl,
-  mapIconUrl,
-  passesFilter,
-  planScan,
-  prettyMap,
-  shortMode,
-  sortLobbies,
-  type Lobby,
-} from '../../shared/matchmaker';
+import { joinUrl, passesFilter, sortLobbies } from '../../shared/matchmaker';
 import { SCAN_TIMING, SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 
 /**
  * The match search.
  *
- * One hotkey, no browsing. Set filters once in settings and this fetches the
- * live list, flicks through the candidates on screen and joins the best one.
+ * One hotkey, no browsing: set your filters once in Settings, and this fetches
+ * the live lobby list, picks the best one and joins it.
  *
- * Every candidate shows the map's preview image, and two things follow from
- * that:
+ * A title and a bar, and nothing else.
  *
- *  - The sweep is much slower than a text-only feed would need to be.
- *    Thumbnails going past at 90ms are just noise; around 170ms you can
- *    actually see which maps got rejected.
- *  - Images are preloaded before the sweep starts so lines don't pop in half
- *    drawn. Layout reserves the thumbnail box either way, so a slow or missing
- *    image never shifts the text.
+ * It used to flick every rejected lobby past on screen, map preview and all,
+ * for about three and a half seconds of which three were theatre. The feedback
+ * was that it looked like it was doing something complicated, and that is fair:
+ * the only thing anyone can act on while it runs is Escape, so everything past
+ * "it is working" and "here is what went wrong" was noise. The sweep, the
+ * thumbnails, the burn and the green flood are all gone, along with the image
+ * preloading that existed to keep the sweep from popping.
  *
- * The result floods the screen green and the navigation happens underneath it,
- * so you never see the page swap as a flash.
+ * The bar is honest about the one real wait, which is the lobby list. It creeps
+ * most of the way while that request is in flight and completes when there is
+ * an answer, rather than pretending to know how long a fetch will take.
  */
 
 const OVERLAY_ID = UI_IDS.scan;
+const { searchMs, crawlMs, completeMs, holdMs, errorMs } = SCAN_TIMING;
 
-// Geometry and timings live with the stylesheet that animates to them.
-const { fallMs, landingPauseMs, expandMs, preloadBudgetMs } = SCAN_TIMING;
+/**
+ * Where the bar gets to on each leg while waiting on the lobby list.
+ *
+ * Neither reaches the end, on purpose. A bar that fills and then sits there
+ * has lied about being finished; one that stops short says "still going"
+ * without claiming to know when it will be done.
+ *
+ * Two legs rather than one because the fetch has no reliable duration. The
+ * first covers the common case at a believable speed; the crawl is what
+ * stops a slow one from looking hung.
+ */
+const SEARCH_PROGRESS = 0.7;
+const CRAWL_PROGRESS = 0.95;
 
 export interface MatchSearchDeps {
   readonly getFilter: () => MatchmakerFilter;
@@ -52,39 +56,10 @@ export interface MatchSearch {
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** MODE MAPNAME (n/m) */
-function lineText(lobby: Lobby): string {
-  return `${shortMode(lobby.gamemode)} ${prettyMap(lobby.map).toUpperCase()} (${lobby.playerCount}/${lobby.playerLimit})`;
-}
-
-/**
- * Warm the browser cache for a set of images. Resolves when they're all in or
- * when the budget runs out, whichever comes first: a slow CDN should cost the
- * sweep a fraction of a second, not hold the whole feature up.
- */
-function preloadImages(urls: readonly string[], budgetMs: number): Promise<void> {
-  if (urls.length === 0) return Promise.resolve();
-  return new Promise((resolve) => {
-    let remaining = urls.length;
-    const done = (): void => {
-      remaining -= 1;
-      if (remaining <= 0) resolve();
-    };
-    for (const url of urls) {
-      const img = new Image();
-      img.addEventListener('load', done, { once: true });
-      img.addEventListener('error', done, { once: true });
-      img.src = url;
-    }
-    setTimeout(resolve, budgetMs);
-  });
-}
-
 export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
   let overlay: HTMLElement | null = null;
-  let stage: HTMLElement | null = null;
+  let fill: HTMLElement | null = null;
   let note: HTMLElement | null = null;
-  let current: HTMLElement | null = null;
 
   /**
    * Bumped on every run and cancel. A search in flight re-checks it after each
@@ -93,6 +68,8 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
    */
   let generation = 0;
   let active = false;
+  /** Cleared when the bar is sent to full, so the crawl cannot walk it back. */
+  let crawlTimer: ReturnType<typeof setTimeout> | null = null;
 
   function build(): HTMLElement {
     defineStyle(STYLE_IDS.scan, SHEETS.scan);
@@ -100,42 +77,47 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
     const root = document.createElement('div');
     root.id = OVERLAY_ID;
 
-    stage = document.createElement('div');
-    stage.className = 'sc-stage';
+    const box = document.createElement('div');
+    box.className = 'sc-box';
+
+    const title = document.createElement('div');
+    title.className = 'sc-title';
+    title.textContent = 'Finding match';
+
+    const track = document.createElement('div');
+    track.className = 'sc-track';
+    fill = document.createElement('div');
+    fill.className = 'sc-fill';
+    track.appendChild(fill);
 
     note = document.createElement('div');
     note.className = 'sc-note';
 
-    root.append(stage, note);
+    box.append(title, track, note);
+    root.append(box);
     document.documentElement.append(root);
     return root;
   }
 
-  function anchorTop(): number {
-    return Math.round(window.innerHeight * 0.38);
-  }
-
   /**
-   * Centre an element on integer coordinates. Has to be in the DOM with its
-   * content already set, since the width gets measured rather than guessed.
+   * Move the bar. `durationMs` of 0 jumps, which is how it gets back to empty
+   * between runs without animating backwards.
    */
-  function snapCentre(el: HTMLElement, top: number): void {
-    el.style.left = '0px';
-    const width = el.getBoundingClientRect().width;
-    el.style.left = `${Math.round((window.innerWidth - width) / 2)}px`;
-    el.style.top = `${Math.round(top)}px`;
+  function setProgress(fraction: number, durationMs: number): void {
+    if (!fill) return;
+    fill.style.transitionDuration = `${durationMs}ms`;
+    fill.style.width = `${Math.round(fraction * 100)}%`;
   }
 
   function show(): void {
     overlay ??= build();
-    if (stage) stage.textContent = '';
+    stopCrawl();
+    setProgress(0, 0);
+    fill?.classList.remove('bad');
     if (note) {
       note.textContent = '';
       note.classList.remove('bad');
     }
-    overlay.querySelectorAll('.sc-flood').forEach((el) => el.remove());
-    current = null;
-    if (stage) stage.style.top = `${anchorTop()}px`;
     overlay.classList.add('on');
     document.documentElement.classList.add('kc-scanning');
     if (document.pointerLockElement) document.exitPointerLock();
@@ -159,75 +141,26 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
     if (!note) return;
     note.textContent = text;
     note.classList.toggle('bad', bad);
-    snapCentre(note, anchorTop() + 54);
   }
 
-  function pushLine(lobby: Lobby): HTMLElement | null {
-    if (!stage) return null;
-
-    const outgoing = current;
-    if (outgoing) {
-      outgoing.classList.add('out');
-      setTimeout(() => outgoing.remove(), fallMs);
-    }
-
-    const line = document.createElement('div');
-    line.className = 'sc-line';
-
-    const icon = mapIconUrl(lobby.map);
-    if (icon !== null) {
-      const img = document.createElement('img');
-      img.className = 'sc-thumb';
-      img.src = icon;
-      img.alt = '';
-      line.appendChild(img);
-    } else {
-      // Community map. Keep the box anyway so the text still lines up with
-      // its neighbours instead of jumping left.
-      const blank = document.createElement('span');
-      blank.className = 'sc-thumb';
-      line.appendChild(blank);
-    }
-
-    const label = document.createElement('span');
-    label.textContent = lineText(lobby);
-    line.appendChild(label);
-
-    stage.appendChild(line);
-    snapCentre(line, 0);
-    current = line;
-    return line;
+  /** Stop the crawl. Anything that finishes the bar has to call this first. */
+  function stopCrawl(): void {
+    if (crawlTimer === null) return;
+    clearTimeout(crawlTimer);
+    crawlTimer = null;
   }
 
-  function clearFalling(): void {
-    if (!stage) return;
-    for (const el of stage.querySelectorAll('.sc-line.out')) {
-      el.classList.add('clear');
-      setTimeout(() => el.remove(), 150);
-    }
-  }
-
-  /**
-   * Flood the screen green from wherever the winning line sits.
-   *
-   * A 10px dot scaled up hard rather than a box that grows. Scale is the one
-   * property the compositor animates without touching layout, so it stays
-   * smooth at any size, and starting from the matched line means the colour
-   * comes out of the result instead of arriving from nowhere.
-   */
-  function floodGreen(): void {
-    if (!overlay) return;
-    const flood = document.createElement('div');
-    flood.className = 'sc-flood';
-    flood.style.left = `${Math.round(window.innerWidth / 2)}px`;
-    flood.style.top = `${anchorTop()}px`;
-    overlay.appendChild(flood);
-    void flood.offsetWidth;
-    flood.classList.add('go');
+  /** Nothing to join. Run the bar out in red so it reads as finished, badly. */
+  function fail(message: string): void {
+    stopCrawl();
+    setNote(message, true);
+    fill?.classList.add('bad');
+    setProgress(1, completeMs);
   }
 
   function cancel(): void {
     if (!active) return;
+    stopCrawl();
     generation += 1;
     active = false;
     hide();
@@ -243,83 +176,56 @@ export function createMatchSearch(deps: MatchSearchDeps): MatchSearch {
     active = true;
 
     show();
-    setNote('Finding a match...');
+    setNote('Searching for lobbies');
+    // Next frame. Setting width in the same frame it was zeroed in gives the
+    // transition nothing to animate from, and the bar jumps instead of filling.
+    requestAnimationFrame(() => {
+      if (generation !== runId) return;
+      setProgress(SEARCH_PROGRESS, searchMs);
+      // Hand over to the crawl if the list has not landed by then.
+      crawlTimer = setTimeout(() => {
+        crawlTimer = null;
+        if (generation === runId) setProgress(CRAWL_PROGRESS, crawlMs);
+      }, searchMs);
+    });
 
     let result: ScanResult;
     try {
       result = (await ipcRenderer.invoke(IPC.matchmakerScan)) as ScanResult;
     } catch {
       if (generation !== runId) return;
-      setNote('Matchmaker unreachable', true);
-      await sleep(1600);
+      fail('Matchmaker unreachable');
+      await sleep(errorMs);
       if (generation === runId) finish(runId);
       return;
     }
     if (generation !== runId) return;
 
     const filter = deps.getFilter();
-    const lobbies = result.lobbies;
-
-    const passing = sortLobbies(
-      lobbies.filter((lobby) => passesFilter(lobby, filter, currentGameID())),
+    const best = sortLobbies(
+      result.lobbies.filter((lobby) => passesFilter(lobby, filter, currentGameID())),
       filter,
       result.pings,
-    );
-    const best = passing[0];
-    const passingIds = new Set(passing.map((l) => l.gameID));
-
-    // Rejects first, so the sweep ends on the winner instead of flashing the
-    // answer partway through.
-    const rejects = lobbies.filter((l) => !passingIds.has(l.gameID));
-    // Slower than a text feed. Thumbnails need time on screen to register.
-    const plan = planScan(rejects.length, { budgetMs: 2600, baseTickMs: 170, minTickMs: 130 });
-
-    // Only the images actually about to be shown, plus the winner's.
-    const needed = new Set<string>();
-    for (const index of plan.indices) {
-      const lobby = rejects[index];
-      if (!lobby) continue;
-      const icon = mapIconUrl(lobby.map);
-      if (icon !== null) needed.add(icon);
-    }
-
-    await preloadImages([...needed], preloadBudgetMs);
-    if (generation !== runId) return;
-
-    for (const index of plan.indices) {
-      if (generation !== runId) return;
-      const lobby = rejects[index];
-      if (lobby) pushLine(lobby);
-      await sleep(plan.tickMs);
-    }
-    if (generation !== runId) return;
+    )[0];
 
     if (!best) {
-      current?.classList.add('out');
-      current = null;
-      clearFalling();
-      setNote('No lobby matches your filters. Check Settings › Client › Matchmaker', true);
-      await sleep(2800);
+      fail('No lobby matches your filters. Check Settings › Client › Matchmaker');
+      await sleep(errorMs);
       if (generation === runId) finish(runId);
       return;
     }
 
-    const landed = pushLine(best);
-    clearFalling();
-    landed?.classList.add('hit');
     const ping = result.pings[best.region];
     setNote(
       ping !== undefined && ping >= 0
         ? `${best.region} · ${ping}ms · joining`
         : `${best.region} · joining`,
     );
+    stopCrawl();
+    setProgress(1, completeMs);
 
-    await sleep(landingPauseMs);
-    if (generation !== runId) return;
-
-    floodGreen();
-
-    await sleep(expandMs);
+    // Long enough to read where you are going, and no longer.
+    await sleep(completeMs + holdMs);
     if (generation !== runId) return;
 
     active = false;

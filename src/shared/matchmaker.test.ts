@@ -9,7 +9,6 @@ import {
   normalizeMapId,
   parseLobby,
   passesFilter,
-  planScan,
   prettyMap,
   REGIONS,
   REGION_NAMES,
@@ -253,56 +252,6 @@ describe('shortMode', () => {
   it('falls back to an uppercased name', () => {
     expect(shortMode('Mode 35')).toBe('MODE 35');
     expect(shortMode('Raid')).toBe('RAID');
-  });
-});
-
-describe('planScan', () => {
-  it('shows every lobby when the list is short', () => {
-    const plan = planScan(5, { budgetMs: 1000, baseTickMs: 30, minTickMs: 10 });
-    expect(plan.indices).toEqual([0, 1, 2, 3, 4]);
-  });
-
-  it('stretches the tick so a short list still fills the budget', () => {
-    // Five lobbies at the base tick would flash past in 150ms.
-    const plan = planScan(5, { budgetMs: 1000, baseTickMs: 30, minTickMs: 10 });
-    expect(plan.tickMs).toBe(30);
-    const short = planScan(2, { budgetMs: 60, baseTickMs: 30, minTickMs: 10 });
-    expect(short.tickMs).toBe(30);
-  });
-
-  it('never ticks faster than the readable floor', () => {
-    const plan = planScan(50, { budgetMs: 100, baseTickMs: 30, minTickMs: 16 });
-    expect(plan.tickMs).toBeGreaterThanOrEqual(16);
-  });
-
-  it('samples a long list instead of showing all of it', () => {
-    // 400 lobbies at 28ms each would be 11 seconds of animation.
-    const plan = planScan(400, { budgetMs: 1600, baseTickMs: 28 });
-    expect(plan.indices.length).toBeLessThan(400);
-    expect(plan.indices.length * plan.tickMs).toBeLessThanOrEqual(1600 + plan.tickMs);
-  });
-
-  it('sweeps the whole list rather than stopping early', () => {
-    const plan = planScan(400, { budgetMs: 1600, baseTickMs: 28 });
-    expect(plan.indices[0]).toBe(0);
-    // Ending partway would make the counter claim a scan it never finished.
-    expect(plan.indices[plan.indices.length - 1]).toBe(399);
-  });
-
-  it('produces indices that are in range and non-decreasing', () => {
-    const plan = planScan(377, { budgetMs: 1600, baseTickMs: 28 });
-    let previous = -1;
-    for (const index of plan.indices) {
-      expect(index).toBeGreaterThanOrEqual(0);
-      expect(index).toBeLessThan(377);
-      expect(index).toBeGreaterThanOrEqual(previous);
-      previous = index;
-    }
-  });
-
-  it('handles an empty and a single-entry list', () => {
-    expect(planScan(0).indices).toEqual([]);
-    expect(planScan(1).indices).toEqual([0]);
   });
 });
 

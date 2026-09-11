@@ -75,6 +75,8 @@ export interface SettingsTabDeps {
   readonly getActiveTheme: () => string;
   /** Filename, or '' for none. */
   readonly onThemeSelect: (name: string) => void;
+  /** Re-open the first-run walkthrough. */
+  readonly openSetup: () => void;
 }
 
 interface ToggleSpec {
@@ -365,8 +367,8 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
   /**
    * Redraw, then reindex.
    *
-   * `render` bails on Krunker's own tabs — there is nothing of ours to draw
-   * there — but the section index is for every tab, so it goes outside.
+   * `render` bails on Krunker's own tabs, there is nothing of ours to draw
+   * there, but the section index is for every tab, so it goes outside.
    */
   function rerender(): void {
     render();
@@ -486,6 +488,13 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         'Open folder',
         FOLDERS.map((f) => gameButton(f.label, () => deps.openFolder(f.id))),
       ),
+    );
+
+    // The three questions from the first launch, on demand. Every one of
+    // them is also a setting on this tab, so this is a convenience rather
+    // than the only way back to any of them.
+    body.appendChild(
+      actionRow('Setup', [gameButton('Run walkthrough', deps.openSetup)]),
     );
 
     // Only offered where it can work. The portable exe and `npm start` have
@@ -758,6 +767,14 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       readonly value: string;
       readonly options: readonly (readonly [string, string])[];
       readonly onChange: (value: string) => void;
+      /**
+       * Shown, but not usable.
+       *
+       * Greyed rather than hidden: a control that vanishes leaves no way
+       * to find out why, and the whole point of switching this one off is
+       * to say what to do instead. The hint carries that.
+       */
+      readonly disabled?: boolean;
     },
   ): HTMLElement {
     const { row } = rowShell(spec);
@@ -776,6 +793,10 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       markDirty(spec.tagKind);
     });
     select.addEventListener('click', (e) => e.stopPropagation());
+    if (spec.disabled === true) {
+      select.disabled = true;
+      select.classList.add('kc-select-off');
+    }
 
     row.appendChild(select);
     return row;
@@ -994,7 +1015,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
      * people came for, and rearranging it before they have asked is doing
      * something to them rather than for them.
      *
-     * No asterisk. Both directions apply immediately — the skin is a
+     * No asterisk. Both directions apply immediately: the skin is a
      * stylesheet plus a few element moves that are recorded and put back.
      */
     const styleRow = selectRow({
@@ -1004,8 +1025,14 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         ['krunker', 'Krunker (original)'],
         ['nmnez', 'NM/NZ'],
       ],
-      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NZ restyles the menu and the windows it opens — one accent colour instead of five, a grounded backdrop so labels stop needing heavy outlines, your FPS and ping set as numbers, one settings section on screen at a time — and strips the panels out from behind the in-game HUD to match. Switches straight away, either way.',
-      onChange: (value) => deps.onChange('features', 'menuSkin', value === 'nmnez'),
+      hint: 'Krunker (original) leaves the game exactly as it ships. NM/NZ restyles the menu and the windows it opens (the game’s own button colours on a darker, flatter menu, your FPS and ping set as plain figures, one settings section on screen at a time) and strips the panels out from behind the in-game HUD to match. Switches straight away, either way.',
+      onChange: (value) => {
+        deps.onChange('features', 'menuSkin', value === 'nmnez');
+        // The Theme row below is usable or not depending on this answer,
+        // so it has to be redrawn. A microtask rather than a call here:
+        // rerender() replaces the row this handler is attached to.
+        queueMicrotask(rerender);
+      },
     });
 
     if (themes.length === 0) {
@@ -1022,16 +1049,34 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       return [styleRow, row];
     }
 
+    /*
+     * A theme and the NM/NZ style are two answers to one question.
+     *
+     * The active theme is appended last in document.head so that it beats
+     * everything else on equal specificity - which is right when it is the
+     * only thing styling the page, and wrong the moment our own skin is
+     * also up. They then disagree over every selector they share, and the
+     * result is neither look.
+     *
+     * So the picker is switched off rather than left to fight, and the hint
+     * says which switch to flip. index.ts refuses the change as well, since
+     * a theme can already be selected when the style is turned on.
+     */
+    const locked = deps.config.features.menuSkin;
+
     return [
       styleRow,
       selectRow({
         label: 'Theme',
-        value: deps.getActiveTheme(),
+        value: locked ? '' : deps.getActiveTheme(),
+        disabled: locked,
         options: [
           ['', 'None'],
           ...themes.map((t) => [t.name, t.name.replace(/\.css$/i, '')] as const),
         ],
-        hint: 'Switches straight away, no reload. Editing the file in a text editor also updates the game the moment you save it.',
+        hint: locked
+          ? 'Off while Menu style is NM/NZ. That already styles the menu, the windows it opens and the in-game HUD, and a theme loads after all of it, so the two would fight over anything they both touch. Set Menu style to Krunker (original) above to use your own CSS.'
+          : 'Switches straight away, no reload. Editing the file in a text editor also updates the game the moment you save it.',
         onChange: (name) => deps.onThemeSelect(name),
       }),
     ];

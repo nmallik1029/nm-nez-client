@@ -154,6 +154,19 @@ export interface UiConfig {
   perfHudCorner: HudCorner;
   perfHudDetail: 'fps' | 'full';
   hideAdContainers: boolean;
+  /**
+   * Whether the first-run walkthrough has been answered.
+   *
+   * Written once, when the walkthrough is finished or skipped, and never
+   * cleared by an update: someone who has already said how they want the
+   * client to look should not be asked again every time they update. The
+   * button in Settings is the way back to it.
+   *
+   * Here rather than in FeatureConfig for the same reason as
+   * UpdateConfig.lastSeenVersion below - it does not switch anything on,
+   * it only records that we have asked.
+   */
+  setupDone: boolean;
 }
 
 export interface UpdateConfig {
@@ -278,6 +291,8 @@ export const DEFAULT_CONFIG: AppConfig = {
     perfHudCorner: 'top-left',
     perfHudDetail: 'full',
     hideAdContainers: true,
+    // False on a fresh install, which is what makes the walkthrough run.
+    setupDone: false,
   },
   hotkeys: DEFAULT_HOTKEYS,
   matchmaker: DEFAULT_FILTER,

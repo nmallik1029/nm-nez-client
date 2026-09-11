@@ -19,6 +19,7 @@ import { installNameHighlights } from './name-highlights';
 import { installRankedPanel } from './ranked/panel';
 import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
+import { installSetup, toggleSetup } from './setup/wizard';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
 import { installRankedLaunchButton } from './ranked-button';
@@ -144,7 +145,15 @@ async function bootstrap(): Promise<void> {
       rescanSwap: () => ipcRenderer.invoke(IPC.swapperRescan) as Promise<number>,
       getThemes: knownThemes,
       getActiveTheme: activeTheme,
+      openSetup: toggleSetup,
       onThemeSelect: (name) => {
+        // Backstop for the picker being switched off in krunker-tab.ts.
+        // Worth having twice: the picker only covers the case where the
+        // theme is chosen second.
+        if (name !== '' && cfg.features.menuSkin) {
+          showToast('Set Menu style to Krunker (original) to use your own CSS', 3600);
+          return;
+        }
         const applied = setActiveTheme(name);
         cfg.features.activeTheme = name;
         void ipcRenderer.invoke(IPC.configPatch, 'features', { activeTheme: name });
@@ -196,6 +205,11 @@ async function bootstrap(): Promise<void> {
 
     void applyThemes();
     void runUserscripts();
+
+    // Last, so everything it can switch on is already installed: the skin,
+    // the script runner and the theme list are all reachable from here and
+    // the walkthrough applies each answer as it is given.
+    installSetup(cfg.ui.setupDone);
   });
 
   log('preload ready');
@@ -249,6 +263,17 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
       // A stylesheet and two element moves, both reversible, so this one
       // toggles live as well.
       setMenuSkin(value === true);
+      // Turning our own styling on puts any custom theme down with it.
+      // Leaving it loaded would mean the Theme row reads as set while the
+      // picker is greyed out, and the two stylesheets would be arguing
+      // underneath - see the note in buildThemeRows.
+      if (value === true && activeTheme() !== '') {
+        const dropped = activeTheme().replace(/\.css$/i, '');
+        setActiveTheme('');
+        if (config) config.features.activeTheme = '';
+        void ipcRenderer.invoke(IPC.configPatch, 'features', { activeTheme: '' });
+        showToast(`Theme "${dropped}" cleared - the NM/NZ style replaces it`, 3600);
+      }
     } else if (key === 'resourceSwapper' && value === true) {
       // The folder is only scanned at startup, so enabling the swapper mid-
       // session would otherwise match nothing until the next launch.

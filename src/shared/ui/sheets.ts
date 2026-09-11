@@ -1,13 +1,12 @@
 import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_IDS } from './ids';
-import { SCAN_THUMB, SCAN_TIMING } from './tokens';
 import hudMinimal from './hud-minimal.css?raw';
 
 /**
  * Every stylesheet the client installs, in one file.
  *
- * They used to live beside the component that mounted them — nine template
- * literals across nine modules — which meant restyling anything started with
+ * They used to live beside the component that mounted them, nine template
+ * literals across nine modules, which meant restyling anything started with
  * finding out where its rules were. They are all here now, in one place, and
  * the components import what they need. `tokens.ts` holds the values; this
  * holds the rules that spend them.
@@ -121,15 +120,15 @@ const queueButton = `
  */
 /*
  * The :not() is load-bearing. Our button copies their class list so it keeps
- * their size and hover, which means it matches this selector too — without
+ * their size and hover, which means it matches this selector too: without
  * the exclusion this rule hides the replacement along with the original and
  * the footer ends up with no queue button at all.
  */
 [class*="footer-controls"] > [class*="queue-all-regions-container"]{display:none !important}
 /*
  * Krunker's button is hidden only while it is offering FIND MATCH, which is
- * the one job ours does better. It has a second state — rejoining a ranked
- * game you are already in — and that one we have no replacement for, so it
+ * the one job ours does better. It has a second state, rejoining a ranked
+ * game you are already in, and that one we have no replacement for, so it
  * comes back. ranked-button.ts sets the attribute by reading their label.
  */
 [class*="footer-controls"] > button[class*="start-button"]:not(#${UI_IDS.queueButton}):not([data-nm-rejoin]){
@@ -235,6 +234,122 @@ const scriptsModal = `
 `;
 
 /**
+ * The first-run walkthrough, over the menu.
+ *
+ * Same shell as the scripts window and the alt manager - game-skin greys,
+ * hard 2px border, no radius - because it is one more panel of ours opening
+ * over Krunker and three panels that each look slightly different is worse
+ * than three that look the same.
+ *
+ * The backdrop is the same scrim as the others, and that is load-bearing
+ * rather than consistency for its own sake: every answer here applies as
+ * you give it, so picking a look changes the menu three inches behind the
+ * panel. An opaque backdrop hides the one thing that makes choosing a look
+ * something other than guesswork. It was opaque first, on the theory that
+ * a half-lit menu still assembling itself on first launch reads as a bug;
+ * the menu is up by the time this opens, so that theory was wrong.
+ */
+const setupWizard = `
+#${UI_IDS.setupWizard}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-update);
+  background:var(--nm-game-scrim);
+  display:flex;align-items:center;justify-content:center}
+#${UI_IDS.setupWizard}{width:min(620px,94vw);max-height:88vh;display:flex;flex-direction:column;
+  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);font-family:var(--nm-font-display)}
+
+/* ---- head ---- */
+#${UI_IDS.setupWizard} .hd{display:flex;align-items:baseline;gap:14px;padding:14px 20px 12px;
+  border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
+#${UI_IDS.setupWizard} .hd .mark{font-size:var(--nm-fs-5xl);letter-spacing:var(--nm-track-xs)}
+#${UI_IDS.setupWizard} .hd .mark i{font-style:normal;color:var(--nm-menu-ember)}
+#${UI_IDS.setupWizard} .hd .step{margin-left:auto;font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-xl);color:var(--nm-game-text-dim)}
+
+/* ---- body ---- */
+#${UI_IDS.setupWizard} .bd{flex:1;overflow-y:auto;padding:20px}
+#${UI_IDS.setupWizard} h2{margin:0;font-size:var(--nm-fs-7xl);font-weight:normal;
+  letter-spacing:var(--nm-track-xs)}
+#${UI_IDS.setupWizard} .lede{margin-top:8px;font-size:var(--nm-fs-lg);line-height:var(--nm-lh);
+  color:var(--nm-game-text-body)}
+#${UI_IDS.setupWizard} section[hidden]{display:none}
+
+/* A card per answer. The whole card is the target rather than a radio dot
+   beside it - there are two or three and they are all that is on screen. */
+#${UI_IDS.setupWizard} .choices{margin-top:16px;display:flex;flex-direction:column;gap:var(--nm-gap-sm)}
+#${UI_IDS.setupWizard} .choice{display:block;width:100%;text-align:left;cursor:pointer;
+  padding:12px 14px;font-family:inherit;
+  background:var(--nm-game-row-bg);
+  border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);
+  transition:border-color var(--nm-fast),background var(--nm-fast)}
+#${UI_IDS.setupWizard} .choice:hover{background:var(--nm-game-row-hover);
+  border-color:var(--nm-game-btn-border)}
+#${UI_IDS.setupWizard} .choice .t{display:block;font-size:var(--nm-fs-2xl)}
+#${UI_IDS.setupWizard} .choice .d{display:block;margin-top:4px;font-size:var(--nm-fs-xs);
+  line-height:var(--nm-lh);color:var(--nm-game-text-dim)}
+/*
+ * A card that carries a screenshot puts it left of its own text.
+ *
+ * Beside rather than above, and 240px rather than the full width, because
+ * two full-bleed 16:9 shots stacked come to roughly 600px of panel before
+ * a word of it has been read. At this size the thing they are there to
+ * show, which is five coloured buttons against five grey ones, still
+ * carries.
+ */
+#${UI_IDS.setupWizard} .choice.shot{display:flex;align-items:flex-start;gap:14px}
+#${UI_IDS.setupWizard} .choice.shot .pic{flex:0 0 auto;width:240px;
+  display:block;border:var(--nm-bw) solid var(--nm-game-border);
+  /* The menu is pixel art. Smoothing it on the way down turns the type
+     into grey mush, and the type is half of what these are showing. */
+  image-rendering:pixelated}
+#${UI_IDS.setupWizard} .choice.shot .col{flex:1;min-width:0}
+#${UI_IDS.setupWizard} .choice.on{border-color:var(--nm-ok-border);background:var(--nm-ok-bg)}
+#${UI_IDS.setupWizard} .choice.on .t{color:var(--nm-ok-text-hi)}
+
+/* A script row: name over one line, switch on the right. Matches the
+   scripts window, which is where these are managed afterwards. */
+#${UI_IDS.setupWizard} .rows{margin-top:16px;display:flex;flex-direction:column;gap:var(--nm-gap-sm)}
+#${UI_IDS.setupWizard} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;
+  background:var(--nm-game-row-bg);
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.setupWizard} .row .ico{flex:0 0 auto;font-size:var(--nm-fs-7xl);
+  color:var(--nm-game-text-dim)}
+#${UI_IDS.setupWizard} .row.live .ico{color:var(--nm-accent)}
+#${UI_IDS.setupWizard} .row .txt{flex:1;min-width:0}
+#${UI_IDS.setupWizard} .row .nm{font-size:var(--nm-fs-2xl)}
+#${UI_IDS.setupWizard} .row .sub{margin-top:2px;font-size:var(--nm-fs-xs);
+  line-height:var(--nm-lh);color:var(--nm-game-text-dim)}
+
+/* Said when a screen has nothing to offer, or is not offering it. */
+#${UI_IDS.setupWizard} .note{margin-top:16px;padding:13px 14px;background:var(--nm-game-row-bg);
+  border-left:var(--nm-bw-heavy) solid var(--nm-game-btn-border);
+  font-size:var(--nm-fs-lg);line-height:var(--nm-lh);color:var(--nm-game-text-body)}
+#${UI_IDS.setupWizard} .note b{color:var(--nm-game-text);font-weight:normal}
+#${UI_IDS.setupWizard} .note p + p{margin-top:10px}
+
+/* ---- foot ---- */
+#${UI_IDS.setupWizard} .ft{display:flex;align-items:center;gap:var(--nm-gap-sm);padding:13px 20px;
+  border-top:var(--nm-bw-thick) solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
+#${UI_IDS.setupWizard} .ft .gap{flex:1}
+#${UI_IDS.setupWizard} button{font-family:inherit;cursor:pointer;padding:8px 18px;
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-md);
+  border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);
+  transition:background var(--nm-fast),color var(--nm-fast),border-color var(--nm-fast)}
+#${UI_IDS.setupWizard} button:hover{background:var(--nm-game-btn-bg-hover);color:var(--nm-game-text)}
+#${UI_IDS.setupWizard} button[disabled]{opacity:.45;cursor:default}
+#${UI_IDS.setupWizard} button[disabled]:hover{background:var(--nm-game-btn-bg);
+  color:var(--nm-game-btn-text)}
+#${UI_IDS.setupWizard} button.go{border-color:var(--nm-ok-border);color:var(--nm-ok-text-hi);
+  background:var(--nm-ok-bg)}
+#${UI_IDS.setupWizard} button.go:hover{background:var(--nm-ok-bg-hover)}
+#${UI_IDS.setupWizard} .sw.on{border-color:var(--nm-ok-border);color:var(--nm-ok)}
+#${UI_IDS.setupWizard} .sw.on:hover{background:var(--nm-ok-bg-hover);color:var(--nm-ok-text-hi)}
+#${UI_IDS.setupWizard} .sw{min-width:58px}
+`;
+/**
  * The hardpoint enemy counter, in the top-right HUD strip.
  *
  * Krunker's own `statIcon` and `greyInner` classes do the box, so this only
@@ -257,7 +372,7 @@ const hardpointCounter = `
  * The inline ranked queue: a panel, and a pill for while it is shut.
  *
  * Same shell as the other client windows. The pill is the part that matters
- * for the feature — the queue survives the panel closing, so there has to be
+ * for the feature: the queue survives the panel closing, so there has to be
  * something on screen saying so.
  */
 const rankedPanel = `
@@ -586,6 +701,9 @@ const settings = `
 .kc-actionbtns .settingsBtn{width:auto;min-width:0;max-width:none;padding:0 14px;
   overflow:visible;text-overflow:clip;white-space:nowrap;
   display:inline-flex;align-items:center;justify-content:center}
+/* A select that is shown but not usable. Greyed and unclickable, with
+   the reason in its hint - see buildThemeRows in krunker-tab.ts. */
+.kc-select-off{opacity:.5;cursor:not-allowed}
 .kc-keywrap{display:flex;align-items:center;gap:var(--nm-gap-sm)}
 .kc-keyicon{min-width:104px;text-align:center;cursor:pointer;user-select:none}
 .kc-keyicon.kc-capturing{background:var(--nm-accent-bg);color:var(--nm-text-hi);
@@ -621,6 +739,22 @@ const sectionNav = `
    earlier attempt at exactly this. */
 #settHolder.kc-has-sectnav{position:relative !important;padding-left:190px !important}
 /*
+ * Hold the panel back until it has its index.
+ *
+ * Krunker's changeTab does not finish filling #settHolder before it
+ * returns, so the microtask that reindexes runs against a panel that is
+ * not there yet, gives up, and waits. What paints in the meantime is the
+ * real content with no index and no left column - a different layout,
+ * for a frame or several, on every tab change.
+ *
+ * visibility, not display: the box keeps its geometry, so the measuring
+ * build() does while this is up still reads true numbers. section-nav.ts
+ * takes the class off the moment it has indexed, and a watchdog takes it
+ * off regardless, so a panel this cannot index is shown plain rather
+ * than hidden forever.
+ */
+#settHolder.kc-sectnav-wait{visibility:hidden !important}
+/*
  * The window stays centred, and stays as tall as whatever section is on it.
  *
  * Two earlier attempts at the same problem, both worse: a floor under the
@@ -649,14 +783,14 @@ const sectionNav = `
  * The float keeps it out of the rows' flow; the holder's padding reserves the
  * column it sits in.
  *
- * The transform value itself is not computed from scroll offsets either — a
+ * The transform value itself is not computed from scroll offsets either: a
  * third attempt did that and drifted, because scroll events arrive less often
  * than frames during an animated jump. pin() reads where the index actually is
  * and corrects it, every frame, for as long as a scroll is playing.
  */
 /* Fixed, and neither floated nor absolute. Two separate reasons:
    As a float it stayed in flow, and Krunker gives every settings row
-   clear:both for its float-right switches — so the first row of the first
+   clear:both for its float-right switches, so the first row of the first
    section cleared the whole index and left a gap exactly as tall as it.
    Absolute fixed that, but an absolutely positioned child of a scroller still
    scrolls with it, so holding it still meant correcting it every frame, which
@@ -664,7 +798,7 @@ const sectionNav = `
    left are written from script, because a transformed ancestor becomes the
    containing block and Krunker has one. */
 #${UI_IDS.sectionNav}{position:absolute;top:0;left:0;width:172px;
-  /* Everything above this is pointer-events:none — #uiBase sets it and each
+  /* Everything above this is pointer-events:none, #uiBase sets it and each
      window holder keeps it, with Krunker re-enabling it only inside its own
      panels. The index sits outside those now, so it has to say so itself or
      the clicks fall straight through to the settings behind it. */
@@ -679,10 +813,10 @@ const sectionNav = `
 #${UI_IDS.sectionNav}::-webkit-scrollbar{width:0}
 /*
  * Krunker's greys, not ours. This sits ON the game's settings panel, which is
- * a mid grey — reaching for --nm-surface here paints a near-black block on it.
+ * a mid grey: reaching for --nm-surface here paints a near-black block on it.
  */
 /* Wraps rather than clipping. "Crosshair (Third Person)" truncated to
-   "Crosshair (Th..." beside a "Crosshair" above it is worse than useless —
+   "Crosshair (Th..." beside a "Crosshair" above it is worse than useless: 
    the two entries read as the same section. */
 /* --nm-lh, not --nm-lh-tight: these labels wrap to two and three lines, and
    at 1.2 the wrapped lines of a tall face collide with each other. */
@@ -701,7 +835,7 @@ const sectionNav = `
  * Quieter settings rows.
  *
  * Krunker draws every category as a raised card with a heavy header bar and
- * boxes every control, which at this density reads as noise — the screenshot
+ * boxes every control, which at this density reads as noise: the screenshot
  * that prompted this had eleven outlined boxes stacked down one column. Cards
  * flatten to a heading and a rule, and rows are separated by a hairline
  * instead of by an outline each.
@@ -729,7 +863,7 @@ const sectionNav = `
    our own palette rather than the panel they were painted on. */
 /*
  * Rows are .settName on Krunker's own tabs and "setting settName" on ours, so
- * both are named. Targeting only .setting — which is what this did — meant none
+ * both are named. Targeting only .setting, which is what this did, meant none
  * of the flattening applied to the game's own tabs at all, which is why they
  * still looked untouched.
  */
@@ -757,7 +891,7 @@ const sectionNav = `
  *
  * They sit at the top of every tab and overwrite every setting in one click,
  * directly above the thing you opened the window for. The same four names are
- * still in the #settingsPreset dropdown in the header, so nothing is lost —
+ * still in the #settingsPreset dropdown in the header, so nothing is lost: 
  * only the four large boxes in the way of the settings.
  *
  * A class, in the end. An earlier attempt went looking for them by their
@@ -779,71 +913,42 @@ const sectionNav = `
  */
 const scan = `
 #${UI_IDS.scan}{position:fixed;inset:0;z-index:var(--nm-z-scan);display:none;
-  pointer-events:none;font-family:var(--nm-font);overflow:hidden}
-#${UI_IDS.scan}.on{display:block}
+  pointer-events:none;font-family:var(--nm-font-display);
+  align-items:center;justify-content:center}
+#${UI_IDS.scan}.on{display:flex}
 
-#${UI_IDS.scan} .sc-stage{position:absolute;left:0;right:0;height:0}
-#${UI_IDS.scan} .sc-line{position:absolute;top:0;white-space:nowrap;font-size:var(--nm-fs-8xl);
-  letter-spacing:var(--nm-track-sm);color:var(--nm-scan-text);display:flex;align-items:center;
-  gap:var(--nm-gap-lg);
+#${UI_IDS.scan} .sc-box{display:flex;flex-direction:column;align-items:center;
+  gap:var(--nm-gap-lg);width:min(460px,72vw)}
+
+#${UI_IDS.scan} .sc-title{font-size:var(--nm-fs-8xl);
+  letter-spacing:var(--nm-track-xl);text-transform:uppercase;
+  color:var(--nm-scan-text);
   text-shadow:0 3px 10px var(--nm-shadow),0 0 2px var(--nm-shadow-strong)}
 
-/* Fixed box whether or not the image has loaded, so text never shifts. */
-#${UI_IDS.scan} .sc-thumb{width:${SCAN_THUMB.width}px;height:${SCAN_THUMB.height}px;flex:none;
-  border-radius:var(--nm-radius-xs);
-  object-fit:cover;background:var(--nm-scan-thumb-bg);
-  box-shadow:0 3px 10px var(--nm-shadow-softer)}
-
-/* Rejected: drift left and down, redden, fade. */
-@keyframes kc-fall{
-  0%  {opacity:1;   transform:translate(0,0) rotate(0deg)}
-  15% {opacity:.95; color:var(--nm-scan-reject)}
-  100%{opacity:0;   transform:translate(-120%,120px) rotate(-10deg);
-       color:var(--nm-scan-reject-end)}
-}
-#${UI_IDS.scan} .sc-line.out{
-  animation:kc-fall ${SCAN_TIMING.fallMs}ms cubic-bezier(.25,.6,.5,1) forwards}
-#${UI_IDS.scan} .sc-line.out .sc-thumb{filter:grayscale(1) brightness(.6)}
-
-/* Cut a tumble short once the outcome is known. */
-#${UI_IDS.scan} .sc-line.out.clear{animation-play-state:paused;
-  transition:opacity var(--nm-scan-cut) linear;opacity:0}
-
-/* Accepted: colour and glow only. scale() would resample the pixel font. */
-@keyframes kc-land{
-  0%  {color:var(--nm-scan-text);
-       text-shadow:0 3px 10px var(--nm-shadow)}
-  45% {color:var(--nm-scan-accept-peak);
-       text-shadow:0 0 26px var(--nm-scan-glow-peak),0 3px 10px var(--nm-shadow-soft)}
-  100%{color:var(--nm-scan-accept);
-       text-shadow:0 0 20px var(--nm-scan-glow),0 3px 10px var(--nm-shadow-soft)}
-}
-#${UI_IDS.scan} .sc-line.hit{animation:kc-land var(--nm-scan-land) ease-out forwards}
-#${UI_IDS.scan} .sc-line.hit .sc-thumb{box-shadow:0 0 22px var(--nm-scan-glow-thumb)}
-/* The line steps aside as its map image takes over. */
-#${UI_IDS.scan} .sc-line.fading{transition:opacity var(--nm-scan-fade) ease-out;opacity:0}
-
 /*
- * The reveal: green floods out from the matched line and covers the screen.
+ * The bar. Square, flat, and the full width of the block.
  *
- * This used to grow the map preview instead and it never really worked.
- * Krunker's previews are 200x80 with no larger variant anywhere, so filling
- * 1920px meant about a 10x upscale, and that looked like mush however I
- * layered it. Flat colour has no resolution to run out of.
+ * Width rather than a transform, which is the opposite of the usual advice
+ * and right here: this animates twice in a run, over hundreds of
+ * milliseconds, on an element with nothing beside it to reflow. A scaled
+ * child would need its own wrapper to clip against and would stretch the
+ * glow with it.
  *
- * Transform only, so the compositor can do it without relayout every frame.
+ * The duration below is a placeholder. scan.ts sets transitionDuration
+ * inline for each leg, because the two legs are different lengths and the
+ * second one only starts when the lobby list lands.
  */
-#${UI_IDS.scan} .sc-flood{position:absolute;width:10px;height:10px;border-radius:50%;
-  background:var(--nm-scan-flood);transform:translate(-50%,-50%) scale(0);opacity:.92}
-@keyframes kc-flood{
-  0%  {transform:translate(-50%,-50%) scale(0);   opacity:.55}
-  100%{transform:translate(-50%,-50%) scale(560); opacity:1}
-}
-#${UI_IDS.scan} .sc-flood.go{
-  animation:kc-flood ${SCAN_TIMING.expandMs}ms cubic-bezier(.4,0,.7,1) forwards}
+#${UI_IDS.scan} .sc-track{width:100%;height:6px;overflow:hidden;
+  background:var(--nm-scan-track)}
+#${UI_IDS.scan} .sc-fill{width:0;height:100%;
+  background:var(--nm-scan-fill);
+  box-shadow:0 0 12px var(--nm-scan-glow);
+  transition:width var(--nm-fast) linear}
+#${UI_IDS.scan} .sc-fill.bad{background:var(--nm-danger);box-shadow:none}
 
-#${UI_IDS.scan} .sc-note{position:absolute;white-space:nowrap;font-size:var(--nm-fs-xl);
+#${UI_IDS.scan} .sc-note{font-size:var(--nm-fs-xl);
   color:var(--nm-scan-note);letter-spacing:var(--nm-track-sm);
+  text-align:center;line-height:var(--nm-lh);
   text-shadow:0 2px 8px var(--nm-shadow)}
 #${UI_IDS.scan} .sc-note.bad{color:var(--nm-danger-soft)}
 
@@ -947,7 +1052,7 @@ const update = `
  *
  * The one lesson worth carrying: an earlier cut set left/right on
  * `#subLogoButtons` to make the play row span the frame, and the row vanished.
- * Not because moving it is forbidden — because Krunker centres it with
+ * Not because moving it is forbidden, because Krunker centres it with
  * `left:50%` AND `transform:translate(-50%,0)`, so a full-width element got
  * shifted half its new width off the side of the screen. The transform has to
  * be cleared in the same rule. Read what the game already sets before
@@ -964,7 +1069,7 @@ const update = `
  *
  * Selectors were read off the running client, not guessed. The menu's newer
  * parts are Svelte-compiled and their classes carry a per-build hash
- * (`menuItem svelte-fgmdj8`), so nothing here matches a hash — only ids and
+ * (`menuItem svelte-fgmdj8`), so nothing here matches a hash: only ids and
  * the stable half of a class name.
  *
  * Before editing any of this, read "Restyling Krunker" at the bottom of
@@ -1119,7 +1224,7 @@ const menuSkin = `
 /* Bone at rest, not ash.
    These read as greyed out after you use one, and the reason is the size of
    the step back: hovering lit them from ash to bone, so letting go dropped
-   them two thirds of the way to the background — right at the moment you had
+   them two thirds of the way to the background, right at the moment you had
    just clicked, which makes it look like a response to the click. Krunker
    changes nothing on click; measured with our own stylesheet stood down, the
    colour and opacity are constant through the whole cycle. So the fix is to
@@ -1130,7 +1235,7 @@ const menuSkin = `
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone-hi) !important}
 #matchInfoHolder .match-action-sep{opacity:1 !important}
 /*
- * The width floor belongs to Invite alone — its label becomes "Copied URL"
+ * The width floor belongs to Invite alone, its label becomes "Copied URL"
  * and back, and without a floor the separator and Join move each way.
  *
  * Right-aligned, not left. The slack has to go somewhere, and on the right it
@@ -1149,7 +1254,7 @@ const menuSkin = `
  */
 /* justify-content, not text-align. Krunker makes this button a flex
    container, and in one of those the label is an anonymous flex item that
-   text-align cannot move — it is applied and simply does nothing. Measured
+   text-align cannot move: it is applied and simply does nothing. Measured
    with the alignment "set": the glyphs sat 39.6px short of the box's right
    edge, so the gap to the divider was 50px against Join's 10.4. */
 #inviteButton{min-width:128px !important;
@@ -1179,7 +1284,7 @@ const menuSkin = `
 /* ---- telemetry ---- */
 /* Same trick as the map name: the unit is a text node beside the numeral, so
    the small size goes on the parent and the numeral takes its own back.
-   #menuFPS keeps the colour Krunker sets inline on it, deliberately — that is
+   #menuFPS keeps the colour Krunker sets inline on it, deliberately: that is
    already a green-to-red threshold and it is the one status colour on this
    screen worth reading. */
 #menuFPSDisplay,#menuPingDisplay{font-family:var(--nm-menu-font) !important;
@@ -1295,15 +1400,15 @@ const menuSkin = `
  * Slide the character render right, off the middle of its own card.
  *
  * Krunker parks it with #classPreviewCanvas{margin-right:-113px}. The canvas
- * sits on its own line above #menuClassContainerInner — that is what the
- * -100px margin-bottom is for, pulling the card back up under it — so this
+ * sits on its own line above #menuClassContainerInner, that is what the
+ * -100px margin-bottom is for, pulling the card back up under it, so this
  * margin moves the render and nothing else. In a text-align:right container
  * a negative right margin hangs the box past the right edge, so a bigger
  * negative number is further right.
  *
  * It reads as left-heavy because the weapon points left: the body is already
  * near the card's centre, and the barrel is the part that runs off the side.
- * Moving the whole render right balances that. 87px here is 53px on screen —
+ * Moving the whole render right balances that. 87px here is 53px on screen: 
  * #menuClassContainer is scale(0.7) inside #uiBase's 0.869, so lengths in this
  * subtree land at ~0.61x. The render still clears the right edge of the
  * viewport with room to spare; the overhang was already clipped there before.
@@ -1427,12 +1532,12 @@ const menuSkin = `
  *
  * WHY ALMOST NOTHING HERE NAMES A CONTAINER, which is the lesson that cost a
  * release: the first version of this sheet scoped every rule to `#menuWindow`
- * and friends — container ids read out of Krunker's stylesheet and assumed to
+ * and friends, container ids read out of Krunker's stylesheet and assumed to
  * cover the rest. The settings window happened to be one of them. The login
  * modal was not, so it came through completely unstyled.
  *
- * The scoping was never needed. Krunker's primitives are global classes —
- * `.button`, `.settName`, `.slider`, `.inputGrey` — and the menu skin's own
+ * The scoping was never needed. Krunker's primitives are global classes, 
+ * `.button`, `.settName`, `.slider`, `.inputGrey`, and the menu skin's own
  * rules for the few of them it reuses are all ID-scoped
  * (`#subLogoButtons > .button`, `#menuClassContainer .button`). An ID beats a
  * class, so a bare `.button` rule here cannot reach the play row however hard
@@ -1441,7 +1546,7 @@ const menuSkin = `
  *
  * The panel itself still needs a handle, because a modal's outer box has no
  * shared class at all. `menu-skin.ts` tags those by shape rather than by name
- * — positioned, visible, horizontally centred, big enough to be a window —
+ *, positioned, visible, horizontally centred, big enough to be a window, 
  * and this styles `.kc-menu-modal`.
  *
  * Before editing, read "Restyling Krunker" at the bottom of
@@ -1552,7 +1657,7 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
 /* Hidden header controls, marked by menu-skin.ts.
    A class rather than an inline style, because the sizing rule below sets
-   display:inline-flex !important and an inline display:none loses to it —
+   display:inline-flex !important and an inline display:none loses to it, 
    which is exactly why Manage Ads kept coming back. Two classes beat one. */
 #menuWindow .settingsBtn.kc-menu-hidden,#menuWindow .kc-menu-hidden{display:none !important}
 /* One height across the header strip, taken from the preset dropdown. */
@@ -1565,7 +1670,7 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
  * The Advanced switch.
  *
  * Its whole visible self is one empty div. The track is .advancedSlider, the
- * knob is its ::before, and the word "Advanced" is its ::after — a content
+ * knob is its ::before, and the word "Advanced" is its ::after, a content
  * string, not a text node. That is why three attempts at finding it by its
  * label came back with nothing: there is no element in the document that says
  * "Advanced" anywhere.
@@ -1588,7 +1693,7 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
 
 /* ---- buttons ---- */
 /* Global on purpose. The menu skin's own button rules are all ID-scoped, so
-   they outrank this and the play row is untouched — see the note at the top. */
+   they outrank this and the play row is untouched: see the note at the top. */
 .button{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
   border-radius:0 !important;background:var(--nm-menu-fill) !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important;
@@ -1596,7 +1701,7 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
 .button:hover{transform:none !important;color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
 .button:active{transform:none !important}
-/* Krunker marks the action it wants you to take with a saturated fill — the
+/* Krunker marks the action it wants you to take with a saturated fill, the
    green Login, Register here, Equip. Same rank, the skin's own accent. */
 .button.buttonG,.button.buttonGreen,.termsBtn{
   border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ember) !important;
@@ -1647,6 +1752,7 @@ export const SHEETS = {
   rankedPanel,
   hardpointCounter,
   scriptsModal,
+  setupWizard,
   changelog,
   menuButtons,
   chatTags,
