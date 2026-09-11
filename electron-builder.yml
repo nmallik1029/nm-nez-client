@@ -42,6 +42,11 @@ publish:
 files:
   - dist/**/*
   - '!**/*.map'
+  # Sounds the client plays, shipped rather than downloaded. Small enough
+  # that asar packing them costs nothing, and main reads them through
+  # app.getAppPath() so the same path works from the repo and from inside
+  # the package.
+  - assets/**/*
 
 asar: true
 

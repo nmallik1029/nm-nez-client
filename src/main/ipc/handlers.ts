@@ -178,7 +178,9 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   // is what makes switching instant.
   registry.handle(IPC.themesGet, () => loadThemes(paths.themes));
 
-  registry.handle(IPC.rankedSound, () => loadMatchSound(paths.sounds));
+  registry.handle(IPC.rankedSound, () =>
+    loadMatchSound(paths.sounds, join(app.getAppPath(), 'assets')),
+  );
 
   registry.handle(IPC.swapperRescan, () => deps.rescanSwap());
 

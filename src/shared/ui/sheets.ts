@@ -119,8 +119,15 @@ const queueButton = `
  * on the next re-render. "All regions" goes with it, because regions are
  * picked in our panel now and two places to choose them is one too many.
  */
+/*
+ * The :not() is load-bearing. Our button copies their class list so it keeps
+ * their size and hover, which means it matches this selector too — without
+ * the exclusion this rule hides the replacement along with the original and
+ * the footer ends up with no queue button at all.
+ */
 [class*="footer-controls"] > [class*="queue-all-regions-container"],
-[class*="footer-controls"] > button[class*="start-button"]{display:none !important}
+[class*="footer-controls"] > button[class*="start-button"]:not(#${UI_IDS.queueButton}){
+  display:none !important}
 #${UI_IDS.queueButton}{display:inline-flex;align-items:center;justify-content:center;
   width:38px;height:38px;margin:0 var(--nm-gap);border-radius:var(--nm-radius);cursor:pointer;
   background:var(--nm-queue-bg);border:var(--nm-bw-thick) solid var(--nm-queue-border);

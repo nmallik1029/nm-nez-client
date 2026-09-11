@@ -33,15 +33,28 @@ export interface Userscript {
 const MAX_SOUND_BYTES = 4 * 1024 * 1024;
 export const MATCH_SOUND_FILE = 'match-found.mp3';
 
-export function loadMatchSound(soundsDir: string): string | null {
+function readSound(full: string): string | null {
   try {
-    const full = join(soundsDir, MATCH_SOUND_FILE);
     if (statSync(full).size > MAX_SOUND_BYTES) return null;
     return `data:audio/mpeg;base64,${readFileSync(full).toString('base64')}`;
   } catch {
-    // Not there, or unreadable. Silence is the right fallback.
+    // Not there, or unreadable.
     return null;
   }
+}
+
+/**
+ * The match sound: the user's if they have one, otherwise the shipped one.
+ *
+ * The bundled copy is the point — someone who installs the client should
+ * hear it without having to find a folder first. `swap/sounds` stays as an
+ * override so anyone who wants their own is not stuck with ours.
+ *
+ * `app.getAppPath()` is the repo root in development and the asar in a
+ * package, so one path covers both.
+ */
+export function loadMatchSound(soundsDir: string, bundledDir: string): string | null {
+  return readSound(join(soundsDir, MATCH_SOUND_FILE)) ?? readSound(join(bundledDir, MATCH_SOUND_FILE));
 }
 
 /** All `.js` in the scripts folder. */
