@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.35',
+    date: '2026-09-10',
+    changes: [
+      {
+        kind: 'changed',
+        text: 'The ranked queue is in the page now instead of a separate window. QUEUE replaces Find Match, and the panel it opens keeps the timer, the regions and the start/stop in one place. Shift-click the button if you still want the old window, which is the one to use when you are queueing with the game shut.',
+      },
+      {
+        kind: 'changed',
+        text: 'Closing the panel no longer stops the queue. It carries on through a reload, a server change and closing the window, because it runs outside the page — a small readout shows the time elapsed while the panel is shut, under Click to Play on the menu and under the counters in a match.',
+      },
+      {
+        kind: 'added',
+        text: 'A sound when the queue finds you a game. Drop your own at swap/sounds/match-found.mp3 to replace it.',
+      },
+      {
+        kind: 'changed',
+        text: 'The panel blinks while it is searching, and the regions lock once you are in the queue, since you only ever queue into the ones you started with.',
+      },
+    ],
+  },
+  {
     version: '0.1.34',
     date: '2026-09-10',
     changes: [
