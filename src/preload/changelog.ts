@@ -2,6 +2,7 @@ import { BRANDING } from '../shared/branding';
 import { CHANGELOG, type ChangeKind } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { defineStyle } from './style';
+import { coalesced } from './schedule';
 
 /**
  * The changelog: a row in Krunker's left menu, and the panel it opens.
@@ -197,5 +198,5 @@ export function installChangelogItem(): void {
   place();
   const root = document.getElementById('menuHider') ?? document.body;
   if (!root) return;
-  new MutationObserver(() => place()).observe(root, { childList: true, subtree: true });
+  new MutationObserver(coalesced(place)).observe(root, { childList: true, subtree: true });
 }

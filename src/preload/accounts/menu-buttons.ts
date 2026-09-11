@@ -1,5 +1,6 @@
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
+import { coalesced } from '../schedule';
 
 /**
  * Rearranges the two buttons under the class preview in Krunker's main menu.
@@ -191,7 +192,8 @@ export function installMenuButtons(deps: MenuButtonDeps): void {
 
   const root = document.getElementById('menuHider') ?? document.body;
   if (root) {
-    new MutationObserver(() => place(deps)).observe(root, { childList: true, subtree: true });
+    const settle = coalesced(() => place(deps));
+    new MutationObserver(settle).observe(root, { childList: true, subtree: true });
   }
 
   window.addEventListener('resize', () => requestAnimationFrame(applyWidth));
