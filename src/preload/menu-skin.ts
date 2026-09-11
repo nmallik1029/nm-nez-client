@@ -4,6 +4,7 @@ import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { setHudStyle } from './hud-skin';
 import { toggleScripts } from './scripts/modal';
 import { toggleStyle } from './style';
+import { coalesced } from './schedule';
 
 /**
  * The main-menu skin: one stylesheet and a handful of moved elements.
@@ -112,8 +113,6 @@ function headerHome(): Element | null {
 
 let enabled = false;
 let observer: MutationObserver | null = null;
-/** Pending coalesced pass; 0 when none is scheduled. */
-let raf = 0;
 
 /**
  * Take out the backdrop this skin used to draw.
@@ -455,13 +454,7 @@ export function setMenuSkin(on: boolean): void {
  * Same shape as `scheduleLift` in chat-place.ts. One pass per frame at most,
  * whatever the mutation rate.
  */
-function schedule(): void {
-  if (raf !== 0) return;
-  raf = requestAnimationFrame(() => {
-    raf = 0;
-    apply();
-  });
-}
+const schedule = coalesced(apply);
 
 /**
  * Krunker rebuilds its menu markup as you navigate, same as its settings
