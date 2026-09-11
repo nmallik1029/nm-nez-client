@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { decideRequest, FILTER_PATTERNS, isAdHost, type RequestContext } from './blocklist';
+import { EMPTY_SWAP_URL } from '../swapper/protocol';
 
 const ctx = (over: Partial<RequestContext> = {}): RequestContext => ({
   blockAds: true,
@@ -52,7 +53,7 @@ describe('decideRequest', () => {
     const bunny = 'https://user-assets.krunker.io/61806/model.obj';
     expect(decideRequest(bunny, ctx({ hideBunnies: true }))).toEqual({
       kind: 'redirect',
-      url: 'data:,',
+      url: EMPTY_SWAP_URL,
     });
   });
 
@@ -87,7 +88,7 @@ describe('decideRequest', () => {
     // happens to have a file of the same name in their swap folder.
     const bunny = 'https://user-assets.krunker.io/61806/model.obj';
     const decision = decideRequest(bunny, ctx({ hideBunnies: true, resolveSwap: () => 'swap://x' }));
-    expect(decision).toEqual({ kind: 'redirect', url: 'data:,' });
+    expect(decision).toEqual({ kind: 'redirect', url: EMPTY_SWAP_URL });
   });
 });
 
