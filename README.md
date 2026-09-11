@@ -115,6 +115,10 @@ instead of failing with a confusing error. Restart the client to switch again.
   out live rather than through a rebuild. Paste what you keep back into `tokens.ts`.
   (The standalone queue window is a separate document with no theme loader, so its
   `--nm-rq-*` group is reference only.)
+- **Match sound.** Drop an mp3 at `swap/sounds/match-found.mp3` and the ranked queue
+  plays it when it finds you a game. No file, no sound. It is read once at
+  startup, so a new file needs a reload (F5).
+
 - **Userscripts.** Any `.js` in `swap/scripts/`. Off by default, and worth keeping that
   way unless you wrote them.
 

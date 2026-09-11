@@ -57,6 +57,8 @@ export const IPC = {
    * happens to change state.
    */
   rankedCurrent: 'ranked:current',
+  /** Renderer -> main. The match-found sound as a data URL, or null. */
+  rankedSound: 'ranked:sound',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

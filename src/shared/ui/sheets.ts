@@ -111,6 +111,16 @@ const watermark = `
 
 /** The queue launcher wedged into Krunker's own ranked footer, beside FIND MATCH. */
 const queueButton = `
+/*
+ * Krunker's own ranked footer, with our button standing in for it.
+ *
+ * FIND MATCH is hidden rather than removed: it is Svelte's element, and
+ * taking it out of the DOM invites the framework to put it back or to throw
+ * on the next re-render. "All regions" goes with it, because regions are
+ * picked in our panel now and two places to choose them is one too many.
+ */
+[class*="footer-controls"] > [class*="queue-all-regions-container"],
+[class*="footer-controls"] > button[class*="start-button"]{display:none !important}
 #${UI_IDS.queueButton}{display:inline-flex;align-items:center;justify-content:center;
   width:38px;height:38px;margin:0 var(--nm-gap);border-radius:var(--nm-radius);cursor:pointer;
   background:var(--nm-queue-bg);border:var(--nm-bw-thick) solid var(--nm-queue-border);
@@ -236,16 +246,38 @@ const rankedPanel = `
 #${UI_IDS.rankedPanel} .note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
   line-height:var(--nm-lh)}
 #${UI_IDS.rankedPanel} .note.bad{color:var(--nm-bad-text)}
+/*
+ * While searching, the whole panel steps between two greens.
+ *
+ * steps(1,end) is what makes it snap rather than fade, which is the same
+ * call the external queue window made: there is no ambient light anywhere in
+ * Krunker's UI, so a soft pulse reads as a web dashboard sitting on top of
+ * the game and a hard blink reads as an indicator lamp.
+ */
+#${UI_IDS.rankedPanel}.live{animation:nmQueueEdge var(--nm-blink) steps(1,end) infinite}
+@keyframes nmQueueEdge{
+  0%,50%{border-color:var(--nm-rq-go);background:var(--nm-rq-panel-hi)}
+  50.01%,100%{border-color:var(--nm-rq-go-dim);background:var(--nm-rq-panel)}
+}
+#${UI_IDS.rankedPanel}.live .hd{animation:nmQueueHead var(--nm-blink) steps(1,end) infinite}
+@keyframes nmQueueHead{
+  0%,50%{border-bottom-color:var(--nm-rq-go)}
+  50.01%,100%{border-bottom-color:var(--nm-rq-go-dim)}
+}
+/* Fixed for the life of a queue, and it should look fixed. */
+#${UI_IDS.rankedPanel} .regions.locked label{opacity:.5;cursor:default}
 
 /*
- * The pill, under the HUD's own counters on the right.
+ * The pill. Where it goes depends on which screen you are on, so the top and
+ * the horizontal edge are set from JS, in preload/ranked/panel.ts:
  *
- * Top centre was wrong: in a match that is where the round timer and the
- * client watermark sit, and it landed on both. The right-hand column already
- * belongs to the leaderboard and the kill counters, so directly below those
- * is the one place in a match that is reliably empty.
+ *   in a match  under the leaderboard and the counters, on the right
+ *   on the menu under CLICK TO PLAY, centred
+ *
+ * Neither can be a constant. The leaderboard grows with the player count,
+ * and Krunker scales its whole UI, so both move.
  */
-#${UI_IDS.rankedPill}{position:fixed;top:196px;right:24px;
+#${UI_IDS.rankedPill}{position:fixed;top:196px;
   z-index:var(--nm-z-toast);display:flex;align-items:center;gap:10px;
   padding:9px 12px;background:var(--nm-game-bg);
   border:var(--nm-bw-thick) solid var(--nm-game-border);

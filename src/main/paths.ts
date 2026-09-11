@@ -20,6 +20,8 @@ export interface AppPaths {
   readonly scripts: string;
   /** Images used as loading-screen backgrounds. */
   readonly backgrounds: string;
+  /** Sounds the client plays. `match-found.mp3` is the only one so far. */
+  readonly sounds: string;
   readonly screenshots: string;
 }
 
@@ -38,6 +40,7 @@ export function appPaths(): AppPaths {
     themes: join(swap, 'themes'),
     scripts: join(swap, 'scripts'),
     backgrounds: join(swap, 'backgrounds'),
+    sounds: join(swap, 'sounds'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
   };
   return cached;
@@ -45,7 +48,7 @@ export function appPaths(): AppPaths {
 
 /** Create the folders up front so they're there to find before first use. */
 export function ensureUserDirs(paths: AppPaths): void {
-  for (const dir of [paths.swap, paths.themes, paths.scripts, paths.backgrounds]) {
+  for (const dir of [paths.swap, paths.themes, paths.scripts, paths.backgrounds, paths.sounds]) {
     try {
       mkdirSync(dir, { recursive: true });
     } catch {

@@ -10,7 +10,7 @@ import { createAccountStore } from '../accounts';
 import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
-import { loadUserscripts } from '../assets';
+import { loadMatchSound, loadUserscripts } from '../assets';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
@@ -177,6 +177,8 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   // full list to draw the per-theme switches, and keeping the text in memory
   // is what makes switching instant.
   registry.handle(IPC.themesGet, () => loadThemes(paths.themes));
+
+  registry.handle(IPC.rankedSound, () => loadMatchSound(paths.sounds));
 
   registry.handle(IPC.swapperRescan, () => deps.rescanSwap());
 

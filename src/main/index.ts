@@ -268,6 +268,12 @@ function installRankedIpc(): void {
   ipcMain.handle(IPC.rankedCurrent, () => lastRankedState);
 
   ipcMain.on(IPC.rankedSetRegions, (_event, regions: unknown) => {
+    // You queue into the regions you started with, so changing them mid-queue
+    // would leave the UI describing something the server is not doing. The
+    // panel disables the boxes too; this is the half that cannot be clicked
+    // around.
+    const status = rankedQueue.current.status;
+    if (status === 'queued' || status === 'connecting') return;
     if (!Array.isArray(regions)) return;
     const valid = regions.filter((r): r is string => typeof r === 'string');
     config.patch('ranked', { regions: valid });

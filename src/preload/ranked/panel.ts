@@ -38,6 +38,25 @@ interface RankedView {
 
 let view: RankedView = { status: 'idle' };
 let ticker: ReturnType<typeof setInterval> | null = null;
+/** Data URL for the match sound, or null if there is no file. */
+let matchSound: string | null = null;
+/** So a repeated 'matched' push does not fire the sound twice. */
+let announced = false;
+
+/**
+ * Play the match sound, if the user has dropped one in.
+ *
+ * Deliberately quiet about failure: autoplay can be refused, the file can be
+ * a renamed .wav, and neither is worth taking the match popup down over.
+ */
+function playMatchSound(): void {
+  if (matchSound === null) return;
+  try {
+    void new Audio(matchSound).play().catch(() => {});
+  } catch {
+    // No Audio, or a file the decoder will not take.
+  }
+}
 
 /** `hh:mm:ss`, because a queue can genuinely run for an hour. */
 function clock(totalSeconds: number): string {
@@ -54,6 +73,11 @@ function elapsed(): string {
 function cooldownLeft(): string {
   if (typeof view.until !== 'number') return '00:00:00';
   return clock((view.until - Date.now()) / 1000);
+}
+
+/** Regions are fixed for the life of a queue. */
+function box_locked(v: RankedView): boolean {
+  return v.status === 'queued' || v.status === 'connecting';
 }
 
 /** Is the queue doing something worth keeping on screen? */
@@ -95,6 +119,8 @@ function syncPill(): void {
     document.body.appendChild(pill);
   }
 
+  positionPill(pill);
+
   const text = pill.querySelector('.txt');
   if (text) {
     text.textContent =
@@ -103,6 +129,51 @@ function syncPill(): void {
         : view.status === 'connecting'
           ? 'Connecting'
           : `Searching ${elapsed()}`;
+  }
+}
+
+/** Breathing room between the pill and whatever it is sitting under. */
+const PILL_GAP_PX = 12;
+
+/**
+ * Put the pill under whatever is above it on this screen.
+ *
+ * Two different anchors, because the two screens have different furniture:
+ *
+ *   in a match  the leaderboard and the counters share the top right, and
+ *               the leaderboard grows a row per player, so a constant top
+ *               lands on it in a full lobby. Measured off the counters,
+ *               which sit below the board.
+ *   on the menu that corner is empty but the middle is not, and CLICK TO
+ *               PLAY is the thing you are looking at, so it goes under that.
+ *
+ * Falls back to the stylesheet's own value when neither anchor is there,
+ * which is what happens for the moment between loading and the HUD existing.
+ */
+function positionPill(pill: HTMLElement): void {
+  const onMenu = document.getElementById('uiBase')?.classList.contains('onMenu') === true;
+
+  if (onMenu) {
+    const instructions = document.getElementById('instructions');
+    const rect = instructions?.getBoundingClientRect();
+    if (rect && rect.height > 0) {
+      pill.style.top = `${Math.round(rect.bottom + PILL_GAP_PX)}px`;
+      pill.style.left = '50%';
+      pill.style.right = 'auto';
+      pill.style.transform = 'translateX(-50%)';
+      return;
+    }
+  }
+
+  const counters = document.querySelector('.topRightCounters');
+  const rect = counters?.getBoundingClientRect();
+  pill.style.left = 'auto';
+  pill.style.transform = 'none';
+  pill.style.right = '24px';
+  if (rect && rect.height > 0) {
+    pill.style.top = `${Math.round(rect.bottom + PILL_GAP_PX)}px`;
+  } else {
+    pill.style.removeProperty('top');
   }
 }
 
@@ -138,6 +209,19 @@ function paintPanel(): void {
   }
   dot?.classList.toggle('on', queued || view.status === 'matched');
   if (timer) timer.textContent = cooling ? cooldownLeft() : elapsed();
+
+  // The whole panel steps between two greens while searching, the way the
+  // old external window did. Same beat, same idea: an indicator lamp rather
+  // than a glow.
+  panel.classList.toggle('live', queued);
+
+  // You queue into the regions you started with, so they cannot be changed
+  // mid-queue. Disabled rather than hidden, so it still reads as a choice
+  // you have already made.
+  for (const box of panel.querySelectorAll<HTMLInputElement>('.regions input')) {
+    box.disabled = queued || view.status === 'connecting';
+  }
+  panel.querySelector('.regions')?.classList.toggle('locked', box_locked(view));
 
   if (button) {
     button.textContent = queued || view.status === 'connecting' ? 'Leave Queue' : 'Start Queue';
@@ -258,7 +342,15 @@ export function toggleRankedPanel(): void {
 // ── wiring ───────────────────────────────────────────────────────────────
 
 function apply(next: RankedView): void {
+  const wasMatched = view.status === 'matched';
   view = next;
+
+  if (next.status === 'matched' && !wasMatched && !announced) {
+    announced = true;
+    playMatchSound();
+  }
+  if (next.status !== 'matched') announced = false;
+
   paintPanel();
   syncPill();
 }
@@ -278,6 +370,17 @@ export function installRankedPanel(): void {
     .then((state: unknown) => apply(state as RankedView))
     .catch(() => {
       // Older main process. The next push will catch us up.
+    });
+
+  // Fetched once up front, so a match does not wait on file IO to make a
+  // noise. Null when the user has not put a file in swap/sounds.
+  void ipcRenderer
+    .invoke(IPC.rankedSound)
+    .then((url: unknown) => {
+      matchSound = typeof url === 'string' ? url : null;
+    })
+    .catch(() => {
+      matchSound = null;
     });
 
   // The timer and the cooldown are clocks, so they tick on their own rather

@@ -23,17 +23,23 @@ import { defineStyle } from './style';
 
 const BUTTON_ID = UI_IDS.queueButton;
 const FOOTER_SELECTOR = '[class*="footer-controls"]';
-const REGIONS_SELECTOR = '[class*="queue-all-regions-container"]';
+/** Krunker's own queue button, which ours stands in for. */
+const START_SELECTOR = 'button[class*="start-button"]';
 
-function buildButton(): HTMLElement {
-  const button = document.createElement('div');
+/**
+ * Our button, wearing Krunker's own.
+ *
+ * The class list is copied off their FIND MATCH rather than written out,
+ * because it carries a per-build Svelte hash (`start-button svelte-mqcul7`)
+ * that moves every time they deploy. Copying it means this keeps their size,
+ * type and hover without us owning any of it.
+ */
+function buildButton(template: Element | null): HTMLElement {
+  const button = document.createElement('button');
   button.id = BUTTON_ID;
+  if (template) button.className = template.className;
   button.title = 'Ranked queue. Keeps queueing through a reload or a server change';
-  // A stopwatch rather than the old "opens a window" arrow, because it does
-  // not open a window any more.
-  button.innerHTML =
-    '<svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/>' +
-    '<path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>';
+  button.textContent = 'QUEUE';
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -51,13 +57,15 @@ function place(): void {
   if (footer.querySelector(`#${BUTTON_ID}`)) return;
 
   defineStyle(STYLE_IDS.queueButton, SHEETS.queueButton);
-  const button = buildButton();
-  const regions = footer.querySelector(REGIONS_SELECTOR);
 
-  // After the regions checkbox if it's there, otherwise before the last child
-  // (FIND MATCH) so we never end up past it.
-  if (regions?.parentElement === footer) regions.insertAdjacentElement('afterend', button);
-  else footer.insertBefore(button, footer.lastElementChild);
+  // Krunker's own button is hidden by the sheet, not removed, so it is still
+  // here to copy a class list from and still here for Svelte to re-render.
+  const start = footer.querySelector(START_SELECTOR);
+  const button = buildButton(start);
+
+  // Exactly where theirs was, so the footer reads the same.
+  if (start) start.insertAdjacentElement('beforebegin', button);
+  else footer.appendChild(button);
 }
 
 /**

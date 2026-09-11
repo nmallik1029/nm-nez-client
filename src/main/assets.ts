@@ -19,6 +19,31 @@ export interface Userscript {
   readonly title: string;
 }
 
+/**
+ * The sound played when the ranked queue finds a match.
+ *
+ * Read here and handed over as a data URL rather than served from disk,
+ * because the page has no business reading the user's filesystem and the one
+ * file involved is small. `MAX_SOUND_BYTES` is the cap; anything larger is
+ * ignored rather than truncated, since half an mp3 is not a sound.
+ *
+ * Null when there is no file, which is the normal case. The queue is silent
+ * until someone drops one in.
+ */
+const MAX_SOUND_BYTES = 4 * 1024 * 1024;
+export const MATCH_SOUND_FILE = 'match-found.mp3';
+
+export function loadMatchSound(soundsDir: string): string | null {
+  try {
+    const full = join(soundsDir, MATCH_SOUND_FILE);
+    if (statSync(full).size > MAX_SOUND_BYTES) return null;
+    return `data:audio/mpeg;base64,${readFileSync(full).toString('base64')}`;
+  } catch {
+    // Not there, or unreadable. Silence is the right fallback.
+    return null;
+  }
+}
+
 /** All `.js` in the scripts folder. */
 export function loadUserscripts(scriptsDir: string): Userscript[] {
   let entries: string[];
