@@ -462,9 +462,21 @@ const menuButtons = `
    alignment the game's text-align:right wrapper gave the stacked buttons. */
 #${UI_IDS.classButtonRow}{display:flex;gap:var(--nm-gap-sm);margin:8px 0 0 auto}
 #${UI_IDS.classButtonRow} > *{flex:1 1 0;width:auto !important;min-width:0;margin:0}
-/* Krunker sizes these for a full-width button. At half the width the label
-   plus its icon no longer fits, so both come down proportionally. */
-#${UI_IDS.classButtonRow} .button{font-size:var(--nm-fs-6xl);padding-left:8px;padding-right:8px;
+/*
+ * Only the icon comes down, and only the icon can.
+ *
+ * Krunker sizes this pair for one full-width button and pins the label with
+ * #customizeButton{font-size:27px !important} - which both of them carry,
+ * the game reuses that id twice - so a plain rule here cannot move it. This
+ * did carry font-size:var(--nm-fs-6xl) for a while and it never applied.
+ *
+ * It does not need to. At half width the label overflowed while the skin was
+ * setting it in tracked-out caps; in the game own mixed case it fits with
+ * room to spare - measured at 235px of text in a 235px box, no clipping. The
+ * icon still comes down, because 27px of label beside 27px of glyph is what
+ * pushed it over in the first place.
+ */
+#${UI_IDS.classButtonRow} .button{padding-left:8px;padding-right:8px;
   justify-content:center;white-space:nowrap}
 #${UI_IDS.classButtonRow} .material-icons{font-size:var(--nm-fs-7xl) !important;
   margin-left:4px !important}
@@ -700,9 +712,6 @@ const sectionNav = `
 .kc-has-sectnav .setHed{background:none !important;border:0 !important;
   box-shadow:none !important;
   padding:22px 2px 9px !important;margin:0 !important;
-  font-size:var(--nm-fs-lg) !important;
-  letter-spacing:var(--nm-track-2xl) !important;
-  text-transform:uppercase !important;
   color:var(--nm-kr-text-faint) !important;
   border-bottom:var(--nm-bw-thick) solid var(--nm-kr-rule) !important}
 /*
@@ -970,8 +979,7 @@ const menuSkin = `
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   box-sizing:border-box !important;height:34px !important;min-height:34px !important;
   max-height:34px !important;padding:0 16px !important;margin:0 !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
-  letter-spacing:var(--nm-track-xl) !important;text-transform:uppercase !important;
+  font-family:var(--nm-menu-font) !important;
   line-height:1 !important;white-space:nowrap !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   background:var(--nm-menu-fill) !important;
@@ -980,14 +988,21 @@ const menuSkin = `
 #playerHeaderEl #${UI_IDS.scriptsButton}:hover{border-color:var(--nm-menu-bone) !important;
   background:var(--nm-menu-wash) !important}
 #playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
-#playerHeaderEl .ph-item:hover .ph-label,#playerHeaderEl .nav-item:hover .nav-label{
-  color:var(--nm-menu-bone) !important}
+/*
+ * Colour for the nav on the right, and none for the stats on the left.
+ *
+ * Those stats are Krunker own colour coding - gold KR, a purple pickaxe, a
+ * green trophy, a white pack - and the skin used to paint every one of them
+ * the same grey. That is a loss rather than a tidy-up: the hue is how you
+ * find the number you want without reading the other three. The typography
+ * above still covers both halves of the bar; only the colour stops here.
+ */
+#playerHeaderEl .nav-label{color:var(--nm-menu-bone) !important}
+#playerHeaderEl .nav-item:hover .nav-label{color:var(--nm-menu-bone-hi) !important}
 /* Icon text is the ligature name, so uppercase must never reach it. */
 #playerHeaderEl .ph-icon,#playerHeaderEl .nav-mat-icon{text-transform:none !important;
-  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+  text-shadow:none !important}
 #playerHeaderEl .verticalSeparator{background:var(--nm-menu-line-hi) !important;opacity:1 !important}
 /* Notifications, and the separators that only existed to fence it off. */
 #playerHeaderEl .headerBarRight [class*="nav-notif-section"],
@@ -1030,13 +1045,21 @@ const menuSkin = `
   45%{opacity:1;width:0;height:14px;margin-top:-7px;border-top-width:0;transform:rotate(0deg)}
   100%{opacity:1;width:7px;height:7px;margin-top:-4px;
     border-top-width:var(--nm-bw-thick);transform:rotate(45deg)}}
+/*
+ * Bone at rest, not ash.
+ *
+ * The game rests these at full strength and the skin dimmed them, on the
+ * theory that a quiet rail lets the play row carry the screen. Over a live
+ * map it reads as a disabled list instead - the same mistake the match
+ * actions below already had to be walked back from. The chevron and the row
+ * wash are what mark the hovered row; its label only has to lift a shade.
+ */
 #menuItemContainer .menuItemTitle{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-xl) !important;letter-spacing:var(--nm-track-sm) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  color:var(--nm-menu-bone) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
-#menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone) !important}
+#menuItemContainer .menuItem:hover .menuItemTitle{color:var(--nm-menu-bone-hi) !important}
 #menuItemContainer .menuItemIcon{text-transform:none !important;
-  color:var(--nm-menu-ash) !important;text-shadow:none !important}
+  color:var(--nm-menu-bone) !important;text-shadow:none !important}
 /* Krunker groups the list with rules, which is what made the gaps uneven.
    Every row now sits on the same rhythm and the grouping goes. */
 #menuItemContainer .sidebarDivider{display:none !important}
@@ -1060,11 +1083,21 @@ const menuSkin = `
   color:var(--nm-menu-ash);font-variant-numeric:tabular-nums}
 
 /* ---- click to play ---- */
-/* Krunker pulses this on scale() at 36px. Wide tracking and an opacity
-   breathe say the same thing without being the loudest object on screen. */
-#instructions{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xl) !important;
-  letter-spacing:var(--nm-menu-track-cta) !important;text-indent:var(--nm-menu-track-cta) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
+/*
+ * Krunker own 44px, left alone.
+ *
+ * This was 15px tracked out to .42em, on the theory that wide small caps
+ * ask for a click more quietly than a 44px scale() pulse. Put side by side
+ * with the game it reads as a different and more modern piece of software,
+ * and it is the clearest single case of the skin retyping a label that was
+ * already right. Measured: 44px normal none against our 15px at 6.3px.
+ *
+ * The breathe stays. That part was about motion rather than type - it
+ * drives opacity instead of size, so the biggest thing on the screen stops
+ * jumping about without having to be shrunk to manage it.
+ */
+#instructions{font-family:var(--nm-menu-font) !important;
+  color:var(--nm-menu-bone) !important;
   text-shadow:0 2px 18px var(--nm-menu-cta-shadow) !important;
   animation:kc-menu-breathe var(--nm-menu-breathe) ease-in-out infinite !important}
 @keyframes kc-menu-breathe{0%,100%{opacity:.8}50%{opacity:1}}
@@ -1074,15 +1107,14 @@ const menuSkin = `
    the parent and restoring the child is the only way to drop just that half. */
 #mapInfoHld{font-size:0 !important}
 #mapInfoHld #mapInfo{font-family:var(--nm-font-display) !important;
-  font-size:var(--nm-fs-7xl) !important;color:var(--nm-menu-bone) !important;
-  text-shadow:none !important;letter-spacing:var(--nm-track-xs) !important}
+  font-size:var(--nm-fs-5xl) !important;color:var(--nm-menu-bone) !important;
+  text-shadow:none !important}
 /* The map name and the two actions beside it, on one baseline. */
 .kc-menu-matchline{display:flex !important;align-items:baseline !important;
   gap:20px !important}
 .kc-menu-matchline [class*="match-info-actions"]{margin:0 !important;
   display:flex !important;align-items:baseline !important;gap:12px !important}
-#menuRegionLabel{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
-  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+#menuRegionLabel{font-family:var(--nm-menu-font) !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 /* Bone at rest, not ash.
    These read as greyed out after you use one, and the reason is the size of
@@ -1093,12 +1125,10 @@ const menuSkin = `
    colour and opacity are constant through the whole cycle. So the fix is to
    stop resting so dim. Full strength at rest, white on hover. */
 #matchInfoHolder .match-action-btn{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-md) !important;letter-spacing:var(--nm-track-3xl) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-bone) !important;
+  color:var(--nm-menu-bone) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
 #matchInfoHolder .match-action-btn:hover{color:var(--nm-menu-bone-hi) !important}
-#matchInfoHolder .match-action-sep{opacity:1 !important;
-  font-size:var(--nm-fs-md) !important}
+#matchInfoHolder .match-action-sep{opacity:1 !important}
 /*
  * The width floor belongs to Invite alone — its label becomes "Copied URL"
  * and back, and without a floor the separator and Join move each way.
@@ -1109,22 +1139,28 @@ const menuSkin = `
  * there after the map name, and both words end up the separator's own
  * distance from it.
  *
- * In LAYOUT pixels: the label measures about 85 on screen at this size, and
- * the whole UI is scaled 0.869, so it needs ~98 of these.
+ * In LAYOUT pixels, re-measured after the skin stopped retyping this pair.
+ * At Krunker own 14px "Copied URL" runs 109.6px on screen, and the UI is
+ * scaled 0.869, so the floor has to clear ~126 layout px. It was 104, sized
+ * for the 13px the skin used to force here; at the game own size that is
+ * short and the row goes back to twitching. Re-measure this whenever the
+ * type on this line changes - it is a number about one label at one size,
+ * not a constant.
  */
 /* justify-content, not text-align. Krunker makes this button a flex
    container, and in one of those the label is an anonymous flex item that
    text-align cannot move — it is applied and simply does nothing. Measured
    with the alignment "set": the glyphs sat 39.6px short of the box's right
    edge, so the gap to the divider was 50px against Join's 10.4. */
-#inviteButton{min-width:104px !important;
+#inviteButton{min-width:128px !important;
   justify-content:flex-end !important;text-align:right !important}
 /* Clicking Invite swaps its label to "Copied URL" and back a moment later,
    and the row twitched each way.
    Measured on the running client rather than guessed at, twice: the font
    size, the height and the transform are all UNCHANGED through the whole
-   thing. It is the label. "Invite" is 43px wide and "Copied URL" is 72, so
-   the control resizes to its own text and everything beside it reflows.
+   thing. It is the label: "Invite" is 61px wide on screen and "Copied URL"
+   is 110, so the control resizes to its own text and everything beside it
+   reflows.
    A floor wide enough for the longer word is the fix; the transform and type
    below are only insurance. Left-aligned so the word does not jump either. */
 #inviteButton,#menuBtnJoin,#inviteButton *,#menuBtnJoin *,
@@ -1136,9 +1172,8 @@ const menuSkin = `
      already carries how quiet they are meant to be. */
   opacity:1 !important;
   transform:none !important;animation:none !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
-  line-height:1 !important;letter-spacing:var(--nm-track-3xl) !important;
-  text-transform:uppercase !important;white-space:nowrap !important}
+  font-family:var(--nm-menu-font) !important;
+  line-height:1 !important;white-space:nowrap !important}
 #matchInfoHolder .match-action-sep{color:var(--nm-menu-line-hi) !important;text-shadow:none !important}
 
 /* ---- telemetry ---- */
@@ -1148,15 +1183,14 @@ const menuSkin = `
    already a green-to-red threshold and it is the one status colour on this
    screen worth reading. */
 #menuFPSDisplay,#menuPingDisplay{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-3xl) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-ash-dim) !important;
+  font-size:var(--nm-fs-md) !important;color:var(--nm-menu-ash-dim) !important;
   text-shadow:none !important}
 #menuFPS,#menuPingText{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-7xl) !important;letter-spacing:var(--nm-track-xs) !important;
+  font-size:var(--nm-fs-7xl) !important;
   font-variant-numeric:tabular-nums;text-shadow:none !important}
 #menuPingText{color:var(--nm-menu-bone) !important}
-#menuPingText::after{content:' MS';font-size:var(--nm-fs-2xs);
-  letter-spacing:var(--nm-track-3xl);color:var(--nm-menu-ash-dim)}
+#menuPingText::after{content:' MS';font-size:var(--nm-fs-md);
+  color:var(--nm-menu-ash-dim)}
 #menuPingIcon{display:none !important}
 
 /* ---- the command bar ---- */
@@ -1203,26 +1237,52 @@ const menuSkin = `
    straight up. */
 #menuClassContainer{bottom:210px !important}
 
-/* ---- play row: one primary, one accent, three quiet ---- */
-/* Krunker ships five buttons in five hues, two of them the same red for
-   different actions, and nothing marking the one you press every time. */
-#subLogoButtons > .button{border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
-  border-radius:0 !important;background:var(--nm-menu-fill) !important;
-  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+/* ---- play row: five buttons, five hues ---- */
+/*
+ * Krunker colour coding, kept, in this skin shape.
+ *
+ * The game borders these 4px in purple, pink, red and cyan (.buttonP,
+ * .buttonPI, .buttonR twice, .buttonG). The skin used to flatten all five
+ * to one grey with a white Quick Match as the single primary. Tidier in
+ * isolation, wrong in place: the hue is how you hit the right button
+ * without reading the row, and dropping it is most of why the menu had
+ * stopped looking like Krunker.
+ *
+ * Ranked takes the client accent rather than the game pink, which frees
+ * that pink for Find Game - the game spends its red on both Find Game and
+ * Host Game - so no two of the five match. Values in MENU_HUES, tokens.ts.
+ *
+ * Weight and radius are the game own - 4px and 4px, on buttons of ours
+ * that are 368px wide against its 106-192, so the edge reads lighter here
+ * than it does there even at the same number. What stays ours is the flat
+ * fill and a hover that floods the hue into it rather than Krunker white
+ * border and scale(0.95). Both of those are !important on .button:hover,
+ * so the hover rule has to name border-color itself - drop it and the
+ * hovered button goes white-edged and loses the hue at the moment you are
+ * looking straight at it.
+ *
+ * --kc-hue, not --nm-: that prefix is the token set, guarded by
+ * tokens.test.ts. This is plumbing so the two shared rules are written
+ * once instead of five times, not a value anyone would theme.
+ */
+#subLogoButtons > .button{--kc-hue:var(--nm-menu-line-hi);
+  border:var(--nm-bw-chunky) solid var(--kc-hue) !important;
+  border-radius:var(--nm-radius) !important;background:var(--nm-menu-fill) !important;
+  color:var(--nm-menu-bone) !important;text-shadow:none !important;
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
-#subLogoButtons > .button:hover{transform:none !important;color:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
+#subLogoButtons > .button:hover{transform:none !important;
+  background:var(--kc-hue) !important;border-color:var(--kc-hue) !important;
+  color:var(--nm-menu-ink) !important}
 #subLogoButtons > .button:active{transform:none !important}
-#subLogoButtons > #menuBtnQuickMatch.button{background:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;color:var(--nm-menu-ink) !important}
-#subLogoButtons > #menuBtnQuickMatch.button:hover{background:var(--nm-menu-bone-hi) !important;
-  border-color:var(--nm-menu-bone-hi) !important;color:var(--nm-menu-ink) !important}
-#subLogoButtons > #menuBtnRanked.button{border-color:var(--nm-menu-ember) !important;
-  color:var(--nm-menu-ash) !important;background:var(--nm-menu-fill) !important}
-#subLogoButtons > #menuBtnRanked.button:hover{background:var(--nm-menu-ember) !important;
-  border-color:var(--nm-menu-ember) !important;color:var(--nm-menu-ink) !important}
-#menuBtnRanked .menuItemRankedLabel{background:var(--nm-menu-ember) !important;
-  color:var(--nm-menu-ash) !important;border-radius:0 !important;transform:none !important;
+#subLogoButtons > #menuBtnQuickMatch.button{--kc-hue:var(--nm-menu-purple)}
+#subLogoButtons > #menuBtnRanked.button{--kc-hue:var(--nm-menu-ember)}
+#subLogoButtons > #menuBtnHost.button{--kc-hue:var(--nm-menu-red)}
+#subLogoButtons > #menuBtnBrowser.button{--kc-hue:var(--nm-menu-pink)}
+#subLogoButtons > #menuBtnCustomGames.button{--kc-hue:var(--nm-menu-cyan)}
+/* The 2x KR badge, in the red the game already draws it. In the accent it
+   read as part of the Ranked button rather than as a flag stuck on it. */
+#menuBtnRanked .menuItemRankedLabel{background:var(--nm-menu-red) !important;
+  color:var(--nm-menu-bone-hi) !important;border-radius:0 !important;transform:none !important;
   animation:none !important;font-family:var(--nm-menu-font) !important;
   font-size:var(--nm-fs-2xs) !important;letter-spacing:var(--nm-track-lg) !important;
   font-weight:400 !important;text-shadow:none !important}
@@ -1249,30 +1309,53 @@ const menuSkin = `
  * viewport with room to spare; the overhang was already clipped there before.
  */
 #classPreviewCanvas{margin-right:-200px !important}
-#menuClassName{font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-xs) !important;
-  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+#menuClassName{font-family:var(--nm-menu-font) !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
 #menuClassSubtext{color:var(--nm-menu-bone) !important;text-shadow:none !important}
-#menuClassContainer .button{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-2xl) !important;letter-spacing:var(--nm-track-xl) !important;
-  text-transform:uppercase !important;border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;
-  border-radius:0 !important;background:var(--nm-menu-fill) !important;
-  color:var(--nm-menu-ash) !important;text-shadow:none !important;
+/*
+ * Loadout, Customize and Alt Manager, on the play row pattern.
+ *
+ * Divided by .7, and that is not a fudge: #menuClassContainer carries
+ * transform:scale(0.7) (item 3 in krunker/constants.ts), so a border and a
+ * radius written here render at 70% on screen. Left uncompensated these
+ * come out visibly thinner than the five buttons below them, which is the
+ * one thing they were asked to match. Krunker does not compensate, which
+ * is why its own class card looks lighter than its play row.
+ *
+ * A hue each, from the same set as the play row. Loadout and Customize
+ * take cyan and purple; Alt Manager takes the client accent, because it
+ * is the one button here that is ours rather than the game own - the same
+ * reason Ranked wears it downstairs.
+ */
+#menuClassContainer .button{--kc-hue:var(--nm-menu-line-hi);
+  font-family:var(--nm-menu-font) !important;
+  border:calc(var(--nm-bw-chunky) / .7) solid var(--kc-hue) !important;
+  border-radius:calc(var(--nm-radius) / .7) !important;
+  background:var(--nm-menu-fill) !important;
+  color:white !important;text-shadow:none !important;
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
-#menuClassContainer .button:hover{color:var(--nm-menu-bone) !important;
-  border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important;
+#menuClassContainer .button:hover{color:var(--nm-menu-ink) !important;
+  border-color:var(--kc-hue) !important;background:var(--kc-hue) !important;
   filter:none !important;transform:none !important}
 #menuClassContainer .button .material-icons{text-transform:none !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important}
+/* The glyph rides the label, or it stays grey on a flooded button. */
+#menuClassContainer .button:hover .material-icons{color:var(--nm-menu-ink) !important}
+/* Krunker reuses #customizeButton as the id on BOTH of the top two, so
+   position in the row is the only thing that tells them apart. Loadout is
+   appended first; see accounts/menu-buttons.ts. */
+#${UI_IDS.classButtonRow} > .button:nth-child(1){--kc-hue:var(--nm-menu-cyan)}
+#${UI_IDS.classButtonRow} > .button:nth-child(2){--kc-hue:var(--nm-menu-purple)}
+#menuClassContainer #${UI_IDS.altManagerButton}{--kc-hue:var(--nm-menu-ember)}
 
 /* ---- scripts button, at the front of Krunker's own nav ---- */
 #playerHeaderEl #${UI_IDS.scriptsButton}{width:auto !important;
   /* A child of .headerBarRight, which is a flex row that stretches its items.
      Without this the 34px height loses to the 61px bar. */
   align-self:center !important;flex:0 0 auto !important;
-  margin:0 !important;cursor:pointer !important;color:var(--nm-menu-ash) !important;
+  margin:0 !important;cursor:pointer !important;color:var(--nm-menu-bone) !important;
   text-shadow:none !important;transform:none !important}
-#playerHeaderEl #${UI_IDS.scriptsButton}:hover{color:var(--nm-menu-bone) !important;
+#playerHeaderEl #${UI_IDS.scriptsButton}:hover{color:var(--nm-menu-bone-hi) !important;
   transform:none !important;filter:none !important}
 /* Krunker's own separators in this bar are hidden further up, so ours is a
    separate element rather than one of theirs turned back on. */
@@ -1283,11 +1366,10 @@ const menuSkin = `
 /* Krunker's own Changelog link, relocated out of the footer to sit beside
    More Krunker. Matched to the nav labels it now stands with. */
 .headerBarRight .kc-menu-headerlink{font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-xl) !important;
-  text-transform:uppercase !important;color:var(--nm-menu-ash) !important;
+  color:var(--nm-menu-bone) !important;
   text-decoration:none !important;text-shadow:none !important;
   margin-left:var(--nm-gap-lg);transition:color var(--nm-fast)}
-.headerBarRight .kc-menu-headerlink:hover{color:var(--nm-menu-bone) !important}
+.headerBarRight .kc-menu-headerlink:hover{color:var(--nm-menu-bone-hi) !important}
 
 /* ---- chat ---- */
 /*
@@ -1329,8 +1411,7 @@ const menuSkin = `
   color:var(--nm-menu-bone) !important;text-shadow:none !important;
   font-family:var(--nm-menu-font) !important}
 #${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_CHAT.inputId}::placeholder{
-  color:var(--nm-menu-ash-dim) !important;text-transform:uppercase !important;
-  letter-spacing:var(--nm-track-md) !important}
+  color:var(--nm-menu-ash-dim) !important}
 /* Krunker's scrollbar is a light grey slab; this one is meant to be found and
    otherwise ignored. */
 #${KRUNKER_DOM_IDS.uiBase}.${KRUNKER_MENU_CLASS} #${KRUNKER_DOM_IDS.chatList}::-webkit-scrollbar{
@@ -1386,8 +1467,7 @@ const krunkerWindows = `
 #settingsTabLayout{background:none !important;border-radius:0 !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
 .settingTab{background:none !important;border-radius:0 !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
-  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important;
+  font-family:var(--nm-menu-font) !important;
   color:var(--nm-menu-ash) !important;text-shadow:none !important;
   border-bottom:var(--nm-bw-thick) solid var(--nm-menu-scrim-0) !important;
   transition:color var(--nm-fast),border-color var(--nm-fast)}
@@ -1401,8 +1481,7 @@ const krunkerWindows = `
    over a rule reads as structure rather than as one more control. */
 .setHed,.setHedS{background:none !important;border:0 !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important;border-radius:0 !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
-  letter-spacing:var(--nm-track-3xl) !important;text-transform:uppercase !important;
+  font-family:var(--nm-menu-font) !important;
   color:var(--nm-menu-ash-dim) !important;text-shadow:none !important;
   padding:0 0 8px !important;margin:26px 0 12px !important}
 .setHed:hover,.setHedS:hover{background:none !important;color:var(--nm-menu-ash) !important}
@@ -1467,8 +1546,7 @@ input:checked + .sliderCent:before{background:var(--nm-menu-ink) !important}
 .settingsBtn{background:var(--nm-menu-fill) !important;
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   color:var(--nm-menu-ash) !important;font-family:var(--nm-menu-font) !important;
-  font-size:var(--nm-fs-xs) !important;letter-spacing:var(--nm-track-lg) !important;
-  text-transform:uppercase !important;text-shadow:none !important;
+  text-shadow:none !important;
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
 .settingsBtn:hover{color:var(--nm-menu-bone) !important;
   border-color:var(--nm-menu-bone) !important;background:var(--nm-menu-wash) !important}
@@ -1534,8 +1612,7 @@ table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
 .instructionsTabs{background:none !important;
   border-bottom:var(--nm-bw) solid var(--nm-menu-line) !important}
 .instructionsTab{color:var(--nm-menu-ash) !important;text-shadow:none !important;
-  font-family:var(--nm-menu-font) !important;font-size:var(--nm-fs-md) !important;
-  letter-spacing:var(--nm-track-lg) !important;text-transform:uppercase !important}
+  font-family:var(--nm-menu-font) !important}
 .instructionsTab:hover{color:var(--nm-menu-bone) !important}
 
 /* The scrollbar, which otherwise reads as a black bar down the right edge of
@@ -1550,8 +1627,7 @@ table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
    because it sits on the game's grey panel. With the skin that panel is ours. */
 #menuWindow #${UI_IDS.sectionNav}{border-right-color:var(--nm-menu-line) !important;
   font-family:var(--nm-menu-font) !important}
-#menuWindow .kc-sectnav-item{font-size:var(--nm-fs-md) !important;
-  letter-spacing:var(--nm-track-sm) !important;text-transform:uppercase !important;
+#menuWindow .kc-sectnav-item{font-size:var(--nm-fs-2xl) !important;
   color:var(--nm-menu-ash-dim) !important;background:none !important;
   border-left-color:var(--nm-menu-scrim-0) !important}
 #menuWindow .kc-sectnav-item:hover{color:var(--nm-menu-bone) !important;

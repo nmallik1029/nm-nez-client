@@ -383,6 +383,11 @@ const FONT = `
  * `--nm-fs-md` is the workhorse: settings rows, buttons, tooltips, chat.
  * Nudging one step here resizes everything that shares it, which is the whole
  * reason for the block.
+ *
+ * There is no 6xl. It was 21px, for the class-card buttons, and it stopped
+ * being used when those went back to the size Krunker sets on them. The
+ * hole is deliberate: the suffixes are names, not indices, and renumbering
+ * 7xl and 8xl down to close it would touch a dozen files to say nothing.
  */
 const TYPE_SCALE = `
   --nm-fs-2xs:11px;
@@ -394,7 +399,6 @@ const TYPE_SCALE = `
   --nm-fs-3xl:17px;
   --nm-fs-4xl:19px;
   --nm-fs-5xl:20px;
-  --nm-fs-6xl:21px;
   --nm-fs-7xl:24px;
   --nm-fs-8xl:28px;
   --nm-fs-display:52px;
@@ -455,6 +459,12 @@ const SHAPE = `
   --nm-bw:1px;
   --nm-bw-thick:2px;
   --nm-bw-heavy:3px;
+  /*
+   * Krunker own weight for a menu button, which is 4px with a 4px radius
+   * on every one of them. Read off the game, not chosen: .buttonP and its
+   * siblings all say "border: 4px solid <hue> !important".
+   */
+  --nm-bw-chunky:4px;
 `;
 
 /**
@@ -533,6 +543,30 @@ const MENU = `
 `;
 
 /**
+ * Krunker's own button hues, for the five across the bottom of the menu.
+ *
+ * Read off the game's stylesheet rather than picked. It colours that row with
+ * four classes — `.buttonP` purple, `.buttonPI` pink, `.buttonR` red and
+ * `.buttonG` cyan, each a 4px border — and that coding is most of what makes
+ * its menu readable at a glance. The skin used to flatten all five to one
+ * grey, which is what made ours look like a different game's menu.
+ *
+ * One deliberate departure: the game spends its red twice, on Host Game and
+ * Find Game, and puts its pink on Ranked. Ranked takes the client accent here
+ * instead, which frees the pink for Find Game, so no two of the five match.
+ *
+ * `--nm-menu-red` also draws the "2x KR" badge. The game sets that at #ff4444,
+ * three points off its own button red — close enough that a second token
+ * would be two values to keep in step for no visible difference.
+ */
+const MENU_HUES = `
+  --nm-menu-purple:#b447ff;
+  --nm-menu-red:#ff4747;
+  --nm-menu-pink:#fa50ae;
+  --nm-menu-cyan:#31caec;
+`;
+
+/**
  * Near-black, at the two opacities the menu still needs it.
  *
  * These were a four-stop ladder for the backdrop that used to sit behind the
@@ -557,13 +591,15 @@ const MENU_SCRIM = `
  * rules all carry `!important` to beat Krunker's own, and one name for them
  * means retuning the menu is one line rather than twenty-odd.
  *
- * The tracking step is here rather than in `TYPE_DETAIL` because nothing else
- * in the client is set this wide — it belongs to one label, and putting it on
- * the shared scale would invite someone to reach for it elsewhere.
+ * It used to carry a `--nm-menu-track-cta` of .42em for the click-to-play
+ * label, the one thing in the client set that wide. It is gone, and so is
+ * the rest of the skin's tracking on the game's own labels: measured against
+ * Krunker, every one of them is GameFont at natural size with no tracking
+ * and no case change, and adding both made the menu read as a more modern,
+ * more generic piece of software. Track our own panels, not the game's.
  */
 const MENU_TYPE = `
   --nm-menu-font:'GameFont',sans-serif;
-  --nm-menu-track-cta:.42em;
 `;
 
 /**
@@ -600,6 +636,7 @@ export const TOKENS_CSS = `:root{${[
   UPDATE,
   QUEUE_WINDOW,
   MENU,
+  MENU_HUES,
   MENU_SCRIM,
   MENU_TYPE,
   MENU_MOTION,
