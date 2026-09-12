@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.43',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Opening settings while queued no longer puts the settings window behind the queue readout. The readout was sitting on a layer above anything the game opens; it now sits above the HUD but below Krunker’s own windows.',
+      },
+    ],
+  },
+  {
     version: '0.1.42',
     date: '2026-09-12',
     changes: [
