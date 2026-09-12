@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.41',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'Clicking the userscript box to pick a file works again. It refused every file with "Userscripts have to be .js files", including .js ones, because the panel cleared the file input before reading what you had picked — so it was answering about an empty list. Dragging a file on was never affected.',
+      },
+    ],
+  },
+  {
     version: '0.1.40',
     date: '2026-09-12',
     changes: [
