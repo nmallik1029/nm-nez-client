@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.40',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'added',
+        text: 'QoL Features, at the bottom of the left menu. Two tabs: Userscripts, where your own .js files go, and Built-in, where the extras that ship with the client live. Drop a script straight onto the panel instead of going and finding the folder, switch any of them off without deleting it, or delete it with two clicks. Scripts run when the page loads and one that has already run cannot be un-run, so adding, removing or switching one lands on the next reload, and the panel says so and gives you the button.',
+      },
+      {
+        kind: 'added',
+        text: 'Tournament links. The client answers to nmnez:// links now, so a bot can post a button that brings the client up and puts the match lobby on: the comp server setup opens with the map, both team names, both rosters, the team size and any class limits already filled in, and the room is created. The result webhook is a field Krunker already has, so the game posts the final scoreboard straight to the bot. Your browser asks before handing a link to the client, and a link it does not recognise does nothing at all.',
+      },
+      {
+        kind: 'changed',
+        text: 'The Scripts button in the top bar is gone. Everything it opened is the Built-in tab of QoL Features now, and one panel with a tab for each kind of script beats two doors onto the same switches.',
+      },
+      {
+        kind: 'fixed',
+        text: 'A config file saved with a byte-order mark, which is what PowerShell and a few Windows editors write, read as corrupt: the client started on defaults and then wrote them back, so editing config.json by hand could cost you every setting in it. Found the hard way, on a real config.',
+      },
+    ],
+  },
+  {
     version: '0.1.39',
     date: '2026-09-11',
     changes: [
