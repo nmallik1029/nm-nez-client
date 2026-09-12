@@ -1,6 +1,7 @@
 import type { StoredAccount } from './accounts';
 import { DEFAULT_FILTER, type MatchmakerFilter } from './matchmaker';
 import { RANKED_MAPS, RANKED_REGIONS } from './ranked';
+import { DEFAULT_VISUALS, type VisualsConfig } from './visuals';
 
 export type { MatchmakerFilter } from './matchmaker';
 
@@ -211,6 +212,14 @@ export interface AppConfig {
   hotkeys: HotkeyConfig;
   matchmaker: MatchmakerFilter;
   ranked: RankedConfig;
+  /**
+   * Crosshair, hitmarker and sky colour, from the QoL panel.
+   *
+   * Its own section rather than more fields on `features`, because none of
+   * these is a switch: each is an object with a shape, a colour and a handful
+   * of measurements, and the editors patch the whole object at a time.
+   */
+  visuals: VisualsConfig;
   updates: UpdateConfig;
   window: WindowConfig;
   /**
@@ -234,6 +243,7 @@ export const CONFIG_SECTIONS: readonly (keyof AppConfig)[] = [
   'hotkeys',
   'matchmaker',
   'ranked',
+  'visuals',
   'updates',
   'window',
 ];
@@ -314,6 +324,9 @@ export const DEFAULT_CONFIG: AppConfig = {
     maps: RANKED_MAPS.map((m) => m.id),
     regions: RANKED_REGIONS.map((r) => r.id),
   },
+  // Every one of these is off until someone turns it on in the QoL panel, so
+  // a fresh client draws Krunker's own crosshair, hitmarker and sky.
+  visuals: DEFAULT_VISUALS,
   updates: {
     autoCheck: true,
     lastSeenVersion: '',

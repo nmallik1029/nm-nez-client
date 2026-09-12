@@ -315,6 +315,68 @@ export const SCAN_TIMING = {
 export const QUEUE_WINDOW_BACKGROUND = '#0a0b0d';
 
 /**
+ * The crosshair, hitmarker and sky colours, as plain strings.
+ *
+ * Here rather than in `shared/visuals.ts` for the same reason as the two
+ * window backgrounds above: they are colours, this file is where colours
+ * live, and the guard in `tokens.test.ts` does not care whether a hex ends up
+ * in a stylesheet or in a canvas call. They cannot be custom properties
+ * either way, since what reads them is `ctx.strokeStyle` and a `<input
+ * type=color>` value, neither of which resolves a `var()`.
+ *
+ * A theme can still have them: these are only the values the editors open on
+ * and the swatches they offer, and whatever you pick is stored in the config
+ * from then on.
+ */
+export const MARKER_START_COLOR = '#00ff88';
+
+/** The hitmarker's own starting colour, which is Krunker's: plain white. */
+export const HITMARKER_START_COLOR = '#ffffff';
+
+/**
+ * What the outline is drawn in, under every stroke.
+ *
+ * Black and not a choice. The outline exists so a light crosshair survives a
+ * white wall and a dark one survives the sky; a coloured outline is a second
+ * crosshair fighting the first.
+ */
+export const MARKER_OUTLINE_COLOR = '#000000';
+
+/**
+ * The swatches under the colour picker.
+ *
+ * Chosen for contrast against Krunker's maps rather than for the look of the
+ * row: sand, brick and grey are most of what the game is built out of, so the
+ * useful colours are the ones none of that contains. The picker beside them
+ * takes anything.
+ */
+export const MARKER_PRESETS: readonly string[] = [
+  '#ffffff',
+  '#00ff88',
+  '#00e5ff',
+  '#ffe600',
+  '#ff3b30',
+  '#ff00e5',
+  '#7cff00',
+  '#000000',
+];
+
+/** Where the sky picker starts: a clear middle-of-the-day blue. */
+export const SKY_START_COLOR = '#8fd3ff';
+
+/** Day, night, sunset, overcast, and four that are nothing like a sky. */
+export const SKY_PRESETS: readonly string[] = [
+  '#8fd3ff',
+  '#0a1020',
+  '#ff8a3d',
+  '#6b7280',
+  '#b48cff',
+  '#000000',
+  '#ffd9a0',
+  '#1f6f4f',
+];
+
+/**
  * The standalone ranked queue window, which is a separate document with a
  * deliberately quieter palette: it is a small always-on-top panel you leave
  * running with the game closed, not something layered over gameplay.
@@ -377,6 +439,17 @@ const SHADOW = `
 const FONT = `
   --nm-font:'GameFont',sans-serif;
   --nm-font-display:'GameFont',Impact,'Arial Black',sans-serif;
+  /*
+   * The icon face, which is Krunker's: the game loads Material Icons for its
+   * own menu, so naming it costs nothing and our panels get the same glyphs
+   * its rows have.
+   *
+   * Needed as a token because our panels set a font on every button, and an
+   * id-and-type selector of ours beats the bare .material-icons class that
+   * would otherwise supply this. Without it the button renders the ligature
+   * as what it literally is: the word "chevron_left".
+   */
+  --nm-font-icons:'Material Icons';
 `;
 
 /**
@@ -515,7 +588,10 @@ const LAYER = `
      that should stay out of their way has to sit below that number. The HUD
      and toast layers deliberately do not: an FPS readout or a toast is meant
      to be legible whatever is open. A queue readout is not -- it is furniture,
-     and settings opening behind it is the bug this exists to prevent. */
+     and settings opening behind it is the bug this exists to prevent.
+
+     The crosshair and the hitmarker are the same kind of furniture and sit
+     here too: over the game and its HUD, under anything it opens on top. */
   --nm-z-game-overlay:20000000;
   --nm-z-hud:2147483000;
   --nm-z-toast:2147483200;

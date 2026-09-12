@@ -320,11 +320,25 @@ const qolPanel = `
 #${UI_IDS.qolPanel}{width:min(620px,94vw);max-height:86vh;display:flex;flex-direction:column;
   background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
   color:var(--nm-game-text);font-family:var(--nm-font-display)}
-#${UI_IDS.qolPanel} .hd{padding:14px 18px;
+#${UI_IDS.qolPanel} .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
 #${UI_IDS.qolPanel} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
   letter-spacing:var(--nm-track-xl);font-weight:normal}
+/* The way out of an editor. Absent, not greyed out, while there is nothing
+   to go back from: an arrow that does nothing is worse than no arrow. */
+#${UI_IDS.qolPanel} .back{display:none;padding:0 8px;font-size:var(--nm-fs-7xl);line-height:1}
+#${UI_IDS.qolPanel} .back.on{display:block}
+/* Material Icons carry the ligature name as text, so anything this panel does
+   to type has to be undone here or the glyph renders as the word
+   "chevron_left". The face has to be named as well: the button rule below
+   sets font-family on every button and outranks the bare .material-icons
+   class that would otherwise supply it. See item 7 in krunker/constants.ts. */
+#${UI_IDS.qolPanel} .material-icons{font-family:var(--nm-font-icons);
+  letter-spacing:normal;text-transform:none}
+/* An editor takes the whole body, so the tabs underneath it would be two
+   ways of leaving that disagree about where you would end up. */
+#${UI_IDS.qolPanel} .tabs.gone{display:none}
 
 /* ---- the tab strip ---- */
 /*
@@ -398,7 +412,7 @@ const qolPanel = `
 #${UI_IDS.qolPanel} .drop .small{display:block;margin-top:4px;font-size:var(--nm-fs-xs)}
 
 /* ---- the rest of the body ---- */
-#${UI_IDS.qolPanel} .actions{display:flex;justify-content:flex-end;margin-top:12px}
+#${UI_IDS.qolPanel} .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 /* Waiting on a reload, which is the one thing in this panel that has not
    happened yet. Krunker flags a pending setting in red; this is the same
    idea in the client's own caution colours. */
@@ -410,6 +424,63 @@ const qolPanel = `
   font-size:var(--nm-fs-lg)}
 #${UI_IDS.qolPanel} .note{margin-top:12px;font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
   line-height:var(--nm-lh)}
+
+/* ---- the editors: crosshair, hitmarker, sky ---- */
+/*
+ * The preview, on one of Krunker's own wall textures.
+ *
+ * Tiled and pixelated because that is what the game does with them: they are
+ * 64px tiles meant to be repeated across a wall, and smoothing one into a
+ * gradient would be a backdrop that exists nowhere in the game the crosshair
+ * has to be legible in.
+ */
+#${UI_IDS.qolPanel} .stage{position:relative;height:190px;margin-bottom:6px;overflow:hidden;
+  background-color:var(--nm-game-input-bg);background-size:64px 64px;
+  image-rendering:pixelated;
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .grab{position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);line-height:0}
+#${UI_IDS.qolPanel} .grab.drag{cursor:move;touch-action:none}
+/* The image takes no pointer events so the box around it gets them all:
+   a drag that starts on a transparent corner of a crosshair is still a drag. */
+#${UI_IDS.qolPanel} .art{display:block;pointer-events:none}
+#${UI_IDS.qolPanel} .handle{position:absolute;right:-7px;bottom:-7px;width:12px;height:12px;
+  background:var(--nm-accent);border:var(--nm-bw) solid var(--nm-game-bg);
+  cursor:nwse-resize;touch-action:none}
+#${UI_IDS.qolPanel} .stage-nav{position:absolute;left:0;right:0;bottom:0;display:flex;
+  align-items:center;justify-content:center;gap:10px;padding:5px;
+  background:var(--nm-game-scrim)}
+#${UI_IDS.qolPanel} .stage-nav span{min-width:54px;text-align:center;font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-md);color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .stage-nav button{padding:2px 8px;font-size:var(--nm-fs-4xl);line-height:1}
+
+/* ---- one control: label, the thing, its value ---- */
+#${UI_IDS.qolPanel} .ctl{display:flex;align-items:center;gap:12px;padding:6px 2px}
+#${UI_IDS.qolPanel} .ctl .lbl{flex:0 0 88px;font-size:var(--nm-fs-md);
+  color:var(--nm-game-text-body)}
+#${UI_IDS.qolPanel} .ctl .rng{flex:1;min-width:0;cursor:pointer;accent-color:var(--nm-accent)}
+/* Tabular, so the number beside a slider does not shuffle its own width
+   from side to side as you drag it. */
+#${UI_IDS.qolPanel} .ctl .val{flex:0 0 42px;text-align:right;font-size:var(--nm-fs-md);
+  color:var(--nm-game-text-dim);font-variant-numeric:tabular-nums}
+#${UI_IDS.qolPanel} .seg{flex:1;display:flex;gap:6px}
+#${UI_IDS.qolPanel} .seg button{flex:1;padding:6px 4px;font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-sm)}
+#${UI_IDS.qolPanel} .seg button.on{border-color:var(--nm-accent);color:var(--nm-game-text)}
+#${UI_IDS.qolPanel} .swatches{flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#${UI_IDS.qolPanel} .swatch{width:22px;height:22px;padding:0;
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .swatch.on{border-color:var(--nm-game-text)}
+#${UI_IDS.qolPanel} .pick{width:36px;height:24px;padding:0;cursor:pointer;background:none;
+  border:var(--nm-bw-thick) solid var(--nm-game-btn-border)}
+#${UI_IDS.qolPanel} .sect{margin:14px 0 2px;font-size:var(--nm-fs-xs);
+  letter-spacing:var(--nm-track-lg);text-transform:uppercase;
+  color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .hint{margin:6px 0 2px;font-size:var(--nm-fs-xs);
+  color:var(--nm-game-text-faint);line-height:var(--nm-lh)}
+/* The sky, which has no shape to preview: the colour is the whole thing. */
+#${UI_IDS.qolPanel} .sky{height:78px;margin-bottom:8px;
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
 `;
 
 /**
@@ -1791,7 +1862,43 @@ table.twoFATable td:hover{background:var(--nm-menu-wash) !important}
   border-left-color:var(--nm-menu-ember) !important}
 `;
 
+/**
+ * The client's own crosshair.
+ *
+ * Fixed to the centre of the viewport rather than dropped into Krunker's HUD,
+ * so a pixel is a pixel: the game scales its own HUD with a setting, and a
+ * crosshair you built at 30px should be 30px whatever that is set to.
+ *
+ * Hidden by default and shown by a class, because when it is on screen is
+ * decided in preload/look/crosshair.ts, from three things the game does.
+ */
+const crosshair = `
+#${UI_IDS.crosshair}{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  display:none;pointer-events:none;z-index:var(--nm-z-game-overlay)}
+#${UI_IDS.crosshair}.on{display:block}
+`;
+
+/**
+ * The client's own hitmarker.
+ *
+ * Its transform is written from JS, because it carries the offset as well as
+ * the centring and the two have to be one declaration.
+ *
+ * On instantly, off over a beat: a hitmarker that fades in is a hitmarker
+ * that arrives after the moment it is reporting. The class sets no transition
+ * for that reason, and the base rule's transition only ever runs on the way
+ * out.
+ */
+const hitmarker = `
+#${UI_IDS.hitmarker}{position:fixed;left:50%;top:50%;
+  display:block;opacity:0;pointer-events:none;z-index:var(--nm-z-game-overlay);
+  transition:opacity var(--nm-quick)}
+#${UI_IDS.hitmarker}.on{opacity:1;transition:none}
+`;
+
 export const SHEETS = {
+  crosshair,
+  hitmarker,
   toast,
   tooltip,
   perfHud,

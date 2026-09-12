@@ -105,6 +105,35 @@ portable exe registers the scheme itself on first run; a `npm start` development
 deliberately doesn't, since it would point every `nmnez://` link on the machine at a bare
 Electron binary.
 
+### QoL Features
+
+A row at the bottom of Krunker's left menu, with your own userscripts on one tab and the
+client's own features on the other. Three of those open an editor.
+
+**Crosshair.** Build one out of a shape, a length, a thickness, a gap, a dot, an outline
+and a colour, or drop in a PNG and use that. The preview sits on one of Krunker's own wall
+textures, because a thin dark crosshair that looks fine on a panel disappears on brick.
+
+The image half is the point. Krunker takes a custom crosshair as a URL, and a URL from
+Discord stops resolving when the CDN expires it, so people lose their crosshair mid-match
+with nothing to explain it. What you drop here is read off your disk once and stored as its
+own bytes; nothing is ever fetched again, so there is nothing left to go missing.
+
+It is drawn by the client rather than handed to the game, because Krunker's crosshair is
+drawn in the canvas: the `<img>` in the page that looks like one has been dead for a while.
+So the client decides when it is on screen, and hides it in the menu, while a window is
+open, and while you are scoped. The game's own crosshair is still drawn underneath, so the
+editor has a switch for that as well; it presses Krunker's own setting, and puts it back.
+
+**Hitmarker.** The same, plus the two things a hitmarker wants: drag it off centre, and
+pull its corner to resize. It appears on the frame Krunker plays the sound it plays for a
+landed shot, so it is not a guess about when you hit someone, it is the game saying so.
+
+**Sky colour.** One colour in place of every map's own sky. Krunker builds the sky when a
+map loads, so this lands on the next map rather than the one you are standing in, and the
+editor says so and offers the reload. Fog, lighting and shadows are left exactly as the map
+made them.
+
 ### Alt manager
 
 Saved accounts under the Loadout row in the main menu. Add one with `+`, click it to

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { coalesced } from './schedule';
+import { coalesced, debounced } from './schedule';
 
 /**
  * The environment is `node`, so there is no real `requestAnimationFrame`. The
@@ -96,5 +96,38 @@ describe('coalesced', () => {
     frames.flush();
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('debounced', () => {
+  it('runs once, after the calls stop', () => {
+    vi.useFakeTimers();
+    const run = vi.fn();
+    const save = debounced(run, 250);
+
+    // A slider being dragged: one change per frame for a second or so.
+    for (let i = 0; i < 60; i++) {
+      save();
+      vi.advanceTimersByTime(16);
+    }
+    expect(run).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(250);
+    expect(run).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('starts again after it has run', () => {
+    vi.useFakeTimers();
+    const run = vi.fn();
+    const save = debounced(run, 100);
+
+    save();
+    vi.advanceTimersByTime(100);
+    save();
+    vi.advanceTimersByTime(100);
+
+    expect(run).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
   });
 });

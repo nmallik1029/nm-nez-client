@@ -28,3 +28,28 @@ export function coalesced(run: () => void): () => void {
     });
   };
 }
+
+/**
+ * Run once, `delayMs` after the calls stop.
+ *
+ * The other half of the same problem, for work that should not happen once a
+ * frame either. Dragging a slider in the crosshair editor produces a change
+ * event per frame, and each one is an IPC round trip and a write to
+ * config.json at the far end of it: what is wanted is the value you let go
+ * on, not the sixty on the way there.
+ *
+ * Trailing edge only, deliberately. The picture is already being redrawn on
+ * every change by whoever called this; the thing being held back is the
+ * saving, and saving the first value of a drag is the one value nobody
+ * chose.
+ */
+export function debounced(run: () => void, delayMs: number): () => void {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  return () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = null;
+      run();
+    }, delayMs);
+  };
+}

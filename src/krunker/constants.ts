@@ -287,6 +287,127 @@ export const KRUNKER_HOST = {
   regionStorageKey: 'pingRegion7',
 } as const;
 
+/**
+ * The crosshair, the hitmarker and the sky, which is everything the client
+ * draws over the game's own art. All of it read off the running game on
+ * 2026-09-12, most of it in a live match.
+ *
+ * THE CROSSHAIR IS NOT IN THE DOM, whatever the DOM suggests. There is an
+ * `<img id="aimDot">` at the centre of the screen with a reticle in it, CSS
+ * that centres it, and a `window.updateAimDot(index, customUrl)` to point it
+ * at a numbered reticle or a URL. All of it is dead. In a live match it sits
+ * at `opacity: 0` with the game's crosshair on Dynamic, on Image, after
+ * updateAimDot(-2, url), and after updateAimDot(0). Nothing the game does
+ * raises it. The four bars you actually see are drawn by the renderer, from
+ * the settings below. So a client that wants its own crosshair draws its own
+ * crosshair; see preload/look/crosshair.ts.
+ *
+ * THE HITMARKER IS A SOUND. There is an `<img id="hitmarker">` too, and it is
+ * just as suspect: across a long spray in a live match nothing ever touched
+ * it. It may still work; we never landed a shot while watching it, so this is
+ * "unknown", not "dead". What is certain is `window.SOUND`, the game's own
+ * audio manager, whose `soundCats` lists `hit_0`, `headshot_0` and
+ * `instantkill_0`, and whose `play(name)` the built-in headshot script has
+ * hooked for months. A shot landing plays `hit_0`. That is the signal the
+ * client's hitmarker runs on: it fires on the frame the game decides you
+ * connected, and it cannot drift from what you hear.
+ */
+export const KRUNKER_LOOK = {
+  /**
+   * The game's own audio manager, on `window`.
+   *
+   * `SOUND.play(name, volume, ...)`, and `SOUND.soundCats` is where the names
+   * come from. Only the hit family is used here; see preload/look/hitmarker.ts.
+   */
+  soundManager: 'SOUND',
+  /**
+   * The sniper scope overlay: a full-screen holder that fades in when you
+   * raise a scope, with the scope image and four blackout panels in it.
+   *
+   * Only used as a signal. It is the one thing on screen that says "the game
+   * is drawing its own aiming furniture right now", which is when a crosshair
+   * of ours should get out of the way.
+   */
+  scopeId: 'aimRecticle',
+  /**
+   * Map data, which is where the sky colour is decided.
+   *
+   * `https://gapi.svc.krunker.io/maps/14` answers `{"data":{...}}` with
+   * `sky:"#dce8ed"`, `skyDome:true`, `skyDomeCol0..2`, `fog`, `fogD`,
+   * `ambient` and `light`. Matching on the path alone also catches the map
+   * *list* endpoints, which have no `sky` in them, so the rewrite checks for
+   * the field rather than trusting the URL.
+   */
+  mapDataPath: '/maps/',
+  /**
+   * The flat sky colour, and the textured dome that covers it.
+   *
+   * Setting the colour alone does nothing on most maps: the dome is painted
+   * over the top of it. Both have to move together, which is why turning the
+   * sky on turns the dome off.
+   *
+   * The colour comes back either way round, and both have been seen on the
+   * live game on the same day: map 14 answers `sky:"#dce8ed"` and map 2, the
+   * one the menu itself is built on, answers `sky:14477549`, which is that
+   * same colour packed into an integer. Read the type before writing one.
+   */
+  skyKey: 'sky',
+  skyDomeKey: 'skyDome',
+  /**
+   * Krunker's own crosshair, as one setting.
+   *
+   *   0 Off, 1 Dynamic, 2 Shapes, 3 Layered, 4 Image, 5 Precision
+   *
+   * Read off its own dropdown in Settings, Game, Crosshair, which carries
+   * `onchange="window.setSetting('crosshairSho', this.value)"`. 1 is the
+   * default. 4 is the mode that takes a URL, i.e. the one that leaves people
+   * with no crosshair when the URL dies.
+   *
+   * The client offers to switch this off, because ours is drawn on top of it
+   * and two crosshairs is one too many. Offers, rather than does it: this is
+   * the player's own game setting, and a client that quietly rewrites those
+   * is a client you cannot trust with the rest of them.
+   */
+  crosshairSetting: 'crosshairSho',
+  crosshairOff: '0',
+  /** What "on" goes back to, which is what a fresh Krunker account has. */
+  crosshairDefault: '1',
+  /**
+   * The game's own hitmarker, which is a plain on/off rather than a list.
+   *
+   * Its checkbox carries `onclick="window.setSetting('hitm', this.checked)"`,
+   * so it stores the string 'true' or 'false'. Same reason as the crosshair:
+   * ours is drawn over the top of it.
+   */
+  hitmarkerSetting: 'hitm',
+  /**
+   * Where `setSetting` puts a value: one localStorage key per setting, named
+   * with this prefix. There is no `getSetting`, so this is the only way to
+   * read one back.
+   *
+   * Confirmed by writing `crosshairSho` and watching `kro_setngss_crosshairSho`
+   * appear holding the value. A missing key means the setting has never been
+   * changed, i.e. it is still at the game's default.
+   */
+  settingKeyPrefix: 'kro_setngss_',
+  /**
+   * Wall textures for the crosshair preview, so it is judged against what it
+   * will actually sit on rather than against a grey box.
+   *
+   * The game's own, and already downloaded: every one of these is fetched
+   * during the menu's own load, so the preview costs nothing and cannot look
+   * like some other game's wall. Tiny tiles (100 to 5000 bytes) meant to be
+   * repeated, hence the pixelated rendering in the sheet. Dropping the
+   * `?build=` token still resolves, checked with a bare request.
+   */
+  previewTextures: [
+    { name: 'Wall', url: 'https://assets.krunker.io/textures/wall_0.png' },
+    { name: 'Brick', url: 'https://assets.krunker.io/textures/brick_0.png' },
+    { name: 'Sand', url: 'https://assets.krunker.io/textures/sand_0.png' },
+    { name: 'Grass', url: 'https://assets.krunker.io/textures/grass_0.png' },
+  ],
+} as const;
+
 /*
  * ---------------------------------------------------------------------------
  * Restyling Krunker: what its CSS does, and what that costs you

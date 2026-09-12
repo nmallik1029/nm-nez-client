@@ -10,6 +10,11 @@ import {
   setRawInput,
 } from './fixes';
 import { installChangelogItem, showPatchNotes } from './changelog';
+import { setCrosshair } from './look/crosshair';
+import { setHitmarker } from './look/hitmarker';
+import { installSkyHook, setSky } from './look/sky';
+import { debounced } from './schedule';
+import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
 import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
@@ -58,6 +63,15 @@ const log = (...args: unknown[]): void => console.log(BRANDING.logPrefix, ...arg
 // and land above them in the cascade.
 installTokens();
 
+/*
+ * The sky is decided by the map JSON, and the menu asks for a map before the
+ * config has finished arriving, so the hook has to be in place now and work
+ * out what colour it wants later. It holds a map response for the few
+ * milliseconds the config takes, which is the only way for the very first
+ * map of a session to have the right sky.
+ */
+installSkyHook();
+
 let hud: PerfHud | null = null;
 let settingsTab: SettingsTab | null = null;
 let matchSearch: MatchSearch | null = null;
@@ -92,6 +106,13 @@ async function bootstrap(): Promise<void> {
     );
 
   const cfg = config;
+  // Clamped on the way in rather than trusted: the config store merges one
+  // level deep, so a section written by an older build arrives with whole
+  // objects missing from it.
+  cfg.visuals = normaliseVisuals(cfg.visuals);
+  // Releases the map request the hook may already be holding.
+  setSky(cfg.visuals.sky);
+
   installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
   // Listener only. It sits idle until main reports a sample, so installing it
   // unconditionally costs nothing and saves a reload when the setting goes on.
@@ -107,6 +128,12 @@ async function bootstrap(): Promise<void> {
   }
 
   onDomReady(() => {
+    // Krunker's own crosshair and hitmarker images, pointed at ours. Early,
+    // because both elements are in the document from the start and there is
+    // no reason to be a frame late into a match that is already running.
+    setCrosshair(cfg.visuals.crosshair);
+    setHitmarker(cfg.visuals.hitmarker);
+
     hud = createPerfHud({ corner: cfg.ui.perfHudCorner, detail: cfg.ui.perfHudDetail });
     if (cfg.ui.perfHud) hud.show();
 
@@ -200,6 +227,8 @@ async function bootstrap(): Promise<void> {
         for (const [key, value] of Object.entries(partial)) applyLocal('features', key, value);
         void ipcRenderer.invoke(IPC.configPatch, 'features', partial);
       },
+      getVisuals: () => cfg.visuals,
+      patchVisuals: (partial) => patchVisuals(cfg, partial),
       reload: () => window.location.reload(),
     });
 
@@ -234,6 +263,58 @@ async function bootstrap(): Promise<void> {
   });
 
   log('preload ready');
+}
+
+/**
+ * How long after the last change the visuals are written to disk.
+ *
+ * Long enough to cover a slider being dragged, short enough that closing the
+ * client straight after picking a colour keeps the colour. Nothing here waits
+ * on the save: the page is already showing the change.
+ */
+const VISUALS_SAVE_MS = 250;
+
+/**
+ * Which parts of the section have changed since the last save.
+ *
+ * Only these are sent. A crosshair or hitmarker image is stored inline as a
+ * data URL and can be most of 200KB, so posting the whole section every time
+ * somebody nudges the sky colour would put both images through the IPC
+ * channel and back onto disk for no reason.
+ */
+let dirtyVisuals: { -readonly [K in keyof VisualsConfig]?: VisualsConfig[K] } = {};
+
+const saveVisuals = debounced(() => {
+  const changed = dirtyVisuals;
+  dirtyVisuals = {};
+  if (Object.keys(changed).length > 0) void ipcRenderer.invoke(IPC.configPatch, 'visuals', changed);
+}, VISUALS_SAVE_MS);
+
+/**
+ * Take a change from the QoL editors: apply it now, save it shortly.
+ *
+ * Only what was actually handed in is re-applied. Repainting a crosshair
+ * because the sky changed would be harmless and is exactly the sort of thing
+ * that stops being harmless once something else is added to the section.
+ */
+function patchVisuals(cfg: AppConfig, partial: Partial<VisualsConfig>): void {
+  const next = normaliseVisuals({ ...cfg.visuals, ...partial });
+  cfg.visuals = next;
+
+  if (partial.sky) {
+    setSky(next.sky);
+    dirtyVisuals.sky = next.sky;
+  }
+  if (partial.crosshair) {
+    setCrosshair(next.crosshair);
+    dirtyVisuals.crosshair = next.crosshair;
+  }
+  if (partial.hitmarker) {
+    setHitmarker(next.hitmarker);
+    dirtyVisuals.hitmarker = next.hitmarker;
+  }
+
+  saveVisuals();
 }
 
 /**

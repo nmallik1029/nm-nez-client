@@ -2,7 +2,7 @@ import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { installMenuItem } from '../menu-item';
 import { defineStyle } from '../style';
 import { renderBuiltIn } from './built-in';
-import type { QolDeps, TabContext } from './context';
+import type { PanelView, QolDeps, TabContext } from './context';
 import { renderUserscripts } from './userscripts';
 
 /**
@@ -17,6 +17,10 @@ import { renderUserscripts } from './userscripts';
  * collecting them: every one of these is a switch somebody flips once and
  * forgets, and a menu with five entries that each open one switch is a menu
  * nobody reads.
+ *
+ * The crosshair, hitmarker and sky needed more than a switch, so a row can
+ * open an editor: that replaces the tab strip with a back arrow and takes
+ * over the body. Still one panel, still one Escape to leave.
  *
  * Same shell as the alt manager and the changelog, and closed the same two
  * ways: click the backdrop or press Escape.
@@ -89,11 +93,25 @@ function open(): void {
 function render(panel: HTMLElement, active: QolDeps): void {
   panel.replaceChildren();
 
+  /**
+   * The editor on top of the tab, if one is open.
+   *
+   * Per panel rather than per session: an editor is somewhere you went, and
+   * re-opening the panel should land you back at the list.
+   */
+  let view: PanelView | null = null;
+
   const head = document.createElement('div');
   head.className = 'hd';
+  const back = document.createElement('button');
+  // A Material Icons ligature, not a "‹": GameFont has no glyph for that
+  // character and draws the missing-glyph box instead, which is what the
+  // first build of this actually shipped on screen.
+  back.className = 'back material-icons';
+  back.textContent = 'chevron_left';
+  back.title = 'Back';
   const title = document.createElement('h2');
-  title.textContent = 'QOL FEATURES';
-  head.appendChild(title);
+  head.append(back, title);
 
   const strip = document.createElement('div');
   strip.className = 'tabs';
@@ -104,30 +122,55 @@ function render(panel: HTMLElement, active: QolDeps): void {
   /** Bumped on every draw, so an async tab can tell whether it is stale. */
   let drawing = 0;
 
+  /**
+   * Draw again, keeping the scroll position.
+   *
+   * A row redrawing itself after a switch was flipped must not throw the
+   * list back to the top; going somewhere else must. So the two have
+   * separate doors, and only `navigate` resets it.
+   */
   function paint(): void {
     for (const [id, button] of buttons) button.classList.toggle('on', id === current);
+    const scroll = body.scrollTop;
     body.replaceChildren();
     drawing += 1;
     const mine = drawing;
-    const tab = TABS.find((entry) => entry.id === current);
-    tab?.render(body, {
+
+    const editor = view;
+    title.textContent = editor ? editor.title : 'QOL FEATURES';
+    back.classList.toggle('on', editor !== null);
+    strip.classList.toggle('gone', editor !== null);
+
+    const ctx: TabContext = {
       deps: active,
       refresh: paint,
       live: () => mine === drawing && body.isConnected,
-    });
+      push: (next) => navigate(next),
+    };
+
+    if (editor) editor.render(body, ctx);
+    else TABS.find((entry) => entry.id === current)?.render(body, ctx);
+
+    body.scrollTop = scroll;
   }
+
+  /** Open an editor, go back from one, or change tab. All reset the scroll. */
+  function navigate(next: PanelView | null): void {
+    view = next;
+    body.scrollTop = 0;
+    paint();
+  }
+
+  back.addEventListener('click', () => navigate(null));
 
   for (const tab of TABS) {
     const button = document.createElement('button');
     button.className = 'tab';
     button.textContent = tab.label;
     button.addEventListener('click', () => {
-      if (current === tab.id) return;
+      if (current === tab.id && view === null) return;
       current = tab.id;
-      // The body scroll belongs to the tab that was in it, and a new tab
-      // opening halfway down reads as a panel that has lost its place.
-      body.scrollTop = 0;
-      paint();
+      navigate(null);
     });
     buttons.set(tab.id, button);
     strip.appendChild(button);
@@ -142,9 +185,9 @@ function render(panel: HTMLElement, active: QolDeps): void {
  *
  * Chromium's default for a file dropped on a page is to navigate to it, and
  * in a client that is the whole session: the page becomes a text file and
- * you are back through the loading screen. The drop zone in the userscripts
- * tab makes this a thing people will actually do, and missing it by an inch
- * must not cost anything.
+ * you are back through the loading screen. The drop zones in this panel make
+ * this a thing people will actually do, and missing one by an inch must not
+ * cost anything.
  *
  * Capture phase on the window, and anything inside the panel is left alone
  * so the zone can handle its own drops. `dropEffect` is what makes the

@@ -47,6 +47,22 @@ export const UI_IDS = {
   qolItem: 'kc-qol-item',
   /** The panel that row opens: userscripts, and our own features. */
   qolPanel: 'kc-qol-panel',
+  /**
+   * The client's own crosshair, in the middle of the screen.
+   *
+   * Ours rather than the game's, because Krunker draws its crosshair in the
+   * canvas and the `<img>` that looks like one is dead. See KRUNKER_LOOK in
+   * krunker/constants.ts, which is where that was measured.
+   */
+  crosshair: 'nm-crosshair',
+  /**
+   * The client's own hitmarker, same place.
+   *
+   * Also ours, for a different reason: the game's hitmarker element may or
+   * may not still be live, and its hit *sound* certainly is, so the client
+   * listens for that and draws its own.
+   */
+  hitmarker: 'nm-hitmarker',
 } as const;
 
 /**
@@ -81,4 +97,13 @@ export const STYLE_IDS = {
   hudMinimal: 'kc-hud-minimal-css',
   setupWizard: 'kc-setup-css',
   qolPanel: 'kc-qol-panel-css',
+  /*
+   * The two sheets that size Krunker's own crosshair and hitmarker images.
+   *
+   * Each is one rule against one id, carrying `!important`, which is what
+   * takes the size off the game's inline style without having to write over
+   * it every time it writes. See preload/look/slot.ts.
+   */
+  crosshair: 'kc-crosshair-css',
+  hitmarker: 'kc-hitmarker-css',
 } as const;

@@ -5,6 +5,10 @@
  * the same kind of thing to whoever is looking at them, something that is on
  * or off, and two tabs that drew that differently would read as two panels
  * that happened to be filed together.
+ *
+ * Some of ours have more to say than on or off, so a row can carry a button
+ * in front of its switch. That is the whole difference between a feature and
+ * a feature with an editor behind it, and it should look like that much.
  */
 
 export interface RowSpec {
@@ -14,6 +18,8 @@ export interface RowSpec {
   readonly sub: string;
   readonly on: boolean;
   readonly onToggle: () => void;
+  /** An extra button before the switch, e.g. the one that opens an editor. */
+  readonly action?: { readonly label: string; readonly onClick: () => void };
 }
 
 export function featureRow(spec: RowSpec): HTMLElement {
@@ -39,7 +45,16 @@ export function featureRow(spec: RowSpec): HTMLElement {
   toggle.textContent = spec.on ? 'ON' : 'OFF';
   toggle.addEventListener('click', spec.onToggle);
 
-  row.append(glyph, text, toggle);
+  row.append(glyph, text);
+
+  if (spec.action) {
+    const button = document.createElement('button');
+    button.textContent = spec.action.label;
+    button.addEventListener('click', spec.action.onClick);
+    row.appendChild(button);
+  }
+
+  row.appendChild(toggle);
   return row;
 }
 
@@ -57,4 +72,27 @@ export function empty(text: string): HTMLElement {
   el.className = 'empty';
   el.textContent = text;
   return el;
+}
+
+/**
+ * Something has changed that only a page load can apply.
+ *
+ * Krunker flags a pending setting in red; this is the same idea in the
+ * client's own caution colours, with the reload attached to it rather than
+ * left as an instruction.
+ */
+export function pendingStrip(text: string, onReload: () => void): HTMLElement {
+  const strip = document.createElement('div');
+  strip.className = 'pend';
+
+  const body = document.createElement('div');
+  body.className = 'txt';
+  body.textContent = text;
+
+  const go = document.createElement('button');
+  go.textContent = 'Reload now';
+  go.addEventListener('click', onReload);
+
+  strip.append(body, go);
+  return strip;
 }

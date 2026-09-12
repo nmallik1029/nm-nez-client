@@ -2,7 +2,7 @@ import { ipcRenderer } from 'electron';
 import { IPC, type UserscriptInfo, type UserscriptSaveResult } from '../../shared/ipc';
 import { showToast } from '../toast';
 import type { TabContext } from './context';
-import { empty, featureRow, note } from './row';
+import { empty, featureRow, note, pendingStrip } from './row';
 
 /**
  * The Userscripts tab: your own `.js` files.
@@ -247,22 +247,10 @@ function actions(): HTMLElement {
 }
 
 function reloadStrip(ctx: TabContext): HTMLElement {
-  const strip = document.createElement('div');
-  strip.className = 'pend';
-
-  const text = document.createElement('div');
-  text.className = 'txt';
-  text.textContent = 'Scripts load with the page, so this takes a reload.';
-
-  const go = document.createElement('button');
-  go.textContent = 'Reload now';
-  go.addEventListener('click', () => {
+  return pendingStrip('Scripts load with the page, so this takes a reload.', () => {
     pending = false;
     ctx.deps.reload();
   });
-
-  strip.append(text, go);
-  return strip;
 }
 
 function kilobytes(bytes: number): string {

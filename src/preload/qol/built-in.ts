@@ -1,29 +1,83 @@
 import { CLIENT_SCRIPTS } from '../scripts/registry';
 import { isScriptRunning, setScriptEnabled } from '../scripts/runner';
-import type { TabContext } from './context';
-import { empty, featureRow, note } from './row';
+import type { PanelView, TabContext } from './context';
+import { crosshairEditor } from './crosshair-editor';
+import { hitmarkerEditor } from './hitmarker-editor';
+import { featureRow, note } from './row';
+import { skyEditor } from './sky-editor';
 
 /**
  * The Built-in tab: the things the client does that Krunker does not.
  *
- * Read from the runner rather than from config, because the runner is what
- * is actually true: one that threw on the way in is off however the config
- * has it. Config is written alongside so the choice survives a restart.
+ * Two kinds of row. The first three are pieces of the game we draw ourselves,
+ * and each opens an editor, because "which crosshair" is not a question with
+ * a yes or a no. Under them are the scripts, which are.
  *
- * This list used to have a second home, a Scripts window opened from a button
- * in the top bar. That button is gone: one panel with a tab for these and a
- * tab for your own scripts is the whole point of this one.
+ * The scripts read from the runner rather than from config, because the
+ * runner is what is actually true: one that threw on the way in is off
+ * however the config has it. Config is written alongside so the choice
+ * survives a restart.
  *
- * Unlike the userscripts in the other tab, these start and stop where you
- * stand. Each ships with its own teardown, which is what the reload over
- * there buys and this does not need.
+ * Unlike the userscripts in the other tab, everything here starts and stops
+ * where you stand. The sky is the one exception and says so itself, since a
+ * map's sky is built when the map loads.
  */
 
 export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
-  if (CLIENT_SCRIPTS.length === 0) {
-    body.append(empty('Nothing here yet.'));
-    return;
-  }
+  const visuals = ctx.deps.getVisuals();
+
+  const openable = (spec: {
+    icon: string;
+    name: string;
+    sub: string;
+    on: boolean;
+    toggle: () => void;
+    editor: () => PanelView;
+  }): HTMLElement =>
+    featureRow({
+      icon: spec.icon,
+      name: spec.name,
+      sub: spec.sub,
+      on: spec.on,
+      onToggle: () => {
+        spec.toggle();
+        ctx.refresh();
+      },
+      action: { label: 'Edit', onClick: () => ctx.push(spec.editor()) },
+    });
+
+  body.append(
+    openable({
+      icon: 'gps_fixed',
+      name: 'Crosshair',
+      sub: 'Build one, or drop in an image. Stored as its own file, so a dead link can never leave you without a crosshair.',
+      on: visuals.crosshair.on,
+      toggle: () =>
+        ctx.deps.patchVisuals({
+          crosshair: { ...visuals.crosshair, on: !visuals.crosshair.on },
+        }),
+      editor: crosshairEditor,
+    }),
+    openable({
+      icon: 'add',
+      name: 'Hitmarker',
+      sub: 'The same, for the marker that shows when you land a shot. Drag it off centre and pull its corner to resize.',
+      on: visuals.hitmarker.on,
+      toggle: () =>
+        ctx.deps.patchVisuals({
+          hitmarker: { ...visuals.hitmarker, on: !visuals.hitmarker.on },
+        }),
+      editor: hitmarkerEditor,
+    }),
+    openable({
+      icon: 'wb_sunny',
+      name: 'Sky colour',
+      sub: 'One colour for every map, in place of its own sky. Lands when the next map loads.',
+      on: visuals.sky.on,
+      toggle: () => ctx.deps.patchVisuals({ sky: { ...visuals.sky, on: !visuals.sky.on } }),
+      editor: skyEditor,
+    }),
+  );
 
   for (const script of CLIENT_SCRIPTS) {
     body.append(
@@ -45,5 +99,9 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     );
   }
 
-  body.append(note('More is going in here: crosshair and hitmarker pickers, and sky colours.'));
+  body.append(
+    note(
+      'The crosshair and hitmarker replace the images Krunker already uses for them, so the game goes on deciding when each one is on screen.',
+    ),
+  );
 }
