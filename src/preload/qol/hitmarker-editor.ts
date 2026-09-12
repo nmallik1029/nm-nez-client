@@ -148,9 +148,6 @@ function render(body: HTMLElement, ctx: TabContext): void {
         onClick: () => commit({ ...DEFAULT_VISUALS.hitmarker, on: config.on }, true),
       },
     ]),
-    hint(
-      'This appears when the game plays the sound it plays for a landed shot, so it shows up exactly when Krunker says you hit someone, not when a client guesses.',
-    ),
   );
 
   draw();

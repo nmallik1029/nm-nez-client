@@ -2,7 +2,7 @@ import { ipcRenderer } from 'electron';
 import { IPC, type UserscriptInfo, type UserscriptSaveResult } from '../../shared/ipc';
 import { showToast } from '../toast';
 import type { TabContext } from './context';
-import { empty, featureRow, note, pendingStrip } from './row';
+import { empty, featureRow, pendingStrip } from './row';
 
 /**
  * The Userscripts tab: your own `.js` files.
@@ -45,7 +45,7 @@ async function fill(body: HTMLElement, ctx: TabContext): Promise<void> {
     featureRow({
       icon: 'play_circle',
       name: 'Run userscripts',
-      sub: 'Off means nothing in this list runs, whatever its own switch says.',
+      sub: 'If disabled, NO SCRIPTS WILL RUN no matter what the other slider(s) say(s).',
       on: features.userscripts,
       onToggle: () => {
         ctx.deps.patchFeatures({ userscripts: !features.userscripts });
@@ -64,9 +64,6 @@ async function fill(body: HTMLElement, ctx: TabContext): Promise<void> {
 
   body.append(actions());
   if (pending) body.append(reloadStrip(ctx));
-  body.append(
-    note('A userscript can do anything this page can. Only run files you wrote or trust.'),
-  );
 }
 
 /** One file: what it calls itself, what it is called on disk, and a switch. */

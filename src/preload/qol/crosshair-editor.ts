@@ -137,9 +137,6 @@ function render(body: HTMLElement, ctx: TabContext): void {
           commit({ ...DEFAULT_VISUALS.crosshair, on: config.on }, true),
       },
     ]),
-    hint(
-      'This is drawn by the client, so it hides itself in the menu, while a window is open and while you are scoped. Krunker draws its own crosshair into the game rather than into the page, which is why turning that one off is a switch of its own.',
-    ),
   );
 
   draw();

@@ -3,7 +3,7 @@ import { isScriptRunning, setScriptEnabled } from '../scripts/runner';
 import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
-import { featureRow, note } from './row';
+import { featureRow } from './row';
 import { showToast } from '../toast';
 import { skyEditor } from './sky-editor';
 
@@ -51,7 +51,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     openable({
       icon: 'gps_fixed',
       name: 'Crosshair',
-      sub: 'Build one, or drop in an image. Stored as its own file, so a dead link can never leave you without a crosshair.',
+      sub: 'My fix for crosshairs disappearing randomly + trash native crosshair UI on krunker, might be buggy with images so please put any bugs in discord.',
       on: visuals.crosshair.on,
       toggle: () =>
         ctx.deps.patchVisuals({
@@ -62,7 +62,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     openable({
       icon: 'add',
       name: 'Hitmarker',
-      sub: 'The same, for the marker that shows when you land a shot. Drag it off centre and pull its corner to resize.',
+      sub: 'Same fix for hitmarkers disappearing, you can also drag to resize/recenter the hitmarker or use sliders too (or an image ofc).',
       on: visuals.hitmarker.on,
       toggle: () =>
         ctx.deps.patchVisuals({
@@ -73,7 +73,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     openable({
       icon: 'wb_sunny',
       name: 'Sky colour',
-      sub: 'One colour for every map, in place of its own sky. Lands when the next map loads.',
+      sub: 'Custom sky color!! For people nervous about using this, sky color scripts are okayed by developers.',
       on: visuals.sky.on,
       toggle: () => {
         ctx.deps.patchVisuals({ sky: { ...visuals.sky, on: !visuals.sky.on } });
@@ -104,10 +104,4 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
       }),
     );
   }
-
-  body.append(
-    note(
-      'The crosshair is drawn by the client, so it hides itself in the menu and while you are scoped. The hitmarker appears when the game plays its hit sound, which is Krunker saying you connected rather than the client guessing.',
-    ),
-  );
 }

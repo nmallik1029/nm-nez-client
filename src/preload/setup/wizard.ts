@@ -287,14 +287,13 @@ function buildLook(draft: Draft, onChange: () => void): Screen {
 
   const ours = card(
     `${BRANDING.productName} style`,
-    "Krunker's own colour coding on a darker, flatter menu. The panels behind the " +
-      'in-game HUD are stripped out to match.',
+    "Krunker's menus but tweaked and optimized to make it look cleaner and more efficient. " +
+      'The ingame HUD is also tweaked and uses the roadman CSS.',
     true,
   );
   const stock = card(
-    'Krunker (original)',
-    'The game exactly as it ships. Everything else the client does, frame pacing, ' +
-      'the queue, the swapper, works just the same.',
+    'Krunker style',
+    'Original style, basically what the normal Krunker styling looks like. Use this if you want to use your own CSS.',
     true,
   );
 
