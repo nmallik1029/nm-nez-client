@@ -122,9 +122,11 @@ function render(body: HTMLElement, ctx: TabContext): void {
     );
   } else {
     body.append(heading('Shape'));
+    // Read live rather than captured; see markerEditor for what that fixes.
     body.append(
-      ...markerControls(config.marker, (marker, structural) =>
-        commit({ ...config, marker }, structural),
+      ...markerControls(
+        () => config.marker,
+        (marker, structural) => commit({ ...config, marker }, structural),
       ),
     );
   }

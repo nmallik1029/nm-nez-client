@@ -112,9 +112,15 @@ function render(body: HTMLElement, ctx: TabContext): void {
     );
   } else {
     body.append(heading('Shape'));
-    body.append(...markerControls(config.marker, (marker, structural) =>
-      commit({ ...config, marker }, structural),
-    ));
+    // A reader, not `config.marker`: moving a slider does not redraw these
+    // rows, so anything holding the marker it was drawn with would write a
+    // stale copy of every other measurement back with its own change.
+    body.append(
+      ...markerControls(
+        () => config.marker,
+        (marker, structural) => commit({ ...config, marker }, structural),
+      ),
+    );
   }
 
   body.append(

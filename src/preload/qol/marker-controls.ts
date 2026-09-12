@@ -32,17 +32,45 @@ const SHAPE_LABELS: Record<MarkerShape, string> = {
 
 export type MarkerChange = (next: MarkerSpec, structural: boolean) => void;
 
-export function markerControls(spec: MarkerSpec, onChange: MarkerChange): HTMLElement[] {
+/** Reads the marker as it is now, not as it was when a control was drawn. */
+export type MarkerRead = () => MarkerSpec;
+
+/**
+ * Turn a change to one measurement into a whole marker.
+ *
+ * The reader is the entire point, and it is what this got wrong first time
+ * round. Every slider used to close over the marker it was drawn with, and
+ * moving a slider deliberately does not redraw the rows, so the second slider
+ * you touched spread a snapshot taken before the first one moved: setting the
+ * gap put the old length back, setting the colour put the old gap back, and
+ * the labels went on reporting the values you had chosen because the labels
+ * were not stale, the marker underneath them was.
+ *
+ * Reading through a function means there is no snapshot to be stale.
+ */
+export function markerEditor(
+  read: MarkerRead,
+  onChange: MarkerChange,
+): (partial: Partial<MarkerSpec>, structural?: boolean) => void {
+  return (partial, structural = false) => onChange({ ...read(), ...partial }, structural);
+}
+
+export function markerControls(read: MarkerRead, onChange: MarkerChange): HTMLElement[] {
   const L = MARKER_LIMITS;
   const rows: HTMLElement[] = [];
-  const edit = (partial: Partial<MarkerSpec>): void => onChange({ ...spec, ...partial }, false);
+  // Only for deciding which controls exist and where their handles start.
+  // Every value that leaves this function goes through `edit`.
+  const spec = read();
+  const edit = markerEditor(read, onChange);
 
   rows.push(
     chooser<MarkerShape>({
       label: 'Shape',
       options: MARKER_SHAPES.map((id) => ({ id, label: SHAPE_LABELS[id] })),
       value: spec.shape,
-      onPick: (shape) => onChange({ ...spec, shape }, true),
+      // Structural: a circle has no gap and a dot has no arms, so which
+      // controls exist changes with the shape.
+      onPick: (shape) => edit({ shape }, true),
     }),
   );
 

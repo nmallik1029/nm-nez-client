@@ -10,17 +10,14 @@ import { featureRow, pendingStrip } from './row';
  * from the map's JSON, and the sky is one field in it. The client answers
  * that field before the game reads it.
  *
- * Which is also why this is the one editor with a reload button on it.
- * Everything else in this panel lands on the frame you change it; a sky is
- * built once when the map loads, so a new colour is waiting for the next map
- * either way. Saying so beats a colour picker that appears to do nothing.
- *
- * `pending` is module-level so it survives the panel closing: you change the
- * colour, close the panel to look at the sky, and it has not changed. The
- * reason should still be there when you come back.
+ * Which is also why this is the one editor with a reload button on it, and
+ * why the notice is always on screen rather than appearing once something has
+ * been changed. A sky is built when the map loads and nothing can repaint the
+ * one you are standing under, so every change here is waiting for the next
+ * map: switching it on, switching it off, and picking a colour alike. Telling
+ * you that only afterwards would mean the first thing anyone does with this
+ * feature is watch it appear to do nothing.
  */
-
-let pending = false;
 
 export function skyEditor(): PanelView {
   return { title: 'SKY COLOUR', render };
@@ -31,7 +28,6 @@ function render(body: HTMLElement, ctx: TabContext): void {
 
   const commit = (next: SkyConfig, redraw: boolean): void => {
     ctx.deps.patchVisuals({ sky: next });
-    pending = true;
     if (redraw) ctx.refresh();
   };
 
@@ -59,16 +55,11 @@ function render(body: HTMLElement, ctx: TabContext): void {
     }),
   );
 
-  if (pending) {
-    body.append(
-      pendingStrip('The sky is built when a map loads, so this lands on the next one.', () => {
-        pending = false;
-        ctx.deps.reload();
-      }),
-    );
-  }
-
   body.append(
+    pendingStrip(
+      'Krunker builds the sky when a map loads, so switching this on or off and changing the colour all land on the next map. Reload to see it now.',
+      () => ctx.deps.reload(),
+    ),
     hint(
       'Most maps paint a textured dome over the top of their sky colour, so turning this on takes the dome off as well. Fog, lighting and shadows are left exactly as the map made them.',
     ),

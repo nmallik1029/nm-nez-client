@@ -4,6 +4,7 @@ import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
 import { featureRow, note } from './row';
+import { showToast } from '../toast';
 import { skyEditor } from './sky-editor';
 
 /**
@@ -74,7 +75,12 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
       name: 'Sky colour',
       sub: 'One colour for every map, in place of its own sky. Lands when the next map loads.',
       on: visuals.sky.on,
-      toggle: () => ctx.deps.patchVisuals({ sky: { ...visuals.sky, on: !visuals.sky.on } }),
+      toggle: () => {
+        ctx.deps.patchVisuals({ sky: { ...visuals.sky, on: !visuals.sky.on } });
+        // The editor carries this notice permanently; the row is the other
+        // way to flip it, and flipping it here looks like nothing happened.
+        showToast('The sky is built when a map loads, so this lands on the next one', 3600);
+      },
       editor: skyEditor,
     }),
   );
