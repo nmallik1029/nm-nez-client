@@ -76,6 +76,22 @@ export const KRUNKER_DOM_IDS = {
    * Measured to work out how far chat has to lift to clear it.
    */
   menuBottomBlock: 'subLogoButtons',
+  /**
+   * Everything the game opens on top of itself: settings, loadout, the
+   * popups. One holder, shown and hidden.
+   *
+   * Worth knowing what it is NOT good for. It says z-index 21474836, and that
+   * number means nothing outside its own stacking context: the chain is
+   * #windowHolder < #menuWindowHider < #fullMenHider < #uiBase, and #uiBase is
+   * position:absolute with z-index:1, so the whole window subtree is placed as
+   * one item at z:1. Anything of ours sitting on the body is above all of it
+   * whatever number we give it, which is how a queue readout ended up over the
+   * settings window twice. Measured on the running menu.
+   *
+   * Its class is no good for telling when one is open, either: popupWin goes
+   * on the first time a window opens and stays. The display is the signal.
+   */
+  windowHolder: 'windowHolder',
 } as const;
 
 /**

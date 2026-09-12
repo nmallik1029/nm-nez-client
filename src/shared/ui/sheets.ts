@@ -595,6 +595,7 @@ const rankedPanel = `
      Krunker's own HUD labels do. */
   text-shadow:var(--nm-watermark-outline) -1px -1px 0,var(--nm-watermark-outline) 1px -1px 0,
     var(--nm-watermark-outline) -1px 1px 0,var(--nm-watermark-outline) 1px 1px 0}
+
 /* In a match the pointer is locked, so the buttons are unreachable. */
 #${UI_IDS.rankedPill}.bare button{display:none}
 #${UI_IDS.rankedPill} .txt{font-variant-numeric:tabular-nums}

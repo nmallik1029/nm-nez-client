@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron';
+import { KRUNKER_DOM_IDS } from '../../krunker/constants';
 import { IPC } from '../../shared/ipc';
 import { RANKED_REGIONS } from '../../shared/ranked';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
@@ -117,8 +118,13 @@ function syncPill(): void {
     stop.textContent = 'Stop';
     stop.addEventListener('click', () => ipcRenderer.send(IPC.rankedStop));
     pill.append(text, open, stop);
-    document.body.appendChild(pill);
   }
+
+  // Re-checked every sync rather than only at creation: on a cold start the
+  // pill can be built before Krunker has made #uiBase, and it should move in
+  // as soon as there is one.
+  const host = document.getElementById(KRUNKER_DOM_IDS.uiBase) ?? document.body;
+  if (pill.parentElement !== host) host.appendChild(pill);
 
   positionPill(pill);
 
@@ -135,6 +141,31 @@ function syncPill(): void {
 
 /** Breathing room between the pill and whatever it is sitting under. */
 const PILL_GAP_PX = 12;
+
+/**
+ * Turn a viewport y into one the pill can be given.
+ *
+ * The pill lives inside #uiBase now, and #uiBase carries the game's UI scale
+ * as a transform (0.869 at the default setting). A transformed ancestor
+ * becomes the containing block for `position:fixed`, so `top` is no longer
+ * viewport pixels: it is the host's own, multiplied by that scale on the way
+ * to the screen. Anchors are measured with getBoundingClientRect, which is
+ * viewport pixels, so the two have to be reconciled or the pill sits about a
+ * seventh of the way up the screen from where it was asked to.
+ *
+ * The mapping is exact for a uniform scale whatever the transform-origin is,
+ * because the host's own rendered rect already carries the origin: a point p
+ * in host space lands at hostRect.top + p * scale.
+ */
+function toHostSpace(pill: HTMLElement, viewportY: number): number {
+  const host = pill.parentElement;
+  if (!host || host === document.body || host.offsetHeight === 0) return viewportY;
+
+  const rect = host.getBoundingClientRect();
+  const scale = rect.height / host.offsetHeight;
+  if (!Number.isFinite(scale) || scale <= 0) return viewportY;
+  return (viewportY - rect.top) / scale;
+}
 
 /**
  * Put the pill under whatever is above it on this screen.
@@ -162,7 +193,7 @@ function positionPill(pill: HTMLElement): void {
     const instructions = document.getElementById('instructions');
     const rect = instructions?.getBoundingClientRect();
     if (rect && rect.height > 0) {
-      pill.style.top = `${Math.round(rect.bottom + PILL_GAP_PX)}px`;
+      pill.style.top = `${Math.round(toHostSpace(pill, rect.bottom + PILL_GAP_PX))}px`;
       pill.style.left = '50%';
       pill.style.right = 'auto';
       pill.style.transform = 'translateX(-50%)';
@@ -176,7 +207,7 @@ function positionPill(pill: HTMLElement): void {
   pill.style.transform = 'none';
   pill.style.right = '24px';
   if (rect && rect.height > 0) {
-    pill.style.top = `${Math.round(rect.bottom + PILL_GAP_PX)}px`;
+    pill.style.top = `${Math.round(toHostSpace(pill, rect.bottom + PILL_GAP_PX))}px`;
   } else {
     pill.style.removeProperty('top');
   }
