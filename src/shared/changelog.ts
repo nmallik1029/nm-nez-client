@@ -16,6 +16,28 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.44',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'added',
+        text: "A crosshair maker, in QoL Features under Built-in. Pick a shape, a length, a thickness, a gap, a centre dot, an outline and a colour, or drop in a PNG. The preview sits on one of Krunker's own wall textures, because a thin dark crosshair that looks right on a panel disappears on brick. An image you drop is read off your disk once and kept as its own bytes, which is the point: Krunker takes a custom crosshair as a URL, and a URL from Discord stops resolving the day the CDN expires it, so people lose their crosshair mid-match with nothing to explain it. This one cannot go missing, because there is nothing left to fetch. Krunker draws its own crosshair as well, so the editor has a switch for that: it presses the game's own setting and puts it back.",
+      },
+      {
+        kind: 'added',
+        text: 'A hitmarker maker beside it, with the same shapes and the same image drop, plus the two things a hitmarker wants: drag it off centre, and pull its corner to resize. It appears when the game plays the sound it plays for a landed shot, so it is Krunker saying you connected rather than the client guessing.',
+      },
+      {
+        kind: 'added',
+        text: 'Sky colour: one colour in place of every map\'s own sky, with eight presets and a picker. Krunker builds the sky when a map loads and nothing can repaint the one you are standing under, so this lands on the next map, and the editor says so and gives you the reload. Fog, lighting and shadows are left exactly as the map made them.',
+      },
+      {
+        kind: 'changed',
+        text: 'The client asks Chromium for far fewer requests. It used to intercept every request to krunker.io, so each texture, model and sound a map loaded woke the main process to be looked at, nearly always to be waved through: the swap folder is empty on a default install, prop culling is off, and a texture was never going to be an ad host. It now intercepts only what something switched on is actually waiting for. Measured across one menu load, the same scenario both ways: 181 requests handed to the client before, 6 after. A map load is a good deal bigger than a menu.',
+      },
+    ],
+  },
+  {
     version: '0.1.43',
     date: '2026-09-12',
     changes: [
