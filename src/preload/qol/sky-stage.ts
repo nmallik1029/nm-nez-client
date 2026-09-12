@@ -42,11 +42,19 @@ export function skyStage(initial: string): SkyStage {
   const scene = document.createElement('img');
   scene.className = 'scene';
   scene.alt = '';
-  scene.hidden = true;
+  /*
+   * Inline, not the `hidden` attribute.
+   *
+   * `hidden` is only a UA stylesheet rule, and the panel's own sheet sets
+   * `display` on both of these by id and class, which outranks it. Setting
+   * `hidden` therefore did nothing at all and the first build of this showed
+   * an empty nav bar with two arrows and no picture between them.
+   */
+  scene.style.display = 'none';
 
   const nav = document.createElement('div');
   nav.className = 'stage-nav';
-  nav.hidden = true;
+  nav.style.display = 'none';
   const back = document.createElement('button');
   back.className = 'material-icons';
   back.textContent = 'chevron_left';
@@ -64,10 +72,10 @@ export function skyStage(initial: string): SkyStage {
     const current = scenes[chosen % scenes.length];
     if (!current) return;
     scene.src = current.image;
-    scene.hidden = false;
+    scene.style.display = 'block';
     name.textContent = current.name;
     // One scene is a picture, not a choice.
-    nav.hidden = scenes.length < 2;
+    nav.style.display = scenes.length < 2 ? 'none' : 'flex';
   }
 
   function step(by: number, scenes: readonly Scene[]): void {
