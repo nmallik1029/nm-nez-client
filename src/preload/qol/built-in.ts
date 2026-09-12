@@ -101,7 +101,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
 
   body.append(
     note(
-      'The crosshair and hitmarker replace the images Krunker already uses for them, so the game goes on deciding when each one is on screen.',
+      'The crosshair is drawn by the client, so it hides itself in the menu and while you are scoped. The hitmarker appears when the game plays its hit sound, which is Krunker saying you connected rather than the client guessing.',
     ),
   );
 }
