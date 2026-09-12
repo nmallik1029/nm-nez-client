@@ -508,7 +508,7 @@ const rankedPanel = `
  * and Krunker scales its whole UI, so both move.
  */
 #${UI_IDS.rankedPill}{position:fixed;top:196px;
-  z-index:var(--nm-z-toast);display:flex;align-items:center;gap:10px;
+  z-index:var(--nm-z-game-overlay);display:flex;align-items:center;gap:10px;
   color:var(--nm-game-text);font-family:var(--nm-font-display);
   font-size:var(--nm-fs-md);
   /* No panel behind it, so the text carries its own legibility the way

@@ -510,6 +510,13 @@ const LAYER = `
   --nm-z-raise:1;
   --nm-z-modal:100000;
   --nm-z-update:100001;
+  /* Over the game's HUD, UNDER the game's own windows.
+     Krunker puts those on #windowHolder.popupWin at 21474836, so anything
+     that should stay out of their way has to sit below that number. The HUD
+     and toast layers deliberately do not: an FPS readout or a toast is meant
+     to be legible whatever is open. A queue readout is not -- it is furniture,
+     and settings opening behind it is the bug this exists to prevent. */
+  --nm-z-game-overlay:20000000;
   --nm-z-hud:2147483000;
   --nm-z-toast:2147483200;
   --nm-z-scan:2147483260;
