@@ -16,6 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.42',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'fixed',
+        text: 'A tournament link only hosted if the client was already open. Clicking one with the client closed started it and then did nothing, which is the way most people will click one. Two things were wrong: the link was handed over at the moment the page finished loading, and the check for whether the page was ready asked a question that is never true on Krunker, so it was dropped every time. Past that, the host window was being opened while the game was still loading, which draws it with an empty map list that never fills in, so the lobby went up on whatever map happened to be ticked. It now waits for the game to actually be up first.',
+      },
+      {
+        kind: 'changed',
+        text: 'Your browser now asks to open "NM/NZ Client" rather than "Performance-focused Krunker client for Windows", which is what it had been reading off the exe.',
+      },
+    ],
+  },
+  {
     version: '0.1.41',
     date: '2026-09-12',
     changes: [
