@@ -16,6 +16,32 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.45',
+    date: '2026-09-12',
+    changes: [
+      {
+        kind: 'fixed',
+        text: "The queue readout no longer covers the menu you are looking at. Opening settings, Social or Store while searching left it sitting on top of them, and no amount of layering was ever going to fix it: everything Krunker opens lives inside one element that is itself stacked low, so a readout parked outside that element is above all of it whatever number it carries. It now sits inside the game's own layer, above the HUD and under anything either of us opens on top.",
+      },
+      {
+        kind: 'fixed',
+        text: 'The chat channel switch is back in the in-game HUD when the NM/NZ style is on. The globe that flips what you type between your team and everyone had been hidden along with the mic button beside it, which left no way to see which one you were about to send to.',
+      },
+      {
+        kind: 'added',
+        text: 'The sky colour is previewed against a real map. Three of them, switchable, each a screenshot with the sky cut out of it, so the colour you pick sits behind the scene and the fogged horizon tints along with it rather than the editor showing you a flat block of the colour and wishing you luck.',
+      },
+      {
+        kind: 'changed',
+        text: 'QoL Features opens on Built-in rather than Userscripts, and the two tabs have swapped places to match.',
+      },
+      {
+        kind: 'changed',
+        text: '"Deeper frame queue" and "Aggressive GPU switches" are marked EXPERIMENTAL. Both depend on your hardware and drivers, and either can leave the game rendering wrong or refusing to start; the tooltip says what to do when that happens.',
+      },
+    ],
+  },
+  {
     version: '0.1.44',
     date: '2026-09-12',
     changes: [
