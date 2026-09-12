@@ -88,6 +88,15 @@ interface ToggleSpec {
   readonly restart?: boolean;
   /** Takes effect on the next asset load; needs a page reload. */
   readonly reload?: boolean;
+  /**
+   * Known to misbehave on some machines.
+   *
+   * Spelled out rather than given an asterisk of its own: the asterisks mean
+   * "this costs you a restart", which is about waiting, and this is about the
+   * game possibly rendering wrong or not starting. A reader should not have
+   * to learn a third symbol to find that out.
+   */
+  readonly experimental?: boolean;
 }
 
 const GROUPS: { title: string; items: ToggleSpec[] }[] = [
@@ -107,6 +116,7 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         label: 'Deeper frame queue',
         hint: 'Lets a second frame queue up while one is still being drawn, which nudges peak FPS higher. Ignored if you have set an FPS cap.',
         restart: true,
+        experimental: true,
       },
       {
         section: 'advanced',
@@ -114,6 +124,7 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         label: 'Aggressive GPU switches',
         hint: 'Pushes the GPU harder by skipping the safety workarounds Chromium normally applies. Turn it back off if the game starts looking wrong.',
         restart: true,
+        experimental: true,
       },
       {
         section: 'advanced',
@@ -571,10 +582,11 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     title.textContent = spec.label;
     if (kind === 'restart') title.appendChild(tag('kc-tag-restart'));
     else if (kind === 'reload') title.appendChild(tag('kc-tag-reload'));
+    if (spec.experimental === true) title.appendChild(experimentalTag());
 
     // Hints are a hover tooltip rather than a second line. A description under
     // every row roughly doubles the height of the tab.
-    attachTooltip(title, rowTooltip(spec.hint, kind));
+    attachTooltip(title, rowTooltip(spec.hint, kind, spec.experimental === true));
 
     // Krunker's native toggle: a .switch label around a checkbox and a
     // .slider round div, which its CSS turns into the pill.
@@ -1089,6 +1101,14 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     return el;
   }
 
+  /** The word, not a symbol. See ToggleSpec.experimental for why. */
+  function experimentalTag(): HTMLElement {
+    const el = document.createElement('span');
+    el.className = 'kc-tag-exp';
+    el.textContent = 'EXPERIMENTAL';
+    return el;
+  }
+
   /**
    * Build a row's tooltip, folding any restart or reload requirement into the
    * same bubble as the hint.
@@ -1097,11 +1117,20 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
    * and a second tooltip target nested in the first makes the bubble swap and
    * then not come back when the pointer moves onto the text again.
    */
-  function rowTooltip(hint: string | undefined, kind: 'restart' | 'reload' | undefined): string {
+  function rowTooltip(
+    hint: string | undefined,
+    kind: 'restart' | 'reload' | undefined,
+    experimental = false,
+  ): string {
     const parts: string[] = [];
     if (hint !== undefined) parts.push(hint);
     if (kind === 'restart') parts.push('* Applies after restarting the client.');
     else if (kind === 'reload') parts.push('* Applies after reloading the page.');
+    if (experimental) {
+      parts.push(
+        'EXPERIMENTAL: this one depends on your hardware and drivers. It can leave the game rendering wrong, or not starting at all. If that happens, turn it off and restart.',
+      );
+    }
     return parts.join('\n');
   }
 

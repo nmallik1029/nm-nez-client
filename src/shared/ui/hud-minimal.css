@@ -82,16 +82,24 @@
   margin: 0 !important; padding: 0 !important;
 }
 
-#uiBase:not(.onMenu) .greyInlineInner {
+/*
+ * The pills either side of the chat input: the channel switch on the left,
+ * the mic toggle on the right.
+ *
+ * The switch stays. It is the globe that flips what you type between team and
+ * all-chat, and hiding it took away the only way to tell which one you were
+ * about to send to, let alone change it. The mic still goes: it is a button
+ * this skin has no room for and it is bound to a key anyway.
+ *
+ * Keyed off what is inside the pill rather than its position, because both
+ * pills carry the same class and only one of them holds #chatSwitchHolder.
+ */
+#uiBase:not(.onMenu) .greyInlineInner:not(:has(#chatSwitchHolder)) {
   display: none;
 }
 
 #uiBase:not(.onMenu) .greyInlineInnerMid {
   margin: 0; padding: 0;
-}
-
-#uiBase:not(.onMenu) #chatInputHolder {
-  grid-template-columns: auto;
 }
 
 #uiBase:not(.onMenu) #chatList {

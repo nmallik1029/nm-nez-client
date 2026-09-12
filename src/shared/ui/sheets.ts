@@ -796,6 +796,15 @@ const settings = `
   vertical-align:-1px;font-weight:700}
 .kc-tag-restart{color:var(--nm-restart)}
 .kc-tag-reload{color:var(--nm-reload)}
+/* Spelled out rather than a third asterisk. The asterisks are about waiting:
+   a restart, a reload. This is about the switch possibly leaving the game
+   rendering wrong, and nobody should have to learn a symbol to be told that.
+   Outlined rather than filled so it reads as a label on the row instead of a
+   button someone could press. */
+.kc-tag-exp{display:inline-block;margin-left:8px;padding:0 5px;
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);
+  color:var(--nm-restart);border:var(--nm-bw) solid var(--nm-restart);
+  vertical-align:1px}
 /* Krunker's rows rely on their .setBodH parent for the card background, and
    its control is floated rather than laid out, so force label-left /
    buttons-right onto one line instead of letting them stack. */

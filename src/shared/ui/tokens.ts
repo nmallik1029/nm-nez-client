@@ -583,16 +583,21 @@ const LAYER = `
   --nm-z-raise:1;
   --nm-z-modal:100000;
   --nm-z-update:100001;
-  /* Over the game's HUD, UNDER the game's own windows.
-     Krunker puts those on #windowHolder.popupWin at 21474836, so anything
-     that should stay out of their way has to sit below that number. The HUD
-     and toast layers deliberately do not: an FPS readout or a toast is meant
-     to be legible whatever is open. A queue readout is not -- it is furniture,
-     and settings opening behind it is the bug this exists to prevent.
+  /* Over the game's HUD, UNDER anything either of us opens on top of it.
+     This was 20000000, which cleared Krunker's windows (#windowHolder.popupWin
+     at 21474836) and nothing else: measured off the running menu, the game
+     also stacks #windowCloser at 99998 and #menuClassContainer and
+     #windowCHolder at 99999, and our own panels sit at --nm-z-modal just
+     above those. All of it was underneath the queue pill, which is how a
+     readout ended up covering the menu it was supposed to sit in.
+
+     So: below the lot. The HUD and toast layers deliberately stay above,
+     because an FPS readout or a toast is meant to be legible whatever is
+     open. A queue readout is not, it is furniture.
 
      The crosshair and the hitmarker are the same kind of furniture and sit
-     here too: over the game and its HUD, under anything it opens on top. */
-  --nm-z-game-overlay:20000000;
+     here too. */
+  --nm-z-game-overlay:99990;
   --nm-z-hud:2147483000;
   --nm-z-toast:2147483200;
   --nm-z-scan:2147483260;
