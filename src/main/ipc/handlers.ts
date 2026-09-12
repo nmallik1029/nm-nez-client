@@ -40,6 +40,13 @@ export interface HandlerDeps {
   readonly log: (...args: unknown[]) => void;
   /** Re-read the swap folder; returns the new file count. */
   readonly rescanSwap: () => number;
+  /**
+   * Rebuild the network filter's URL patterns.
+   *
+   * They only cover what is switched on, so a feature that decides whether
+   * game assets are intercepted has to say when it changes.
+   */
+  readonly refreshRequestFilter: () => void;
   readonly updater: UpdaterControls;
 }
 
@@ -153,6 +160,15 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     partial: Record<string, unknown>,
   ): void {
     const has = (key: string): boolean => Object.prototype.hasOwnProperty.call(partial, key);
+
+    // Which requests are worth intercepting at all is decided by these four,
+    // so any of them moving means the filter has to be rebuilt.
+    if (
+      section === 'features' &&
+      ['blockAds', 'resourceSwapper', 'hideBunnies', 'hideTurfBanners'].some(has)
+    ) {
+      deps.refreshRequestFilter();
+    }
 
     if (section === 'fixes' && has('disableBackgroundThrottle')) {
       const contents = getWindow()?.webContents;

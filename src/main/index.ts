@@ -13,7 +13,7 @@ import { ServerPinger } from './net/ping';
 import { RankedQueue, type QueueState } from './ranked/queue';
 import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
-import { installRequestFilter } from './net/request-filter';
+import { installRequestFilter, type RequestFilter } from './net/request-filter';
 import { appPaths, ensureUserDirs, migrateUserData } from './paths';
 import { createProtocolInbox, registerProtocolClient } from './protocol';
 import { findProtocolUrl } from '../shared/protocol';
@@ -84,6 +84,13 @@ const protocolInbox = createProtocolInbox(log);
 let mainWindow: BrowserWindow | null = null;
 const swapServer = new SwapServer();
 let swapIndex: SwapIndex = EMPTY_SWAP_INDEX;
+/**
+ * The network filter, kept so its URL patterns can be rebuilt.
+ *
+ * They cover only what is switched on, so anything that changes that has to
+ * say so: a feature toggle, or a rescan that finds the first swap file.
+ */
+let requestFilter: RequestFilter | null = null;
 let disposeThemeWatch: (() => void) | null = null;
 
 // ── Ranked queue ──
@@ -209,9 +216,10 @@ function start(): void {
   if (config.get('features').resourceSwapper) rescanSwap();
   handleSwapProtocol(swapServer);
 
-  installRequestFilter(session.defaultSession, {
+  requestFilter = installRequestFilter(session.defaultSession, {
     getFeatures: () => config.get('features'),
     resolveSwap: (url) => resolveSwapUrl(url, swapIndex, (abs) => swapServer.urlFor(abs)),
+    swapFileCount: () => swapIndex.size,
     onGameSocket: (host, port) => {
       if (config.get('ui').realPing) pinger.setTarget(host, port);
       else pinger.reset();
@@ -232,6 +240,7 @@ function start(): void {
     getWindow: () => mainWindow,
     log,
     rescanSwap,
+    refreshRequestFilter: () => requestFilter?.refresh(),
     updater,
   });
 
@@ -340,6 +349,9 @@ async function openRankedWindow(): Promise<void> {
 function rescanSwap(): number {
   swapIndex = buildSwapIndex(scanSwapDir(paths.swap));
   log(`swapper: ${swapIndex.size} file(s)`);
+  // Going from no files to some is what decides whether game assets are
+  // intercepted at all, so the filter has to hear about it.
+  requestFilter?.refresh();
   return swapIndex.size;
 }
 

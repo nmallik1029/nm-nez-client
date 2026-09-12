@@ -86,6 +86,7 @@ beforeEach(() => {
     getWindow: () => null,
     log: () => {},
     rescanSwap: () => 0,
+    refreshRequestFilter: () => {},
     updater: { check: () => {}, download: () => {}, install: () => {} },
   });
 });

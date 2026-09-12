@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decideRequest, FILTER_PATTERNS, isAdHost, type RequestContext } from './blocklist';
+import { decideRequest, isAdHost, requestPatterns, type RequestContext } from './blocklist';
 import { EMPTY_SWAP_URL } from '../swapper/protocol';
 
 const ctx = (over: Partial<RequestContext> = {}): RequestContext => ({
@@ -92,12 +92,49 @@ describe('decideRequest', () => {
   });
 });
 
-describe('FILTER_PATTERNS', () => {
-  it('covers the game origin so the swapper can see its requests', () => {
-    expect(FILTER_PATTERNS).toContain('*://*.krunker.io/*');
+describe('requestPatterns', () => {
+  const NEEDS = { blockAds: false, swapping: false, blockingProps: false };
+
+  it('always covers the game socket, which is what real ping aims at', () => {
+    expect(requestPatterns(NEEDS)).toContain('wss://*.krunker.io/*');
   });
 
-  it('contains no duplicates', () => {
-    expect(FILTER_PATTERNS).toHaveLength(new Set(FILTER_PATTERNS).size);
+  it('leaves game assets alone when nothing wants them', () => {
+    // The point of the whole exercise: on a default profile a map load is
+    // thousands of requests, and none of them should reach our JavaScript.
+    const patterns = requestPatterns({ ...NEEDS, blockAds: true });
+    expect(patterns).not.toContain('*://*.krunker.io/*');
+    expect(patterns).not.toContain('*://user-assets.krunker.io/*');
+    expect(patterns).toContain('*://*.doubleclick.net/*');
+  });
+
+  it('covers the game origin once the swapper has something to serve', () => {
+    expect(requestPatterns({ ...NEEDS, swapping: true })).toContain('*://*.krunker.io/*');
+  });
+
+  it('covers only the prop host when props are being culled', () => {
+    const patterns = requestPatterns({ ...NEEDS, blockingProps: true });
+    expect(patterns).toContain('*://user-assets.krunker.io/*');
+    expect(patterns).not.toContain('*://*.krunker.io/*');
+  });
+
+  it('does not ask for the prop host twice when swapping covers it', () => {
+    const patterns = requestPatterns({ ...NEEDS, swapping: true, blockingProps: true });
+    expect(patterns).not.toContain('*://user-assets.krunker.io/*');
+    expect(patterns).toHaveLength(new Set(patterns).size);
+  });
+
+  it('leaves the ad hosts out when ad blocking is off', () => {
+    expect(requestPatterns(NEEDS)).toEqual(['wss://*.krunker.io/*']);
+  });
+
+  it('never hands Electron an empty list, which would match everything', () => {
+    for (const blockAds of [true, false]) {
+      for (const swapping of [true, false]) {
+        for (const blockingProps of [true, false]) {
+          expect(requestPatterns({ blockAds, swapping, blockingProps }).length).toBeGreaterThan(0);
+        }
+      }
+    }
   });
 });

@@ -54,16 +54,56 @@ export const BUNNY_RE = assetRegex(BLOCKABLE_ASSETS.bunnies);
 export const TURF_BANNER_RE = assetRegex(BLOCKABLE_ASSETS.turfBanners);
 
 /**
- * Patterns handed to Electron's webRequest filter.
- *
- * `*://*` only covers http and https, so wss needs its own line. Without it
- * the handler never sees the game socket and real ping has nothing to aim at.
+ * The game's own socket. Without this the handler never sees it and real ping
+ * has nothing to aim at. `*://*` covers http and https only, hence its own
+ * line.
  */
-export const FILTER_PATTERNS: readonly string[] = [
-  ...AD_HOST_PATTERNS,
-  '*://*.krunker.io/*',
-  'wss://*.krunker.io/*',
-];
+const GAME_SOCKET_PATTERN = 'wss://*.krunker.io/*';
+
+/** Everything the game loads: the only way for the swapper to see an asset. */
+const GAME_ASSET_PATTERN = '*://*.krunker.io/*';
+
+/** Props live here, and nothing else we block does. */
+const PROP_PATTERN = '*://user-assets.krunker.io/*';
+
+/** What the filter has to cover, given what is switched on right now. */
+export interface FilterNeeds {
+  readonly blockAds: boolean;
+  /** The swapper is on AND actually has a file to serve. */
+  readonly swapping: boolean;
+  /** Bunnies or turf banners are being culled. */
+  readonly blockingProps: boolean;
+}
+
+/**
+ * The patterns to hand Electron, for what is on right now.
+ *
+ * This used to be one fixed list with `*://*.krunker.io/*` in it, which meant
+ * every texture, model and sound the game loaded woke the main process to be
+ * looked at. A map load is thousands of requests and nearly every one of them
+ * was asking three questions whose answer was already no: the swap index is
+ * empty on a default install, prop culling is off, and an asset on
+ * assets.krunker.io was never going to be an ad host.
+ *
+ * So the list is built from what is actually switched on. Nothing wants game
+ * assets on a default profile, so none are intercepted at all and they are
+ * matched and dropped in Chromium's C++ layer instead. What is left is a
+ * handful of ad hosts and the socket.
+ *
+ * It has to be rebuilt whenever one of those answers changes: a feature
+ * toggled, or a rescan that finds the first file in the swap folder. See
+ * `installRequestFilter`.
+ */
+export function requestPatterns(needs: FilterNeeds): string[] {
+  const patterns = [GAME_SOCKET_PATTERN];
+  if (needs.blockAds) patterns.push(...AD_HOST_PATTERNS);
+
+  // The broad pattern already covers user-assets, so the two are exclusive.
+  if (needs.swapping) patterns.push(GAME_ASSET_PATTERN);
+  else if (needs.blockingProps) patterns.push(PROP_PATTERN);
+
+  return patterns;
+}
 
 export interface RequestContext {
   readonly blockAds: boolean;
