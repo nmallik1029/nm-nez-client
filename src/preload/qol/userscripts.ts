@@ -142,9 +142,15 @@ function dropZone(ctx: TabContext): HTMLElement {
   picker.multiple = true;
   picker.hidden = true;
   picker.addEventListener('change', () => {
-    const chosen = picker.files;
-    // Cleared first: picking the same file twice in a row fires no change
-    // event otherwise, which looks like the second time did nothing.
+    // Copy the list out BEFORE clearing the input.
+    //
+    // `picker.files` is a live FileList, and setting `value = ''` empties it
+    // per spec -- so holding the reference and clearing first handed `install`
+    // an empty list, which it reported as "Userscripts have to be .js files".
+    // The file was never looked at. Clearing is still needed, because picking
+    // the same file twice in a row fires no change event otherwise and the
+    // second attempt looks like it did nothing; it just has to happen second.
+    const chosen = [...(picker.files ?? [])];
     picker.value = '';
     void install(chosen, ctx);
   });
@@ -173,7 +179,7 @@ function dropZone(ctx: TabContext): HTMLElement {
   zone.addEventListener('drop', (event) => {
     event.preventDefault();
     zone.classList.remove('over');
-    void install(event.dataTransfer?.files ?? null, ctx);
+    void install([...(event.dataTransfer?.files ?? [])], ctx);
   });
 
   return zone;
@@ -187,8 +193,8 @@ function dropZone(ctx: TabContext): HTMLElement {
  * to get wrong about where the file came from. Main checks the name and the
  * size before it writes anything.
  */
-async function install(files: FileList | null, ctx: TabContext): Promise<void> {
-  const chosen = [...(files ?? [])].filter((file) => file.name.toLowerCase().endsWith('.js'));
+async function install(files: readonly File[], ctx: TabContext): Promise<void> {
+  const chosen = files.filter((file) => file.name.toLowerCase().endsWith('.js'));
   if (chosen.length === 0) {
     showToast('Userscripts have to be .js files');
     return;
