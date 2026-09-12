@@ -101,7 +101,7 @@ export class ConfigStore<T extends object> {
   private load(defaults: T): T {
     let parsed: unknown;
     try {
-      parsed = JSON.parse(readFileSync(this.filePath, 'utf8'));
+      parsed = JSON.parse(stripBom(readFileSync(this.filePath, 'utf8')));
     } catch {
       return structuredClone(defaults);
     }
@@ -131,4 +131,18 @@ export class ConfigStore<T extends object> {
     }
     return merged;
   }
+}
+
+/**
+ * Drop a leading byte-order mark.
+ *
+ * Several Windows editors write one, and PowerShell's `Set-Content -Encoding
+ * utf8` does too. JSON.parse treats it as a syntax error, so a config saved
+ * by one of those reads as corrupt and every setting silently goes back to
+ * its default. Found the hard way, on a real config, which is also why the
+ * character is written as an escape here rather than sitting invisibly in
+ * the source.
+ */
+function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 }

@@ -61,6 +61,15 @@ describe('ConfigStore', () => {
     expect(store().get('flag')).toBe(false);
   });
 
+  it('reads a file saved with a byte-order mark', () => {
+    // PowerShell's `Set-Content -Encoding utf8` writes one, as do several
+    // Windows editors. Without the strip, JSON.parse calls this corrupt and
+    // every setting in it silently goes back to its default.
+    const bom = String.fromCharCode(0xfeff);
+    writeFileSync(file, bom + JSON.stringify({ flag: true }), 'utf8');
+    expect(store().get('flag')).toBe(true);
+  });
+
   it('falls back to defaults when the file holds a non-object', () => {
     writeFileSync(file, '["nope"]', 'utf8');
     expect(store().get('nested')).toEqual({ a: 1, b: 'x' });
