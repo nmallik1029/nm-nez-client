@@ -4,13 +4,27 @@ import { app, shell, type BrowserWindow } from 'electron';
 import { isKrunkerOrigin } from '../../krunker/constants';
 import { BRANDING } from '../../shared/branding';
 import { CONFIG_SECTIONS, type AppConfig } from '../../shared/config';
-import { IPC, type Capabilities, type OpenableFolder, type ScanResult } from '../../shared/ipc';
+import {
+  IPC,
+  type Capabilities,
+  type OpenableFolder,
+  type ScanResult,
+  type UserscriptSaveResult,
+} from '../../shared/ipc';
 import { clampFrameCap } from '../platform/flags';
 import { createAccountStore } from '../accounts';
 import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
-import { loadLookPreviews, loadMatchSound, loadUserscripts } from '../assets';
+import {
+  listUserscripts,
+  loadLookPreviews,
+  loadMatchSound,
+  loadUserscripts,
+  removeUserscript,
+  saveUserscript,
+  type SaveProblem,
+} from '../assets';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
@@ -197,9 +211,48 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     return { lobbies, pings };
   });
 
-  registry.handle(IPC.userscriptsGet, () =>
-    config.get('features').userscripts ? loadUserscripts(paths.scripts) : [],
-  );
+  registerUserscriptHandlers();
+
+  /**
+   * The scripts folder, as the QoL panel sees it.
+   *
+   * These write to disk on behalf of the page, which is a bigger thing than
+   * the rest of this file does, so the whole surface is one plain filename
+   * inside one folder: `isScriptFileName` refuses anything that could name
+   * a path, and the size is capped the same way the loader caps it. What
+   * this is not is a new capability for a hostile script: anything already
+   * running here runs at the game's origin and can reach config:patch, and
+   * a script cannot enable itself into a folder it could not already ask
+   * the user to open.
+   */
+  function registerUserscriptHandlers(): void {
+    registry.handle(IPC.userscriptsGet, () => {
+      const features = config.get('features');
+      if (!features.userscripts) return [];
+      const off = new Set(features.disabledUserscripts);
+      return loadUserscripts(paths.scripts).filter((script) => !off.has(script.name));
+    });
+
+    registry.handle(IPC.userscriptsList, () => listUserscripts(paths.scripts));
+
+    registry.handle(IPC.userscriptsAdd, (_e, name: unknown, source: unknown): UserscriptSaveResult => {
+      if (typeof name !== 'string' || typeof source !== 'string') {
+        return { ok: false, problem: 'That is not a file', scripts: listUserscripts(paths.scripts) };
+      }
+
+      const problem = saveUserscript(paths.scripts, name, source);
+      return {
+        ok: problem === 'ok',
+        problem: saveMessage(problem, name),
+        scripts: listUserscripts(paths.scripts),
+      };
+    });
+
+    registry.handle(IPC.userscriptsRemove, (_e, name: unknown) => {
+      if (typeof name === 'string') removeUserscript(paths.scripts, name);
+      return listUserscripts(paths.scripts);
+    });
+  }
 
   registry.handle(IPC.hotkeyCaptureLock, (_e, locked: unknown) => {
     hotkeyLock.set(locked === true);
@@ -267,6 +320,20 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   });
 
   return registry;
+}
+
+/** A refused save, in words the person who dropped the file can act on. */
+function saveMessage(problem: SaveProblem, name: string): string {
+  switch (problem) {
+    case 'ok':
+      return '';
+    case 'name':
+      return `"${name}" is not a plain .js filename`;
+    case 'size':
+      return `"${name}" is too big to run as a userscript`;
+    case 'write':
+      return `Could not write "${name}" to the scripts folder`;
+  }
 }
 
 function isConfigSection(value: string): value is keyof AppConfig {

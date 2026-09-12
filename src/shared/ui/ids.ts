@@ -31,13 +31,8 @@ export const UI_IDS = {
   /** Wrapper that puts Loadout and Customize on one line. */
   classButtonRow: 'kc-class-buttons',
   altManagerButton: 'kc-alt-manager-button',
-  /** Opens the scripts window from the top bar. */
-  scriptsButton: 'kc-scripts-button',
   /** Enemies standing on the hardpoint, in the top-right HUD counters. */
   hardpointCounter: 'kc-hp-counter',
-  /** The rule between our own header controls and Krunker's nav. */
-  headerSeparator: 'kc-header-sep',
-  scriptsModal: 'kc-scripts-modal',
   /** The ranked queue, in the page rather than its own window. */
   rankedPanel: 'kc-ranked-panel',
   /** Shown while the queue runs and the panel is shut. */
@@ -48,6 +43,10 @@ export const UI_IDS = {
   menuMark: 'kc-menu-mark',
   /** The first-run walkthrough, drawn over the menu. */
   setupWizard: 'kc-setup',
+  /** QoL Features, at the bottom of Krunker's left menu. */
+  qolItem: 'kc-qol-item',
+  /** The panel that row opens: userscripts, and our own features. */
+  qolPanel: 'kc-qol-panel',
 } as const;
 
 /**
@@ -68,7 +67,6 @@ export const STYLE_IDS = {
   scan: 'kc-scan-css',
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
-  scriptsModal: 'kc-scripts-modal-css',
   rankedPanel: 'kc-ranked-panel-css',
   hardpointCounter: 'kc-hp-counter-css',
   sectionNav: 'kc-sectnav-css',
@@ -82,4 +80,5 @@ export const STYLE_IDS = {
   krunkerWindows: 'kc-krunker-windows-css',
   hudMinimal: 'kc-hud-minimal-css',
   setupWizard: 'kc-setup-css',
+  qolPanel: 'kc-qol-panel-css',
 } as const;

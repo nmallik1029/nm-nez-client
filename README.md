@@ -61,8 +61,9 @@ text 300 times a second is its own performance problem.
 Set your filters once in settings (region, mode, map, player count, time left), then one
 key scans the live lobby list and drops you into the best match. No browsing.
 
-The scan animation flicks through candidates with their map previews so you can see what
-got rejected. That's presentation only; the filtering always considers every lobby.
+On screen it's a title and a loading bar. It used to flick through every rejected lobby
+with its map preview, which looked busier than it was; the only thing you can do while it
+runs is press Escape, so the bar says which region you're joining and nothing else.
 
 ### External ranked queue
 
@@ -71,6 +72,38 @@ owns, in its own little window, so you can close the game, reload it, or go and 
 something else and keep your place in line. It brings itself to the front when you match.
 
 Launch it from the button next to FIND MATCH in Krunker's ranked panel.
+
+### Tournament links (`nmnez://`)
+
+The client registers the `nmnez://` URL scheme, so a tournament bot can post a button that
+puts the match lobby up for you. Clicking it brings the client to the front, opens
+Krunker's comp server setup with the map, team names, rosters, team size, class limits and
+the result webhook already filled in, and creates the room.
+
+The link looks like this, and it's the same shape three other Krunker clients already
+take, so a bot that builds them only has to learn the scheme name:
+
+```
+nmnez://game?action=host-comp&mapId=Burg&team1Name=Alpha&team2Name=Bravo&teamSize=3v3
+  &team1Players=one,%20two,%20three&team2Players=four,%20five,%20six
+  &spectators=caster1&classes={"ak":2}&webhook=https://your-bot/krunker&region=NY
+```
+
+`region` is a game-id region code (`NY`, `DAL`, `FRA`...) or one of Krunker's own server
+keys (`us-nj`). Switching region needs a page load, so the client only reloads when the
+region you asked for isn't the one already set. `webhook` is Krunker's own field: the game
+posts the final scoreboard there when the match ends, the client never sees it. Anything
+in a link that isn't one of these is ignored, and a value that makes no sense is dropped
+rather than typed into the form.
+
+Nothing else uses the scheme, and no other action is implemented: a link the client
+doesn't recognise does nothing at all. There's no prompt of our own before a lobby goes
+up, because your browser already asks before handing a custom scheme to an app.
+
+Registration happens when the client is installed, so this needs an installed build. A
+portable exe registers the scheme itself on first run; a `npm start` development run
+deliberately doesn't, since it would point every `nmnez://` link on the machine at a bare
+Electron binary.
 
 ### Alt manager
 

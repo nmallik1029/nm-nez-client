@@ -186,57 +186,9 @@ const queueButton = `
  * The Alt Manager window. Krunker's palette, so it reads as part of the game.
  */
 /**
- * The scripts window.
- *
- * Deliberately the same shell as the alt manager: dark panel, thick border,
- * a header rule and a scrolling body. Two client windows that look like two
- * different programs is the thing this menu has been spending its time
- * getting away from.
- */
-const scriptsModal = `
-#${UI_IDS.scriptsModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
-  background:var(--nm-game-scrim);
-  display:flex;align-items:center;justify-content:center}
-#${UI_IDS.scriptsModal}{width:min(560px,92vw);max-height:82vh;display:flex;flex-direction:column;
-  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
-  color:var(--nm-game-text);font-family:var(--nm-font-display)}
-#${UI_IDS.scriptsModal} .hd{display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
-  background:var(--nm-game-bg-head)}
-#${UI_IDS.scriptsModal} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
-  letter-spacing:var(--nm-track-xl);font-weight:normal}
-#${UI_IDS.scriptsModal} .bd{overflow-y:auto;padding:14px 18px 18px}
-#${UI_IDS.scriptsModal} .empty{padding:22px 0;text-align:center;
-  color:var(--nm-game-text-dim);font-size:var(--nm-fs-lg)}
-#${UI_IDS.scriptsModal} .note{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
-  line-height:var(--nm-lh);margin-top:12px;text-align:center}
-/* One script. Icon, then the name over its description, then the switch. */
-#${UI_IDS.scriptsModal} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;
-  margin-bottom:8px;
-  background:var(--nm-game-row-bg);border:var(--nm-bw-thick) solid var(--nm-game-border)}
-#${UI_IDS.scriptsModal} .row .ico{flex:0 0 auto;font-size:var(--nm-fs-7xl);
-  color:var(--nm-game-text-dim)}
-#${UI_IDS.scriptsModal} .row.live .ico{color:var(--nm-accent)}
-#${UI_IDS.scriptsModal} .txt{flex:1;min-width:0}
-#${UI_IDS.scriptsModal} .nm{font-size:var(--nm-fs-2xl)}
-#${UI_IDS.scriptsModal} .sub{font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);
-  line-height:var(--nm-lh);margin-top:2px}
-#${UI_IDS.scriptsModal} button{flex:0 0 auto;font-family:inherit;cursor:pointer;
-  min-width:58px;padding:7px 14px;font-size:var(--nm-fs-md);
-  letter-spacing:var(--nm-track-md);
-  border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
-  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text)}
-#${UI_IDS.scriptsModal} button:hover{background:var(--nm-game-btn-bg-hover);
-  color:var(--nm-game-text)}
-#${UI_IDS.scriptsModal} button.on{border-color:var(--nm-ok-border);color:var(--nm-ok)}
-#${UI_IDS.scriptsModal} button.on:hover{background:var(--nm-ok-bg-hover);
-  color:var(--nm-ok-text-hi)}
-`;
-
-/**
  * The first-run walkthrough, over the menu.
  *
- * Same shell as the scripts window and the alt manager - game-skin greys,
+ * Same shell as the QoL panel and the alt manager - game-skin greys,
  * hard 2px border, no radius - because it is one more panel of ours opening
  * over Krunker and three panels that each look slightly different is worse
  * than three that look the same.
@@ -308,7 +260,7 @@ const setupWizard = `
 #${UI_IDS.setupWizard} .choice.on .t{color:var(--nm-ok-text-hi)}
 
 /* A script row: name over one line, switch on the right. Matches the
-   scripts window, which is where these are managed afterwards. */
+   QoL panel, which is where these are managed afterwards. */
 #${UI_IDS.setupWizard} .rows{margin-top:16px;display:flex;flex-direction:column;gap:var(--nm-gap-sm)}
 #${UI_IDS.setupWizard} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;
   background:var(--nm-game-row-bg);
@@ -349,6 +301,117 @@ const setupWizard = `
 #${UI_IDS.setupWizard} .sw.on:hover{background:var(--nm-ok-bg-hover);color:var(--nm-ok-text-hi)}
 #${UI_IDS.setupWizard} .sw{min-width:58px}
 `;
+/**
+ * QoL Features: the panel behind the last row of Krunker's left menu.
+ *
+ * The same shell as the alt manager, the changelog and the
+ * walkthrough, for the reason all of those share it: these are four panels
+ * of ours opening over the same menu, and four that looked slightly
+ * different would read as four programs.
+ *
+ * What is new here is the tab strip. It sits between the header and the
+ * body rather than inside the body, so switching tabs does not move it, and
+ * the underline on the open one is the only accent colour on the panel.
+ */
+const qolPanel = `
+#${UI_IDS.qolPanel}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
+  background:var(--nm-game-scrim);
+  display:flex;align-items:center;justify-content:center}
+#${UI_IDS.qolPanel}{width:min(620px,94vw);max-height:86vh;display:flex;flex-direction:column;
+  background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text);font-family:var(--nm-font-display)}
+#${UI_IDS.qolPanel} .hd{padding:14px 18px;
+  border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
+  background:var(--nm-game-bg-head)}
+#${UI_IDS.qolPanel} .hd h2{margin:0;font-size:var(--nm-fs-4xl);
+  letter-spacing:var(--nm-track-xl);font-weight:normal}
+
+/* ---- the tab strip ---- */
+/*
+ * Equal halves rather than two labels shoved left. With two tabs, a strip
+ * of tight text at one end reads as a heading somebody has misaligned; at
+ * half the panel each they read as the choice they are.
+ */
+#${UI_IDS.qolPanel} .tabs{display:flex;background:var(--nm-game-bg-head);
+  border-bottom:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .tab{flex:1;padding:11px 14px;font-family:inherit;cursor:pointer;
+  border:0;border-bottom:var(--nm-bw-heavy) solid transparent;background:none;
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-lg);text-transform:uppercase;
+  color:var(--nm-game-text-dim);
+  transition:color var(--nm-fast),background var(--nm-fast),border-color var(--nm-fast)}
+#${UI_IDS.qolPanel} .tab:hover{color:var(--nm-game-text);background:var(--nm-game-row-hover)}
+#${UI_IDS.qolPanel} .tab.on{color:var(--nm-game-text);border-bottom-color:var(--nm-accent)}
+
+#${UI_IDS.qolPanel} .bd{overflow-y:auto;padding:14px 18px 18px}
+
+/* ---- a row: icon, name over a line, switch ---- */
+#${UI_IDS.qolPanel} .row{display:flex;align-items:center;gap:12px;padding:11px 12px;margin-bottom:8px;
+  background:var(--nm-game-row-bg);border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .row .ico{flex:0 0 auto;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .row.live .ico{color:var(--nm-accent)}
+#${UI_IDS.qolPanel} .row .txt{flex:1;min-width:0}
+#${UI_IDS.qolPanel} .row .nm{font-size:var(--nm-fs-2xl);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+/* Wraps, unlike the name above it. These are sentences: cut one off at the
+   panel edge and the half that says what the feature actually does is the
+   half that goes. */
+#${UI_IDS.qolPanel} .row .sub{margin-top:2px;font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);
+  line-height:var(--nm-lh)}
+
+/* ---- buttons ---- */
+/* The tab strip is buttons too, and wins on specificity: a class beats a
+   type selector, so .tab keeps its own border and padding. */
+#${UI_IDS.qolPanel} button{flex:0 0 auto;font-family:inherit;cursor:pointer;padding:7px 14px;
+  font-size:var(--nm-fs-md);letter-spacing:var(--nm-track-md);
+  border:var(--nm-bw-thick) solid var(--nm-game-btn-border);
+  background:var(--nm-game-btn-bg);color:var(--nm-game-btn-text);
+  transition:background var(--nm-fast),color var(--nm-fast),border-color var(--nm-fast)}
+#${UI_IDS.qolPanel} button:hover{background:var(--nm-game-btn-bg-hover);color:var(--nm-game-text)}
+#${UI_IDS.qolPanel} .sw{min-width:58px}
+#${UI_IDS.qolPanel} .sw.on{border-color:var(--nm-ok-border);color:var(--nm-ok)}
+#${UI_IDS.qolPanel} .sw.on:hover{background:var(--nm-ok-bg-hover);color:var(--nm-ok-text-hi)}
+#${UI_IDS.qolPanel} .del{padding:7px 11px;border-color:var(--nm-bad-border);color:var(--nm-bad-text)}
+#${UI_IDS.qolPanel} .del:hover,#${UI_IDS.qolPanel} .del.armed{background:var(--nm-bad-bg);
+  color:var(--nm-bad-text-hi)}
+
+/* ---- the drop target ---- */
+/*
+ * Dashed, because that is what a thing you drop onto looks like, and the
+ * one place in this client where a border that is not hard-edged is saying
+ * something rather than just being softer.
+ *
+ * Children take no pointer events. Dragging over a child fires dragleave
+ * on the zone, and a highlight that flickers as the cursor crosses the two
+ * lines of text inside it is exactly the wrong feedback to give somebody
+ * holding a file over the target.
+ */
+#${UI_IDS.qolPanel} .drop{margin-bottom:12px;padding:20px 14px;text-align:center;cursor:pointer;
+  background:var(--nm-game-input-bg);
+  border:var(--nm-bw-thick) dashed var(--nm-game-btn-border);
+  color:var(--nm-game-text-dim);
+  transition:background var(--nm-fast),color var(--nm-fast),border-color var(--nm-fast)}
+#${UI_IDS.qolPanel} .drop > *{pointer-events:none}
+#${UI_IDS.qolPanel} .drop:hover{color:var(--nm-game-text);border-color:var(--nm-game-input-focus)}
+#${UI_IDS.qolPanel} .drop.over{background:var(--nm-ok-bg);border-color:var(--nm-ok-border);
+  color:var(--nm-ok-text-hi)}
+#${UI_IDS.qolPanel} .drop .big{display:block;font-size:var(--nm-fs-2xl)}
+#${UI_IDS.qolPanel} .drop .small{display:block;margin-top:4px;font-size:var(--nm-fs-xs)}
+
+/* ---- the rest of the body ---- */
+#${UI_IDS.qolPanel} .actions{display:flex;justify-content:flex-end;margin-top:12px}
+/* Waiting on a reload, which is the one thing in this panel that has not
+   happened yet. Krunker flags a pending setting in red; this is the same
+   idea in the client's own caution colours. */
+#${UI_IDS.qolPanel} .pend{display:flex;align-items:center;gap:12px;margin-top:12px;padding:11px 12px;
+  background:var(--nm-caution-bg);border-left:var(--nm-bw-heavy) solid var(--nm-warn);
+  color:var(--nm-caution-text)}
+#${UI_IDS.qolPanel} .pend .txt{flex:1;font-size:var(--nm-fs-md);line-height:var(--nm-lh)}
+#${UI_IDS.qolPanel} .empty{padding:22px 0;text-align:center;color:var(--nm-game-text-dim);
+  font-size:var(--nm-fs-lg)}
+#${UI_IDS.qolPanel} .note{margin-top:12px;font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint);
+  line-height:var(--nm-lh)}
+`;
+
 /**
  * The hardpoint enemy counter, in the top-right HUD strip.
  *
@@ -1080,7 +1143,9 @@ const menuSkin = `
 /* ---- top bar ---- */
 #signupRewardsButton{display:none !important}
 #signedOutHeaderBar [class*="ph-icon"]{display:none !important}
-#signedOutHeaderBar [class*="ph-login-wrap"],#playerHeaderEl #${UI_IDS.scriptsButton}{
+/* Krunker's own sign-in button, squared off to match the rest of the bar.
+   Our Scripts button used to share this rule; QoL Features replaced it. */
+#signedOutHeaderBar [class*="ph-login-wrap"]{
   display:inline-flex !important;align-items:center !important;justify-content:center !important;
   box-sizing:border-box !important;height:34px !important;min-height:34px !important;
   max-height:34px !important;padding:0 16px !important;margin:0 !important;
@@ -1089,8 +1154,7 @@ const menuSkin = `
   border:var(--nm-bw) solid var(--nm-menu-line-hi) !important;border-radius:0 !important;
   background:var(--nm-menu-fill) !important;
   transition:border-color var(--nm-fast),background var(--nm-fast)}
-#signedOutHeaderBar [class*="ph-login-wrap"]:hover,
-#playerHeaderEl #${UI_IDS.scriptsButton}:hover{border-color:var(--nm-menu-bone) !important;
+#signedOutHeaderBar [class*="ph-login-wrap"]:hover{border-color:var(--nm-menu-bone) !important;
   background:var(--nm-menu-wash) !important}
 #playerHeaderEl .ph-label,#playerHeaderEl .nav-label{font-family:var(--nm-menu-font) !important;
   text-shadow:none !important;transition:color var(--nm-fast)}
@@ -1453,21 +1517,6 @@ const menuSkin = `
 #${UI_IDS.classButtonRow} > .button:nth-child(2){--kc-hue:var(--nm-menu-purple)}
 #menuClassContainer #${UI_IDS.altManagerButton}{--kc-hue:var(--nm-menu-ember)}
 
-/* ---- scripts button, at the front of Krunker's own nav ---- */
-#playerHeaderEl #${UI_IDS.scriptsButton}{width:auto !important;
-  /* A child of .headerBarRight, which is a flex row that stretches its items.
-     Without this the 34px height loses to the 61px bar. */
-  align-self:center !important;flex:0 0 auto !important;
-  margin:0 !important;cursor:pointer !important;color:var(--nm-menu-bone) !important;
-  text-shadow:none !important;transform:none !important}
-#playerHeaderEl #${UI_IDS.scriptsButton}:hover{color:var(--nm-menu-bone-hi) !important;
-  transform:none !important;filter:none !important}
-/* Krunker's own separators in this bar are hidden further up, so ours is a
-   separate element rather than one of theirs turned back on. */
-#playerHeaderEl #${UI_IDS.headerSeparator}{align-self:center !important;flex:0 0 auto !important;
-  width:var(--nm-bw) !important;height:30px !important;margin:0 16px !important;
-  background:var(--nm-menu-line-hi) !important}
-
 /* Krunker's own Changelog link, relocated out of the footer to sit beside
    More Krunker. Matched to the nav labels it now stands with. */
 .headerBarRight .kc-menu-headerlink{font-family:var(--nm-menu-font) !important;
@@ -1751,8 +1800,8 @@ export const SHEETS = {
   altModal,
   rankedPanel,
   hardpointCounter,
-  scriptsModal,
   setupWizard,
+  qolPanel,
   changelog,
   menuButtons,
   chatTags,

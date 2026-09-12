@@ -22,7 +22,7 @@ import { setMenuSkin } from '../menu-skin';
  * can open before the game has finished loading. In practice it was a second
  * thing in the taskbar, a second preload, a fourth Vite config and three IPC
  * channels, all to ask three questions. Here it is one panel over the menu,
- * the same as the alt manager and the scripts window, and every answer
+ * the same as the alt manager and the QoL panel, and every answer
  * applies live because the functions that apply them are already in this
  * process:
  *
@@ -34,7 +34,7 @@ import { setMenuSkin } from '../menu-skin';
  * it wrote config the page had already read.
  *
  * Config is written alongside each change so the choice survives a restart,
- * the same split the scripts window uses: the runner is what is *true*, the
+ * the same split the QoL panel uses: the runner is what is *true*, the
  * config is what is *remembered*.
  */
 
@@ -341,7 +341,7 @@ function buildLook(draft: Draft, onChange: () => void): Screen {
 
 // ── screen two ────────────────────────────────────────────────────────────
 
-/** Written whole each time, same as the scripts window does it. */
+/** Written whole each time, same as the QoL panel does it. */
 function saveScripts(draft: Draft): void {
   void ipcRenderer.invoke(IPC.configPatch, 'features', {
     enabledScripts: draft.scripts,
@@ -356,7 +356,7 @@ function buildScripts(draft: Draft): Screen {
   body.appendChild(
     lede(
       'Small extras that ship with the client, off unless you say otherwise. Each one ' +
-        'can be switched off again from the Scripts button in the top bar.',
+        'can be switched off again under QoL Features in the left menu.',
     ),
   );
 
@@ -408,7 +408,7 @@ function buildScripts(draft: Draft): Screen {
       if (at === -1) draft.scripts.push(script.id);
       else draft.scripts.splice(at, 1);
       // Live, so switching one on here is the same act as switching it on in
-      // the scripts window, including throwing on the way in, which the
+      // the QoL panel, including throwing on the way in, which the
       // runner reports and which this then reflects.
       setScriptEnabled(script.id, at === -1);
       draft.scripts = CLIENT_SCRIPTS.filter((s) => isScriptRunning(s.id)).map((s) => s.id);

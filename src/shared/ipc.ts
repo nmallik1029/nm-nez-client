@@ -99,11 +99,32 @@ export const IPC = {
 
   /** Renderer -> main. Userscript sources from the scripts folder. */
   userscriptsGet: 'userscripts:get',
+  /**
+   * Renderer -> main. What is in the scripts folder, without the sources.
+   *
+   * Its own channel rather than a flag on userscriptsGet, because that one
+   * is the load path and answers with every byte of every file. The QoL
+   * panel is drawing a list of names and sizes and has no use for megabytes
+   * of JavaScript.
+   */
+  userscriptsList: 'userscripts:list',
+  /** Renderer -> main. Write a dropped `.js` into the scripts folder. */
+  userscriptsAdd: 'userscripts:add',
+  /** Renderer -> main. Delete one file from the scripts folder. */
+  userscriptsRemove: 'userscripts:remove',
   /** Renderer -> main. Suspend global hotkeys while the rebind dialog captures. */
   hotkeyCaptureLock: 'hotkeys:capture-lock',
 
   /** Main -> renderer. A hotkey fired; payload is a HotkeyAction. */
   hotkeyAction: 'hotkey:action',
+  /**
+   * Main -> renderer. A `nmnez://` link Windows handed us, verbatim.
+   *
+   * Sent unparsed on purpose. `shared/protocol.ts` is what decides whether a
+   * link is one we act on, and having one answer to that rather than one per
+   * side of the IPC boundary is the point of it being shared.
+   */
+  protocolUrl: 'protocol:url',
   /** Main -> renderer. Transient status text for the in-page toast. */
   toast: 'app:toast',
   /** Main -> renderer. Measured round-trip to the match server, in ms. */
@@ -114,6 +135,31 @@ export const IPC = {
    */
   themesChanged: 'themes:changed',
 } as const;
+
+/** One file in the scripts folder, as the QoL panel lists them. */
+export interface UserscriptInfo {
+  /** Filename, which is also its id: the folder cannot hold two. */
+  readonly name: string;
+  /** From a Tampermonkey-style `@name` header, falling back to the filename. */
+  readonly title: string;
+  readonly bytes: number;
+}
+
+/**
+ * What came of trying to save a dropped file.
+ *
+ * A result rather than a thrown error, because every one of these is
+ * something to show the person who dropped the file, and an `invoke`
+ * rejection arrives wrapped in "Error invoking remote method" before the
+ * sentence anyone wrote.
+ */
+export interface UserscriptSaveResult {
+  readonly ok: boolean;
+  /** Why not, ready to read. Empty when it worked. */
+  readonly problem: string;
+  /** The folder afterwards, whether or not anything changed. */
+  readonly scripts: readonly UserscriptInfo[];
+}
 
 export interface ThemeFile {
   readonly name: string;

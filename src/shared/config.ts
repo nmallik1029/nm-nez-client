@@ -65,6 +65,17 @@ export interface FeatureConfig {
   hideTurfBanners: boolean;
   resourceSwapper: boolean;
   userscripts: boolean;
+  /**
+   * Filenames in the scripts folder that are switched off, from the QoL
+   * panel.
+   *
+   * An opt-out list rather than an opt-in one, so a file dropped in the
+   * folder still runs without having to be enabled somewhere first, which is
+   * what the folder meant before there was a panel listing it. A name that
+   * no longer exists is simply never matched, so deleting a file cannot
+   * leave a setting behind.
+   */
+  disabledUserscripts: readonly string[];
   /** Show team and all chat together, prefixed [T] / [M]. */
   betterChat: boolean;
   /**
@@ -94,9 +105,9 @@ export interface FeatureConfig {
    */
   menuSkin: boolean;
   /**
-   * Ids of the built-in scripts that are switched on, from the Scripts
-   * window in the top bar. Ids rather than a flag each, so a script that is
-   * removed later just stops being listed instead of leaving a dead setting.
+   * Ids of the built-in scripts that are switched on, from QoL Features in
+   * the left menu. Ids rather than a flag each, so a script that is removed
+   * later just stops being listed instead of leaving a dead setting.
    */
   enabledScripts: readonly string[];
 
@@ -271,6 +282,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     hideTurfBanners: false,
     resourceSwapper: true,
     userscripts: false,
+    disabledUserscripts: [],
     betterChat: true,
     hideMenuPromos: true,
     menuSkin: false,

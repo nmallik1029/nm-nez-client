@@ -15,6 +15,8 @@ import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
 import { installRequestFilter } from './net/request-filter';
 import { appPaths, ensureUserDirs, migrateUserData } from './paths';
+import { createProtocolInbox, registerProtocolClient } from './protocol';
+import { findProtocolUrl } from '../shared/protocol';
 import { applySwitches, computeSwitches } from './platform/flags';
 import { browserUserAgent } from './platform/user-agent';
 import { loadThemes, watchThemes } from './themes';
@@ -65,6 +67,19 @@ applySwitches(app.commandLine, computeSwitches(config.get('performance'), config
 
 // Custom schemes must also be declared before ready.
 registerSwapScheme();
+
+// And the one Windows hands us links on. Installed builds get this from the
+// installer; this covers the portable exe and a registration since taken over.
+registerProtocolClient(log);
+
+/**
+ * Where a `nmnez://` link waits for a page to act on it.
+ *
+ * Built here rather than in `start()` because a link can arrive before the
+ * window exists: Windows starts a second instance to deliver one, and the
+ * `second-instance` handler below fires whether or not we are ready yet.
+ */
+const protocolInbox = createProtocolInbox(log);
 
 let mainWindow: BrowserWindow | null = null;
 const swapServer = new SwapServer();
@@ -171,7 +186,12 @@ const pinger = new ServerPinger({
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (_event, argv) => {
+    // Opening a nmnez:// link starts a second copy of the client, which gets
+    // as far as failing to take the lock and hands us its command line on the
+    // way out. That command line is the link.
+    protocolInbox.offer(findProtocolUrl(argv));
+
     if (!mainWindow || mainWindow.isDestroyed()) return;
     if (mainWindow.isMinimized()) mainWindow.restore();
     mainWindow.focus();
@@ -199,6 +219,11 @@ function start(): void {
   });
 
   mainWindow = createMainWindow({ config });
+
+  // A cold start from a link carries it on our own command line rather than
+  // through second-instance. Offered after attach, so it has somewhere to go.
+  protocolInbox.attach(mainWindow);
+  protocolInbox.offer(findProtocolUrl(process.argv));
 
   registerHandlers({
     ipcMain,

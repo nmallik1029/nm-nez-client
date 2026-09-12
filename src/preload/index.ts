@@ -16,6 +16,8 @@ import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installNameHighlights } from './name-highlights';
+import { installProtocolHost } from './protocol/host';
+import { installQol } from './qol/panel';
 import { installRankedPanel } from './ranked/panel';
 import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
@@ -179,8 +181,27 @@ async function bootstrap(): Promise<void> {
     // Puts the client name and version under the in-game round timer.
     installWatermark();
 
+    // Hosting a tournament lobby from a nmnez:// link. Installed before the
+    // menu furniture below because a link can already be waiting: main holds
+    // one until the page says it has finished loading, and that is now.
+    installProtocolHost();
+
     // Adds a changelog row at the top of Krunker's own left menu.
     installChangelogItem();
+
+    // And QoL Features at the bottom of it: your own userscripts on one tab,
+    // ours on the other.
+    installQol({
+      getFeatures: () => cfg.features,
+      patchFeatures: (partial) => {
+        // Through applyLocal, so the mirror and any live effect of a feature
+        // are the settings tab's business rather than something this panel
+        // has its own copy of.
+        for (const [key, value] of Object.entries(partial)) applyLocal('features', key, value);
+        void ipcRenderer.invoke(IPC.configPatch, 'features', partial);
+      },
+      reload: () => window.location.reload(),
+    });
 
     installUpdatePrompt();
     announceUpdate(capabilities);

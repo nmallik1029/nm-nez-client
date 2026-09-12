@@ -179,6 +179,95 @@ export const BLOCKABLE_ASSETS = {
   },
 } as const;
 
+/**
+ * Krunker's host window, which is what a `nmnez://` host link fills in.
+ *
+ * The whole competitive lobby setup is the game's own: team names, rosters,
+ * per-class limits and, at the bottom, a webhook field Krunker itself POSTs
+ * the final scoreboard to. So hosting from a link is not a thing we
+ * implement, it is a form we fill in and a button we press. That is worth
+ * knowing before anyone goes looking for our own lobby API: there isn't one,
+ * and there shouldn't be.
+ *
+ * Three globals and a pile of ids, so all of it breaks together when Krunker
+ * moves any of it. `preload/protocol/host.ts` checks each one is there before
+ * it touches anything and says which is missing when it isn't.
+ */
+export const KRUNKER_HOST = {
+  /**
+   * `openHostWindow(advanced, tab)`. False is the simple view, 1 is the
+   * custom-games tab, which is the one with a map list on it.
+   */
+  openHostWindow: 'openHostWindow',
+  /** Index into the game's `windows[]` for that window. */
+  windowIndex: 7,
+  /** Its tab carrying the custom-game settings, via `switchTab`. */
+  settingsTab: 2,
+  /** Creates the room from whatever the form now says. */
+  createPrivateRoom: 'createPrivateRoom',
+  /** Present once the host window has drawn its first tab. */
+  readyMarker: '.hostTb0',
+  /** A map card's label. The checkbox is its sibling inside the card. */
+  mapNameSelector: '.hostMap .hostMapName',
+  ids: {
+    team1Name: 'customSnameTeam1',
+    team2Name: 'customSnameTeam2',
+    /** A `<select>` of indices, not labels. Matched on option text. */
+    teamSize: 'customStmSize',
+    spectatorSlots: 'customSspecSlots',
+    /** Who is allowed in on each side, comma separated. */
+    team1Roster: 'compRosterT1',
+    team2Roster: 'compRosterT2',
+    spectatorRoster: 'compRosterSpecs',
+    /** Krunker posts the match result here when the game ends. */
+    webhook: 'customSwebhook',
+    /** Suffixed with the index of a class in `classOrder` below. */
+    classLimitPrefix: 'customSclassLim',
+  },
+  /**
+   * The order the per-class limit inputs are numbered in, which is the only
+   * thing that maps a weapon name onto `#customSclassLim7`. Positional, so an
+   * update that inserts a class shifts every one after it.
+   */
+  classOrder: [
+    'ak',
+    'sniper',
+    'smg',
+    'lmg',
+    'shotgun',
+    'rev',
+    'semi',
+    'rpg',
+    'uzi',
+    'runner',
+    'deagler',
+    'crossbow',
+    'famas',
+    'blaster',
+    'survivor',
+    'infiltrator',
+  ],
+  /**
+   * Writes one of the game's own settings.
+   *
+   * There is no matching getter on `window`; `getSetting` does not exist.
+   * Krunker's own region dropdown carries
+   * `onchange="window.setSetting('defaultRegion', this.value)"`, which is
+   * where both of the next two values come from.
+   */
+  setSetting: 'setSetting',
+  /** The setting naming the region a hosted game goes up in. */
+  regionSetting: 'defaultRegion',
+  /**
+   * Where that setting lands, and so the only way to read it back.
+   *
+   * Confirmed by writing `defaultRegion` and watching this key change with
+   * it. The digit on the end looks like a schema version, so treat a missing
+   * key as "no idea" rather than as a region.
+   */
+  regionStorageKey: 'pingRegion7',
+} as const;
+
 /*
  * ---------------------------------------------------------------------------
  * Restyling Krunker: what its CSS does, and what that costs you

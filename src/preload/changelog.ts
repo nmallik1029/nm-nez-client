@@ -1,8 +1,8 @@
 import { BRANDING } from '../shared/branding';
 import { CHANGELOG, type ChangeKind } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
+import { installMenuItem } from './menu-item';
 import { defineStyle } from './style';
-import { coalesced } from './schedule';
 
 /**
  * The changelog: a row in Krunker's left menu, and the panel it opens.
@@ -11,76 +11,17 @@ import { coalesced } from './schedule';
  * `showPatchNotes`, which is what runs after an update installs and opens the
  * new version already expanded, since that is the thing you just asked to read.
  *
- * The row is cloned from one of the game's own menu items rather than built by
- * hand. The menu is Svelte-compiled and its styling hides behind a per-build
- * hash class ("menuItem svelte-fgmdj8"), so anything we assemble ourselves
- * matches none of it and renders unstyled. Cloning gets the icon sizing, the
- * type, the hover and the hash, whatever the hash is this build.
+ * The row itself is one of Krunker's own, cloned and relabelled by
+ * `menu-item.ts`, which is also what puts it back when the game rebuilds
+ * its menu.
  */
 
 const ITEM_ID = UI_IDS.changelogItem;
 const MODAL_ID = UI_IDS.changelogModal;
-const CONTAINER_ID = 'menuItemContainer';
-
 /** Material icon name. Matches the game's own outlined set. */
 const ICON = 'description';
 
 let closeModal: (() => void) | null = null;
-
-/**
- * Find a menu row worth copying. Skips anything with an id already or one of
- * the promo classes: battle pass and guide rows are .menuItem too but carry
- * extra structure, and the promo ones are hidden, which we'd inherit.
- */
-function findTemplate(container: HTMLElement): HTMLElement | null {
-  for (const el of container.querySelectorAll<HTMLElement>('.menuItem')) {
-    if (el.id !== '') continue;
-    const cls = String(el.className);
-    if (cls.includes('bpItem') || cls.includes('dsItem') || cls.includes('guideItem')) continue;
-    if (!el.querySelector('.menuItemIcon') || !el.querySelector('.menuItemTitle')) continue;
-    return el;
-  }
-  return null;
-}
-
-function place(): void {
-  const container = document.getElementById(CONTAINER_ID);
-  if (!container) return;
-  if (document.getElementById(ITEM_ID)) return;
-
-  const template = findTemplate(container);
-  if (!template) return;
-
-  const item = template.cloneNode(true) as HTMLElement;
-  item.id = ITEM_ID;
-  // The template might be hidden itself, and ids inside the clone would
-  // duplicate the game's own.
-  item.style.removeProperty('display');
-  item.removeAttribute('onclick');
-  for (const el of item.querySelectorAll('[id]')) el.removeAttribute('id');
-
-  const icon = item.querySelector('.menuItemIcon');
-  if (icon) icon.textContent = ICON;
-
-  const title = item.querySelector('.menuItemTitle');
-  if (!title) return;
-  // replaceChildren throws out whatever the template had in it (badges,
-  // counters, Svelte's comment markers) and leaves just our label.
-  title.replaceChildren(document.createTextNode(`${BRANDING.productName} Changelog`));
-  title.removeAttribute('onclick');
-
-  item.addEventListener('mouseenter', () => {
-    const tick = (window as unknown as { playTick?: () => void }).playTick;
-    if (typeof tick === 'function') tick();
-  });
-  item.addEventListener('click', () => {
-    const select = (window as unknown as { playSelect?: (v: number) => void }).playSelect;
-    if (typeof select === 'function') select(0.1);
-    toggleChangelog();
-  });
-
-  container.insertBefore(item, container.firstChild);
-}
 
 /** Open the changelog, or close it if it's already open. */
 export function toggleChangelog(): void {
@@ -189,14 +130,13 @@ function open(expandVersion: string | null): void {
   document.body.appendChild(backdrop);
 }
 
-/**
- * Add the row and keep it there. Krunker rebuilds the menu list on navigation
- * and throws the clone away. `place()` bails after one getElementById when the
- * row is already up.
- */
+/** Add the row, at the top of the list. */
 export function installChangelogItem(): void {
-  place();
-  const root = document.getElementById('menuHider') ?? document.body;
-  if (!root) return;
-  new MutationObserver(coalesced(place)).observe(root, { childList: true, subtree: true });
+  installMenuItem({
+    id: ITEM_ID,
+    icon: ICON,
+    label: `${BRANDING.productName} Changelog`,
+    position: 'top',
+    onClick: toggleChangelog,
+  });
 }

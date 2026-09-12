@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { basename, extname, join } from 'node:path';
+import type { UserscriptInfo } from '../shared/ipc';
 
 /**
  * Userscripts. CSS themes are in `themes.ts` instead, because those can be
@@ -99,8 +100,14 @@ export function loadLookPreviews(bundledDir: string): LookPreviews {
   };
 }
 
-/** All `.js` in the scripts folder. */
-export function loadUserscripts(scriptsDir: string): Userscript[] {
+/**
+ * The files in the scripts folder we are willing to run, in load order.
+ *
+ * Sorted, so that order is the same on every machine instead of whatever the
+ * filesystem feels like. Anything oversized, unreadable or not a `.js` is
+ * left out here rather than at each call site.
+ */
+function scriptFiles(scriptsDir: string): { name: string; full: string; bytes: number }[] {
   let entries: string[];
   try {
     entries = readdirSync(scriptsDir);
@@ -108,23 +115,124 @@ export function loadUserscripts(scriptsDir: string): Userscript[] {
     return [];
   }
 
-  const out: Userscript[] = [];
-  // Sorted, so load order is the same on every machine instead of whatever
-  // the filesystem feels like.
+  const out: { name: string; full: string; bytes: number }[] = [];
   for (const name of entries.sort()) {
     if (out.length >= MAX_FILES) break;
     if (extname(name).toLowerCase() !== '.js') continue;
 
     const full = join(scriptsDir, name);
     try {
-      if (statSync(full).size > MAX_FILE_BYTES) continue;
-      const source = readFileSync(full, 'utf8');
-      out.push({ name, source, title: parseScriptName(source) ?? name });
+      const { size } = statSync(full);
+      if (size > MAX_FILE_BYTES) continue;
+      out.push({ name, full, bytes: size });
     } catch {
       // Unreadable file. Skip it instead of failing the whole load.
     }
   }
   return out;
+}
+
+/** All `.js` in the scripts folder, with their text. */
+export function loadUserscripts(scriptsDir: string): Userscript[] {
+  const out: Userscript[] = [];
+  for (const file of scriptFiles(scriptsDir)) {
+    try {
+      const source = readFileSync(file.full, 'utf8');
+      out.push({ name: file.name, source, title: parseScriptName(source) ?? file.name });
+    } catch {
+      // Readable a moment ago, not now. Skip it rather than fail the load.
+    }
+  }
+  return out;
+}
+
+/**
+ * The same files, as a list to look at rather than a list to run.
+ *
+ * Still reads each one, because the title comes out of the file. Only the
+ * first couple of kilobytes of it are needed and none of it is kept, which
+ * is the difference between this and `loadUserscripts`: that one answers
+ * with every byte of every script over IPC, and the panel is drawing names.
+ */
+export function listUserscripts(scriptsDir: string): UserscriptInfo[] {
+  return scriptFiles(scriptsDir).map((file) => ({
+    name: file.name,
+    title: scriptTitle(file.full) ?? file.name,
+    bytes: file.bytes,
+  }));
+}
+
+function scriptTitle(full: string): string | null {
+  try {
+    return parseScriptName(readFileSync(full, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Is this a plain filename we are willing to write into the scripts folder?
+ *
+ * The name arrives from the page, which runs at the game's origin alongside
+ * whatever userscripts are already enabled, so it is not to be trusted with
+ * a path. Everything that could make one is refused rather than stripped:
+ * a name that has been quietly rewritten is a file somewhere the person who
+ * dropped it is not looking.
+ *
+ * Windows reserves a few device names (CON, NUL, COM1) whatever the
+ * extension, and those are refused too. Writing to one of them does not
+ * write a file at all.
+ */
+const RESERVED_NAMES = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\.|$)/i;
+
+export function isScriptFileName(name: string): boolean {
+  if (name === '' || name.length > 120) return false;
+  // Any separator, drive letter or wildcard. basename() alone is not enough:
+  // on POSIX a backslash is an ordinary character in a filename, and this has
+  // to answer the same way wherever it runs.
+  if (/[\\/:*?"<>|]/.test(name)) return false;
+  if (name !== basename(name)) return false;
+  // Leading dots hide the file and "." and ".." are not names at all.
+  if (name.startsWith('.')) return false;
+  if (RESERVED_NAMES.test(name)) return false;
+  return extname(name).toLowerCase() === '.js';
+}
+
+/** Why a save was refused, or 'ok'. */
+export type SaveProblem = 'ok' | 'name' | 'size' | 'write';
+
+/**
+ * Write one dropped file into the scripts folder, replacing a file of the
+ * same name.
+ *
+ * Replacing rather than refusing, because the ordinary reason to drop a
+ * script you already have is that you have a newer copy of it, and the
+ * alternative is asking someone to go and delete the old one first.
+ */
+export function saveUserscript(scriptsDir: string, name: string, source: string): SaveProblem {
+  if (!isScriptFileName(name)) return 'name';
+  if (Buffer.byteLength(source, 'utf8') > MAX_FILE_BYTES) return 'size';
+
+  try {
+    mkdirSync(scriptsDir, { recursive: true });
+    writeFileSync(join(scriptsDir, name), source, 'utf8');
+    return 'ok';
+  } catch {
+    return 'write';
+  }
+}
+
+/** Delete one file from the scripts folder. False if it is still there. */
+export function removeUserscript(scriptsDir: string, name: string): boolean {
+  if (!isScriptFileName(name)) return false;
+  try {
+    rmSync(join(scriptsDir, name));
+    return true;
+  } catch {
+    // Already gone, or locked by something. Either way nothing to report
+    // beyond the list the caller is about to re-read.
+    return false;
+  }
 }
 
 /** Pull `@name` out of a metadata block, if there is one. */

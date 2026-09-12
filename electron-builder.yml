@@ -50,6 +50,22 @@ files:
 
 asar: true
 
+# Deep links. This is what makes Windows send a "nmnez://game?action=host-comp"
+# link to the client: the NSIS installer writes the registry keys for the
+# scheme, so an installed build owns it from the moment it is installed.
+#
+# The scheme has to match BRANDING.protocolScheme, which is what the client
+# parses links against, and it is awkward to change later for the same reason
+# appId is: the OS keeps the registration, and any bot that has already built
+# links for the old one keeps sending them.
+#
+# The portable exe gets no installer and so registers itself at runtime
+# instead; see src/main/protocol.ts.
+protocols:
+  - name: NM/NZ Client
+    schemes:
+      - nmnez
+
 # Package the patched binary, not a stock one.
 #
 # Left alone, electron-builder resolves Electron from its own CDN cache off the

@@ -2,7 +2,6 @@ import { BRANDING } from '../shared/branding';
 import { CHANGELOG } from '../shared/changelog';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
 import { setHudStyle } from './hud-skin';
-import { toggleScripts } from './scripts/modal';
 import { toggleStyle } from './style';
 import { coalesced } from './schedule';
 
@@ -18,6 +17,11 @@ import { coalesced } from './schedule';
  *
  * All of them are reversible, so turning the skin off puts the menu back
  * exactly as the game shipped it rather than leaving debris behind.
+ *
+ * There used to be a Scripts button of ours at the front of Krunker's nav,
+ * with a divider after it. Both are gone: the QoL Features row at the bottom
+ * of the left menu opens the same switches and a good deal more, and two
+ * doors onto one panel is one more than anybody needs.
  */
 
 const MARK_ID = UI_IDS.menuMark;
@@ -81,35 +85,26 @@ const MODAL_ROOTS = [
 /** Where the Changelog link came from, so turning the skin off puts it back. */
 let footerHome: { parent: Element; nextSibling: ChildNode | null } | null = null;
 const ALT_ID = UI_IDS.altManagerButton;
-const SCRIPTS_ID = UI_IDS.scriptsButton;
-const SEPARATOR_ID = UI_IDS.headerSeparator;
 /** The backdrop older builds drew, kept only so it can be cleaned up. */
 const SCRIM_ID_LEGACY = 'kc-menu-scrim';
 /** Where the class card keeps Loadout and Customize; Alt Manager's home. */
 const CLASS_ROW_ID = UI_IDS.classButtonRow;
 const CLASS_CONTAINER_ID = 'menuClassContainer';
 /**
- * Where Alt Manager goes: the front of Krunker's own nav group, just left of
- * Inbox.
+ * Krunker's nav group in the top bar, which is where the Changelog link goes
+ * once it has been lifted out of the footer.
  *
- * It used to aim for the left end of the whole bar, taking the first of
- * `#signedOutHeaderBar` then `#playerHeaderEl` that existed. Signed out that
- * lands inside the login bar and looks right, which is why it seemed fine.
- * Signed in it is not: Krunker leaves `#signedOutHeaderBar` in the document
- * and hides it, so "the first one that exists" picks a hidden element and the
- * button goes in there and is never seen again.
+ * Not `#signedOutHeaderBar` and not `#playerHeaderEl`. Krunker leaves the
+ * signed-out bar in the document and hides it, so anything that takes "the
+ * first of the two that exists" lands in a hidden element when you are signed
+ * in and is never seen again. `.headerBarRight` is present either way and is
+ * never the hidden one, so there is no login state left to get wrong.
  *
- * `.headerBarRight` is present signed in and signed out and is never the
- * hidden one, so there is no login state left to get wrong. Appending to
- * `#playerHeaderEl` would be visible too, but that row is
- * `justify-content:space-between` and a third child drags the nav in off the
- * right edge, measured at 1385px to 732px on a 1920 viewport.
+ * Two other things used to go here as well, and both moved for the same
+ * reason they were put here: Alt Manager sits under the class card, and the
+ * Scripts button is gone entirely now QoL Features covers it.
  */
 const HEADER_NAV_SELECTOR = '.headerBarRight';
-
-function headerHome(): Element | null {
-  return document.querySelector(HEADER_NAV_SELECTOR);
-}
 
 let enabled = false;
 let observer: MutationObserver | null = null;
@@ -148,7 +143,7 @@ function placeAltManager(): void {
   });
 
   // Under Loadout and Customize, where menu-buttons put it, skin or not.
-  // It used to move up into the header; Scripts has that slot now.
+  // It used to move up into the header instead.
   const row = document.getElementById(CLASS_ROW_ID);
   if (row?.nextElementSibling === alt) return;
   if (row) {
@@ -157,57 +152,6 @@ function placeAltManager(): void {
   }
   const container = document.getElementById(CLASS_CONTAINER_ID);
   if (container && alt.parentElement !== container) container.appendChild(alt);
-}
-
-/**
- * Scripts, at the front of Krunker's nav with a rule after it.
- *
- * Built here rather than cloned from one of the game's buttons: this one is
- * ours, it is a plain div, and the header rule in the sheet gives it its
- * whole appearance. Krunker hides its own separators in this bar, so the
- * divider is an element of ours rather than one of theirs turned back on.
- *
- * The hover and click sounds are the game's own, looked up at call time.
- * They live on `window` and are not always there, so a missing one is no
- * sound rather than a broken button.
- */
-function placeScriptsButton(): void {
-  const existing = document.getElementById(SCRIPTS_ID);
-  const existingRule = document.getElementById(SEPARATOR_ID);
-
-  if (!enabled) {
-    existing?.remove();
-    existingRule?.remove();
-    return;
-  }
-
-  const header = headerHome();
-  if (!header) return;
-  // Already in place. The observer runs this on every mutation batch, so the
-  // steady state has to be cheap.
-  if (existing?.parentElement === header && existingRule?.parentElement === header) return;
-
-  const button = existing ?? document.createElement('div');
-  if (!existing) {
-    button.id = SCRIPTS_ID;
-    // Uppercased by the sheet, like the nav labels it stands with.
-    button.textContent = 'Scripts';
-    button.addEventListener('mouseenter', () => {
-      const tick = (window as unknown as { playTick?: () => void }).playTick;
-      if (typeof tick === 'function') tick();
-    });
-    button.addEventListener('click', () => {
-      const select = (window as unknown as { playSelect?: (v: number) => void }).playSelect;
-      if (typeof select === 'function') select(0.1);
-      toggleScripts();
-    });
-  }
-
-  const rule = existingRule ?? document.createElement('div');
-  rule.id = SEPARATOR_ID;
-
-  header.insertBefore(rule, header.firstChild);
-  header.insertBefore(button, rule);
 }
 
 /**
@@ -287,7 +231,7 @@ function placeFooterLinks(): void {
   if (!source) return;
 
   if (enabled) {
-    const header = document.querySelector('.headerBarRight');
+    const header = document.querySelector(HEADER_NAV_SELECTOR);
     if (!header || source.parentElement === header) return;
     if (!footerHome && source.parentElement) {
       footerHome = { parent: source.parentElement, nextSibling: source.nextSibling };
@@ -411,7 +355,6 @@ function placeMatchActions(): void {
 
 function apply(): void {
   clearScrim();
-  placeScriptsButton();
   placeMark();
   placeAltManager();
   placeMatchActions();
