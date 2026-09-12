@@ -101,6 +101,58 @@ export function loadLookPreviews(bundledDir: string): LookPreviews {
 }
 
 /**
+ * The map scenes the sky editor previews a colour against.
+ *
+ * Each is a screenshot of a real map with the sky cut out of it: transparent
+ * where the sky was, and part-transparent where the map's own fog had already
+ * blended the distance into it. The editor puts the colour you picked behind
+ * the picture, so the preview tints its horizon the way the game does and
+ * changing the colour costs nothing at all.
+ *
+ * Named from the file: `sky-sandstorm.png` is labelled Sandstorm. Adding a
+ * scene is dropping a file in `assets/`, which is the point of reading the
+ * folder rather than listing them here.
+ *
+ * Bundled only, like the walkthrough's screenshots and for the same reason:
+ * a preview someone had replaced would be the editor lying about what the
+ * colour is going to look like.
+ */
+/** Same 2MB ceiling as the walkthrough shots, through the same reader. */
+const SCENE_PREFIX = 'sky-';
+
+export interface SkyScene {
+  /** For the label under the picture, e.g. "Sandstorm". */
+  readonly name: string;
+  /** PNG data URL, sky transparent. */
+  readonly image: string;
+}
+
+export function loadSkyScenes(bundledDir: string): SkyScene[] {
+  let entries: string[];
+  try {
+    entries = readdirSync(bundledDir);
+  } catch {
+    return [];
+  }
+
+  const out: SkyScene[] = [];
+  for (const file of entries.sort()) {
+    const lower = file.toLowerCase();
+    if (!lower.startsWith(SCENE_PREFIX) || extname(lower) !== '.png') continue;
+
+    const image = readPreview(join(bundledDir, file));
+    if (image === null) continue;
+
+    // "sky-lost-world.png" -> "Lost world". One label per file, no table to
+    // keep in step with the folder.
+    const stem = file.slice(SCENE_PREFIX.length, file.length - extname(file).length);
+    const words = stem.replace(/[-_]+/g, ' ').trim();
+    out.push({ name: words.charAt(0).toUpperCase() + words.slice(1), image });
+  }
+  return out;
+}
+
+/**
  * The files in the scripts folder we are willing to run, in load order.
  *
  * Sorted, so that order is the same on every machine instead of whatever the

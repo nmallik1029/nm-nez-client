@@ -64,6 +64,12 @@ export const IPC = {
    * as data URLs. Either may be null if the file is missing.
    */
   setupPreviews: 'setup:previews',
+  /**
+   * Renderer -> main. The map scenes the sky editor previews against, as data
+   * URLs with the sky cut out of them. Empty when none are bundled, which the
+   * editor falls back from to a plain block of colour.
+   */
+  skyScenes: 'sky:scenes',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

@@ -25,3 +25,29 @@ A few seconds at most, and quiet. It plays over whatever you were doing.
 Anyone who would rather use their own can still put one at
 `%APPDATA%\nmnez\swap\sounds\match-found.mp3`; that takes precedence and this
 one is the fallback. With neither, the queue is silent and nothing breaks.
+
+## sky-*.png
+
+The map scenes the sky editor previews a colour against. `sky-sandstorm.png`
+is labelled "Sandstorm": the name comes off the filename, so adding a scene is
+dropping a file in here and nothing else.
+
+Each one is a screenshot of a real map **with the sky cut out of it**:
+transparent where the sky was, and part-transparent where the map's own fog
+had already blended the distance into it. The editor puts the chosen colour
+behind the picture, so the horizon tints along with the sky the way it does in
+game, and changing the colour costs nothing: no canvas, no per-pixel work,
+just a background colour under a PNG.
+
+Making one:
+
+1. Play the map with the client's sky colour set to something no map contains
+   (magenta is ideal) and take a screenshot. Keying against a colour the
+   scenery shares is what makes the buildings go see-through.
+2. Cut the sky to transparent. A flood fill from the top edge, rather than
+   "every pixel of that colour", keeps a wall of the same shade opaque.
+3. Scale it to around 640px wide and save as PNG. The preview box is 600px
+   across, and the file has to earn its place in the installer.
+
+Missing files are not an error. With none of these the editor shows a plain
+block of the colour, which is what it did before the scenes existed.

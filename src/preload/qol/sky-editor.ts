@@ -1,7 +1,8 @@
 import { SKY_PRESETS, type SkyConfig } from '../../shared/visuals';
 import type { PanelView, TabContext } from './context';
-import { colorRow, hint } from './controls';
+import { colorRow } from './controls';
 import { featureRow, pendingStrip } from './row';
+import { skyStage } from './sky-stage';
 
 /**
  * The sky colour.
@@ -31,9 +32,9 @@ function render(body: HTMLElement, ctx: TabContext): void {
     if (redraw) ctx.refresh();
   };
 
-  const swatch = document.createElement('div');
-  swatch.className = 'sky';
-  swatch.style.background = config.color;
+  // A real map with its sky cut out of it, and the colour behind the picture.
+  // Falls back to a plain block of colour when no scenes are bundled.
+  const stage = skyStage(config.color);
 
   body.append(
     featureRow({
@@ -43,13 +44,13 @@ function render(body: HTMLElement, ctx: TabContext): void {
       on: config.on,
       onToggle: () => commit({ ...config, on: !config.on }, true),
     }),
-    swatch,
+    stage.root,
     colorRow({
       label: 'Colour',
       value: config.color,
       presets: SKY_PRESETS,
       onPick: (color) => {
-        swatch.style.background = color;
+        stage.setColor(color);
         commit({ ...config, color }, false);
       },
     }),
@@ -59,9 +60,6 @@ function render(body: HTMLElement, ctx: TabContext): void {
     pendingStrip(
       'Krunker builds the sky when a map loads, so switching this on or off and changing the colour all land on the next map. Reload to see it now.',
       () => ctx.deps.reload(),
-    ),
-    hint(
-      'Most maps paint a textured dome over the top of their sky colour, so turning this on takes the dome off as well. Fog, lighting and shadows are left exactly as the map made them.',
     ),
   );
 }

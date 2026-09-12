@@ -478,9 +478,18 @@ const qolPanel = `
   color:var(--nm-game-text-dim)}
 #${UI_IDS.qolPanel} .hint{margin:6px 0 2px;font-size:var(--nm-fs-xs);
   color:var(--nm-game-text-faint);line-height:var(--nm-lh)}
-/* The sky, which has no shape to preview: the colour is the whole thing. */
-#${UI_IDS.qolPanel} .sky{height:78px;margin-bottom:8px;
-  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+/*
+ * The sky preview: a map with its sky cut out, over the colour you picked.
+ *
+ * The colour is the element's own background and the screenshot sits on top
+ * of it, so the browser composites the two and the map's fogged horizon tints
+ * along with the sky, exactly as the game does it. With no scene bundled the
+ * picture is simply absent and this is a block of the colour, which is what
+ * the editor showed before the scenes existed.
+ */
+#${UI_IDS.qolPanel} .sky-stage{height:170px;background-size:cover}
+#${UI_IDS.qolPanel} .sky-stage .scene{display:block;width:100%;height:100%;
+  object-fit:cover;pointer-events:none}
 `;
 
 /**
