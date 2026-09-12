@@ -205,6 +205,25 @@ export const KRUNKER_HOST = {
   settingsTab: 2,
   /** Creates the room from whatever the form now says. */
   createPrivateRoom: 'createPrivateRoom',
+  /**
+   * Present once the game has finished loading, i.e. `KRUNKER_MENU_CLASS` on
+   * `#uiBase`.
+   *
+   * Hosting has to wait for this, and nothing earlier will do. Measured on a
+   * cold start: the globals below exist at 1.7s and the play buttons at the
+   * same time, but the menu flag only appears at 7.4s. Open the host window
+   * in that gap and it draws its tabs with an empty map list and never
+   * fills it in, so the map never gets ticked and the lobby goes up on
+   * whatever was already selected. Opened the instant this flag appears, the
+   * cards are there a second later.
+   */
+  menuReady: '#uiBase.onMenu',
+  /**
+   * Krunker's loading backdrop, which fades to nothing about a second after
+   * the flag above. In a match the menu flag is off, so this is the other
+   * way to know the game is up rather than still loading.
+   */
+  loadingBackdropId: 'instructionsFadeBG',
   /** Present once the host window has drawn its first tab. */
   readyMarker: '.hostTb0',
   /** A map card's label. The checkbox is its sibling inside the card. */

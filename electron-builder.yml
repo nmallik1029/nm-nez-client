@@ -15,6 +15,17 @@
 appId: com.nmnez.client
 productName: NM-NZ
 
+# What Windows calls the app when it asks the user about it.
+#
+# electron-builder writes the exe's FileDescription from the package
+# description, and that is the string a browser puts in "A website wants to
+# open this application": ours read "Open Performance-focused Krunker client
+# for Windows?", which is a sentence about the client rather than its name.
+# package.json keeps the sentence, because that is what a package description
+# is for; the exe gets the name.
+extraMetadata:
+  description: NM/NZ Client
+
 directories:
   output: out
   buildResources: build

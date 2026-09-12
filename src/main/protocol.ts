@@ -58,15 +58,26 @@ export function createProtocolInbox(log: (...args: unknown[]) => void): Protocol
    */
   let pending: string | null = null;
   let target: BrowserWindow | null = null;
+  /**
+   * Has the current document finished loading?
+   *
+   * The listener in the page is installed per load, so a link sent before
+   * that lands nowhere. This used to ask `webContents.isLoading()` instead,
+   * which is a different question and the wrong one: Krunker starts fetching
+   * again the instant the load event fires, so at `did-finish-load` the
+   * answer was already "yes, loading", every time. A link opened by starting
+   * the client was therefore dropped on the floor and only links to an
+   * already-running client worked. The events are the signal; the flag is
+   * just them, remembered.
+   */
+  let documentReady = false;
 
   function flush(): void {
     const url = pending;
-    if (url === null || !target || target.isDestroyed()) return;
+    if (url === null || !target || target.isDestroyed() || !documentReady) return;
 
     const contents = target.webContents;
-    // Mid-navigation. The listener in the page is installed per load, so a
-    // send now would land nowhere; did-finish-load below brings us back.
-    if (contents.isDestroyed() || contents.isLoading()) return;
+    if (contents.isDestroyed()) return;
 
     pending = null;
     // A link is someone asking for the client, so put it in front of them.
@@ -86,15 +97,26 @@ export function createProtocolInbox(log: (...args: unknown[]) => void): Protocol
   return {
     offer(url) {
       if (url === null) return;
+      log('protocol link received');
       pending = url;
       flush();
     },
 
     attach(window) {
       target = window;
+
       // Every load, not once: a link can arrive while the page is still
       // coming up, and the region switch reloads the page under us.
-      window.webContents.on('did-finish-load', flush);
+      window.webContents.on('did-finish-load', () => {
+        documentReady = true;
+        flush();
+      });
+      // A new document has no listener of ours in it yet, so anything still
+      // pending waits for that document's own did-finish-load.
+      window.webContents.on('did-navigate', () => {
+        documentReady = false;
+      });
+
       flush();
     },
   };

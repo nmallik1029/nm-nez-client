@@ -100,7 +100,10 @@ function waitForHostApi(): Promise<HostApi | null> {
  * on waits forever, which on a Krunker update that renames one field is a
  * client sitting in front of a half-filled form with nothing to say about it.
  */
-function waitFor<T extends Element>(selector: string): Promise<T | null> {
+function waitFor<T extends Element>(
+  selector: string,
+  timeoutMs = FIELD_TIMEOUT_MS,
+): Promise<T | null> {
   const existing = document.querySelector<T>(selector);
   if (existing) return Promise.resolve(existing);
 
@@ -115,12 +118,36 @@ function waitFor<T extends Element>(selector: string): Promise<T | null> {
     const timer = setTimeout(() => {
       observer.disconnect();
       resolve(null);
-    }, FIELD_TIMEOUT_MS);
+    }, timeoutMs);
     observer.observe(document.documentElement, { childList: true, subtree: true });
   });
 }
 
 const byId = <T extends Element>(id: string): Promise<T | null> => waitFor<T>(`#${id}`);
+
+/**
+ * Wait until the game is up rather than still loading.
+ *
+ * Two ways to know, because neither covers both cases: the menu flag is the
+ * plain answer on the menu and absent in a match, and the loading backdrop
+ * having faded is the answer either way but is a number mid-transition.
+ *
+ * Returns after the budget regardless. A link that arrives during a match
+ * should still try rather than report a game that never loaded, and the
+ * waits after this one report anything that is actually missing.
+ */
+async function waitForGameReady(): Promise<void> {
+  const deadline = Date.now() + API_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    if (document.querySelector(KRUNKER_HOST.menuReady)) return;
+
+    const backdrop = document.getElementById(KRUNKER_HOST.loadingBackdropId);
+    if (!backdrop || Number.parseFloat(getComputedStyle(backdrop).opacity) === 0) return;
+
+    await new Promise((resolve) => setTimeout(resolve, API_POLL_MS));
+  }
+}
 
 /**
  * Set an input's value, if the input is there. Says whether it was.
@@ -159,11 +186,8 @@ function clampToInput(input: HTMLInputElement | null, value: number): number {
  * By id first, because that is what the bot sends when it has one, then by
  * the label on the card, because what it sends otherwise is the map's name.
  */
-async function selectMap(mapId: string): Promise<boolean> {
+function selectMap(mapId: string): boolean {
   if (mapId === '') return true;
-  // The marker says the tab is up, which is not quite the same as the map
-  // list having been built into it.
-  if (!(await waitFor(KRUNKER_HOST.mapNameSelector))) return false;
 
   let checkbox = document.getElementById(mapId) as HTMLInputElement | null;
   if (!checkbox) {
@@ -226,15 +250,27 @@ async function fillAndHost(host: CompHostRequest): Promise<void> {
     showToast('Krunker never finished loading, so the lobby was not created', 5000);
     return;
   }
+  // And the game itself, which is up several seconds after its globals are.
+  // This is the whole difference between a link that starts the client and
+  // one handed to a client already sitting on the menu.
+  await waitForGameReady();
 
   api.openHostWindow(false, 1);
-  if (!(await waitFor(KRUNKER_HOST.readyMarker))) {
+  if (!(await waitFor(KRUNKER_HOST.readyMarker, API_TIMEOUT_MS))) {
     showToast('Could not open the host window', 3600);
     return;
   }
+  /*
+   * The window drawing its first tab is not the same as the map list being
+   * in it. Started from a link, the game is still pulling down the data
+   * those cards are built from, and six seconds was not enough: the cards
+   * turned up a moment after the wait gave up, so the lobby went up on
+   * whatever map was already ticked and the toast said the map had failed.
+   */
+  await waitFor(KRUNKER_HOST.mapNameSelector, API_TIMEOUT_MS);
 
   const missing: string[] = [];
-  if (!(await selectMap(host.mapId))) missing.push(`map "${host.mapId}"`);
+  if (!selectMap(host.mapId)) missing.push(`map "${host.mapId}"`);
 
   api.windows[KRUNKER_HOST.windowIndex]?.switchTab?.(KRUNKER_HOST.settingsTab);
 
