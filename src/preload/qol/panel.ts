@@ -9,9 +9,10 @@ import { renderUserscripts } from './userscripts';
  * QoL Features: a row at the bottom of Krunker's left menu, and the panel it
  * opens.
  *
- * Two tabs. Userscripts is your own `.js` files, which you drop straight onto
- * the panel rather than going and finding a folder. Built-in is ours, the
- * things the client can do that Krunker cannot.
+ * Two tabs. Built-in is ours, the things the client can do that Krunker
+ * cannot, and it is first and open by default: it is what most people came to
+ * this panel for. Userscripts is your own `.js` files, which you drop straight
+ * onto the panel rather than going and finding a folder.
  *
  * One panel rather than a window per feature, which is the whole point of
  * collecting them: every one of these is a switch somebody flips once and
@@ -36,15 +37,16 @@ interface Tab {
   readonly render: (body: HTMLElement, ctx: TabContext) => void;
 }
 
+/** Left to right, and the first one is what the panel opens on. */
 const TABS: readonly Tab[] = [
-  { id: 'userscripts', label: 'Userscripts', render: renderUserscripts },
   { id: 'builtin', label: 'Built-in', render: renderBuiltIn },
+  { id: 'userscripts', label: 'Userscripts', render: renderUserscripts },
 ];
 
 let deps: QolDeps | null = null;
 let close: (() => void) | null = null;
 /** Kept across a close, so re-opening lands on the tab you were last on. */
-let current: TabId = 'userscripts';
+let current: TabId = TABS[0]?.id ?? 'builtin';
 
 /** Open the panel, or close it if it is already open. */
 export function toggleQol(): void {
