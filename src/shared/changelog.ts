@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.47',
+    date: '2026-09-13',
+    changes: [
+      { kind: 'added', text: 'Kill streak sounds can run without the banners. Switch Show banners off in its editor to keep the sounds and lose the picture at the bottom of the screen.' },
+    ],
+  },
+  {
     version: '0.1.46',
     date: '2026-09-13',
     changes: [
