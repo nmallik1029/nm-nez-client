@@ -5,7 +5,7 @@ import { gameFontBase64 } from './game-font';
 import { BRANDING } from '../shared/branding';
 import { IPC } from '../shared/ipc';
 import { DEFAULT_CONFIG, type AppConfig, type HotkeyAction } from '../shared/config';
-import { stepEscape, stillHolding, wantEscapeShortcut } from '../shared/escape-lock';
+import { ESCAPE_ACCELERATORS, stepEscape, stillHolding, wantEscapeShortcut } from '../shared/escape-lock';
 import { findAction } from '../shared/keybind';
 import { ConfigStore } from './config/store';
 import { hotkeyLock } from './hotkey-lock';
@@ -301,6 +301,8 @@ const NO_ESCAPE: EscapeState = { pageLocked: false, holdingSince: null };
 
 /** Whose Escape the OS shortcut is currently taking, if anyone's. */
 let escapeShortcutOwner: WebContents | null = null;
+/** Which of ESCAPE_ACCELERATORS the OS actually let us have, to give back. */
+let escapeShortcutsHeld: string[] = [];
 
 function installEscapeLockIpc(): void {
   ipcMain.on(IPC.escapeReleasesLock, (event, value: unknown) => {
@@ -328,12 +330,16 @@ function syncEscapeShortcut(contents: WebContents): void {
   });
 
   if (want && escapeShortcutOwner === null) {
-    // False if something else on the machine already holds Escape. The
-    // before-input-event path is still there, so that is a slower Escape
-    // rather than a broken one.
-    if (globalShortcut.register('Escape', () => takeEscape(contents))) {
-      escapeShortcutOwner = contents;
+    // Each one is false if something else on the machine already holds that
+    // combination, or Windows keeps it for itself. The rest still work, and
+    // the before-input-event path is still there, so a missing one is a
+    // slower Escape rather than a broken one.
+    for (const accelerator of ESCAPE_ACCELERATORS) {
+      if (globalShortcut.register(accelerator, () => takeEscape(contents))) {
+        escapeShortcutsHeld.push(accelerator);
+      }
     }
+    if (escapeShortcutsHeld.length > 0) escapeShortcutOwner = contents;
   } else if (!want && escapeShortcutOwner !== null) {
     releaseEscapeShortcut();
   }
@@ -341,7 +347,8 @@ function syncEscapeShortcut(contents: WebContents): void {
 
 function releaseEscapeShortcut(): void {
   if (escapeShortcutOwner === null) return;
-  globalShortcut.unregister('Escape');
+  for (const accelerator of escapeShortcutsHeld) globalShortcut.unregister(accelerator);
+  escapeShortcutsHeld = [];
   escapeShortcutOwner = null;
 }
 

@@ -63,6 +63,29 @@ export function wantEscapeShortcut(state: {
 }
 
 /**
+ * Every Escape the OS shortcut has to take, held modifiers and all.
+ *
+ * A Windows hotkey fires only on its exact modifier state, so a shortcut for
+ * Escape alone lets Shift+Escape straight through. Chromium does not care:
+ * its exclusive access manager releases the lock on an Escape with any
+ * modifiers held, and starts the same refusal as a plain one. In a match that
+ * is most presses -- crouch and slide are held on Shift or Ctrl -- which is
+ * why Escape stayed fast on the end screen, where nobody is holding anything,
+ * and kept going slow in game.
+ *
+ * Never Ctrl+Shift+Escape. That is Task Manager, and a game that has frozen
+ * with the mouse locked is exactly when somebody needs it.
+ */
+export const ESCAPE_ACCELERATORS: readonly string[] = [
+  'Escape',
+  'Shift+Escape',
+  'Control+Escape',
+  'Alt+Escape',
+  'Shift+Alt+Escape',
+  'Control+Alt+Escape',
+];
+
+/**
  * How long a taken press stays taken without hearing from its key again.
  *
  * The global shortcut takes the keyDown, so its repeats and keyUp are what

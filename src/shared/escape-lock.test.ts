@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ESCAPE_ACCELERATORS,
   HOLD_EXPIRY_MS,
   stepEscape,
   stillHolding,
@@ -98,6 +99,35 @@ describe('wantEscapeShortcut', () => {
 
   it('never with the fix switched off', () => {
     expect(wantEscapeShortcut({ enabled: false, pageLocked: true, focused: true })).toBe(false);
+  });
+});
+
+describe('ESCAPE_ACCELERATORS', () => {
+  const held = (accel: string) => new Set(accel.split('+').slice(0, -1));
+
+  it('takes plain Escape', () => {
+    expect(ESCAPE_ACCELERATORS).toContain('Escape');
+  });
+
+  it('takes Escape with crouch or slide held, on Shift or on Ctrl', () => {
+    expect(ESCAPE_ACCELERATORS).toContain('Shift+Escape');
+    expect(ESCAPE_ACCELERATORS).toContain('Control+Escape');
+  });
+
+  it('is Escape and nothing else under the modifiers', () => {
+    for (const accel of ESCAPE_ACCELERATORS) expect(accel.split('+').at(-1)).toBe('Escape');
+  });
+
+  it('never takes Task Manager, with or without Alt on top', () => {
+    for (const accel of ESCAPE_ACCELERATORS) {
+      const mods = held(accel);
+      expect(mods.has('Control') && mods.has('Shift')).toBe(false);
+    }
+  });
+
+  it('lists each combination once', () => {
+    const keys = ESCAPE_ACCELERATORS.map((a) => [...held(a)].sort().join('+'));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
 
