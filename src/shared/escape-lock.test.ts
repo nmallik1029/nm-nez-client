@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { stepEscape, type EscapeKeyInput } from './escape-lock';
+import {
+  HOLD_EXPIRY_MS,
+  stepEscape,
+  stillHolding,
+  wantEscapeShortcut,
+  type EscapeKeyInput,
+} from './escape-lock';
 
 /**
  * The two things that must never happen: taking Escape away from the page
@@ -74,5 +80,37 @@ describe('stepEscape', () => {
 
   it('does not disturb the holding state for other keys mid-press', () => {
     expect(stepEscape(key({ key: 'w' }), false, true)).toEqual({ action: 'pass', holding: true });
+  });
+});
+
+describe('wantEscapeShortcut', () => {
+  it('takes Escape only when enabled, locked and focused, all three', () => {
+    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: true })).toBe(true);
+  });
+
+  it('never while the game window is not focused, so no other app loses Escape', () => {
+    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: false })).toBe(false);
+  });
+
+  it('never while the mouse is free, so Escape still closes menus and chat', () => {
+    expect(wantEscapeShortcut({ enabled: true, pageLocked: false, focused: true })).toBe(false);
+  });
+
+  it('never with the fix switched off', () => {
+    expect(wantEscapeShortcut({ enabled: false, pageLocked: true, focused: true })).toBe(false);
+  });
+});
+
+describe('stillHolding', () => {
+  it('is not holding with no press', () => {
+    expect(stillHolding(null, 1000)).toBe(false);
+  });
+
+  it('holds for a press that heard from its key recently', () => {
+    expect(stillHolding(1000, 1000 + HOLD_EXPIRY_MS - 1)).toBe(true);
+  });
+
+  it('lets go of a press whose keyUp never arrived, so the next Escape works', () => {
+    expect(stillHolding(1000, 1000 + HOLD_EXPIRY_MS)).toBe(false);
   });
 });

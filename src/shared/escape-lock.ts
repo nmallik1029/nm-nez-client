@@ -2,16 +2,20 @@
  * Escape, taken in the main process while the game holds the mouse.
  *
  * WHY. Pressing Escape to leave a match made clicking back in take about two
- * seconds, however fast you clicked. Alt-Tab releases the same lock and clicks
- * straight back in, so the lock itself is fine: the delay is the Escape key
- * reaching the page. Something on that path -- Chromium treating it as you
- * leaving the lock, or Krunker's own Escape handling -- holds the next request
- * up.
+ * seconds, however fast you clicked. Chromium says so in as many words:
+ * "Pointer lock cannot be acquired immediately after the user has exited the
+ * lock." It counts Escape as you leaving the lock and makes the next request
+ * wait. A lock the page releases from code carries no such wait, and neither
+ * does losing it to Alt-Tab, which is why that clicked straight back in.
  *
- * So the key never gets there. Main takes the press before Chromium or the
- * page sees it and asks the page to release the lock from code, which is the
- * same kind of release Alt-Tab produces. Krunker shows click-to-play on losing
- * the lock however it was lost, so what you see does not change.
+ * WHERE IT HAS TO BE TAKEN. The first attempt took the key in
+ * `before-input-event` and changed nothing: Chromium's view layer releases the
+ * lock on Escape before Electron emits that event, so by the time the key
+ * could be refused it had already counted. So while the game holds the mouse
+ * and its window is focused, Escape is registered as a global shortcut, which
+ * Windows consumes before the window receives a keystroke at all. The page is
+ * then asked to release the lock from code. Registered only for that long, so
+ * no other application ever loses the key.
  *
  * Only while the mouse is locked and nothing is being typed into, which the
  * page reports. Everywhere else Escape reaches the page untouched: it still
@@ -39,6 +43,35 @@ export interface EscapeStep {
   readonly action: 'pass' | 'release' | 'swallow';
   /** Whether a press is being taken, carried to the next event. */
   readonly holding: boolean;
+}
+
+/**
+ * Should Escape be taken at the OS level right now?
+ *
+ * Only while all three hold. Focus is what keeps this from ever taking Escape
+ * off another application: the moment the game window is not the one you are
+ * typing into, the shortcut goes.
+ */
+export function wantEscapeShortcut(state: {
+  readonly enabled: boolean;
+  readonly pageLocked: boolean;
+  readonly focused: boolean;
+}): boolean {
+  return state.enabled && state.pageLocked && state.focused;
+}
+
+/**
+ * How long a taken press stays taken without hearing from its key again.
+ *
+ * The global shortcut takes the keyDown, so its repeats and keyUp are what
+ * tell this the press has ended. If a keyUp is ever lost, a press left held
+ * forever would swallow the next Escape you press to close a menu. Each
+ * repeat refreshes the time, so a long hold is still one press.
+ */
+export const HOLD_EXPIRY_MS = 2000;
+
+export function stillHolding(holdingSince: number | null, now: number): boolean {
+  return holdingSince !== null && now - holdingSince < HOLD_EXPIRY_MS;
 }
 
 export function stepEscape(

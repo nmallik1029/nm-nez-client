@@ -1,11 +1,11 @@
-import { app, BrowserWindow, ipcMain, session, type WebContents } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, session, type WebContents } from 'electron';
 import * as clip from './clipboard';
 import { isKrunkerOrigin } from '../krunker/constants';
 import { gameFontBase64 } from './game-font';
 import { BRANDING } from '../shared/branding';
 import { IPC } from '../shared/ipc';
 import { DEFAULT_CONFIG, type AppConfig, type HotkeyAction } from '../shared/config';
-import { stepEscape } from '../shared/escape-lock';
+import { stepEscape, stillHolding, wantEscapeShortcut } from '../shared/escape-lock';
 import { findAction } from '../shared/keybind';
 import { ConfigStore } from './config/store';
 import { hotkeyLock } from './hotkey-lock';
@@ -248,6 +248,14 @@ function start(): void {
   installHotkeys(mainWindow.webContents);
   installRankedIpc();
   installEscapeLockIpc();
+  {
+    // Focus is half of when Escape may be taken at the OS level: the moment
+    // the game is not the focused window, the shortcut has to go.
+    const contents = mainWindow.webContents;
+    mainWindow.on('focus', () => syncEscapeShortcut(contents));
+    mainWindow.on('blur', () => syncEscapeShortcut(contents));
+    mainWindow.on('closed', () => releaseEscapeShortcut());
+  }
 
   if (config.get('updates').autoCheck && canUpdate()) {
     setTimeout(() => updater.check(false), UPDATE_CHECK_DELAY_MS).unref();
@@ -282,15 +290,69 @@ function start(): void {
  * What each page last said about Escape, and whether a press is being taken.
  * Per WebContents so a second window can never take the game's keys.
  */
-const escapeState = new WeakMap<WebContents, { pageLocked: boolean; holding: boolean }>();
+interface EscapeState {
+  pageLocked: boolean;
+  /** When the current taken press last heard from its key; null when none. */
+  holdingSince: number | null;
+}
+
+const escapeState = new WeakMap<WebContents, EscapeState>();
+const NO_ESCAPE: EscapeState = { pageLocked: false, holdingSince: null };
+
+/** Whose Escape the OS shortcut is currently taking, if anyone's. */
+let escapeShortcutOwner: WebContents | null = null;
 
 function installEscapeLockIpc(): void {
   ipcMain.on(IPC.escapeReleasesLock, (event, value: unknown) => {
     // A page that is not the game has no business deciding what Escape does.
     if (!isKrunkerOrigin(event.senderFrame?.url ?? '')) return;
-    const prev = escapeState.get(event.sender) ?? { pageLocked: false, holding: false };
-    escapeState.set(event.sender, { ...prev, pageLocked: value === true });
+    const prev = escapeState.get(event.sender) ?? NO_ESCAPE;
+    const locked = value === true;
+    // Taking the mouse again means any earlier press is long over.
+    escapeState.set(event.sender, { pageLocked: locked, holdingSince: locked ? null : prev.holdingSince });
+    syncEscapeShortcut(event.sender);
   });
+}
+
+/**
+ * Take Escape at the OS level exactly while the game holds the mouse and is
+ * the focused window, and not a moment longer. See shared/escape-lock.ts for
+ * why before-input-event is too late.
+ */
+function syncEscapeShortcut(contents: WebContents): void {
+  const win = contents.isDestroyed() ? null : BrowserWindow.fromWebContents(contents);
+  const want = wantEscapeShortcut({
+    enabled: config.get('fixes').escapePointerLock,
+    pageLocked: (escapeState.get(contents) ?? NO_ESCAPE).pageLocked,
+    focused: win !== null && !win.isDestroyed() && win.isFocused(),
+  });
+
+  if (want && escapeShortcutOwner === null) {
+    // False if something else on the machine already holds Escape. The
+    // before-input-event path is still there, so that is a slower Escape
+    // rather than a broken one.
+    if (globalShortcut.register('Escape', () => takeEscape(contents))) {
+      escapeShortcutOwner = contents;
+    }
+  } else if (!want && escapeShortcutOwner !== null) {
+    releaseEscapeShortcut();
+  }
+}
+
+function releaseEscapeShortcut(): void {
+  if (escapeShortcutOwner === null) return;
+  globalShortcut.unregister('Escape');
+  escapeShortcutOwner = null;
+}
+
+function takeEscape(contents: WebContents): void {
+  if (contents.isDestroyed()) return;
+  const prev = escapeState.get(contents) ?? NO_ESCAPE;
+  // The OS took the keyDown, so before-input-event never saw it. Mark the
+  // press held, so its repeats and keyUp -- which reach the window once the
+  // shortcut is unregistered -- are taken with it.
+  escapeState.set(contents, { ...prev, holdingSince: Date.now() });
+  contents.send(IPC.releasePointerLock);
 }
 
 function installRankedIpc(): void {
@@ -382,9 +444,11 @@ function installHotkeys(contents: WebContents): void {
     // Ahead of everything else, including the keyDown filter below: taking an
     // Escape press means taking its keyUp and repeats too. See escape-lock.ts.
     if (config.get('fixes').escapePointerLock) {
-      const state = escapeState.get(contents) ?? { pageLocked: false, holding: false };
-      const step = stepEscape(input, state.pageLocked, state.holding);
-      escapeState.set(contents, { pageLocked: state.pageLocked, holding: step.holding });
+      const state = escapeState.get(contents) ?? NO_ESCAPE;
+      const now = Date.now();
+      const step = stepEscape(input, state.pageLocked, stillHolding(state.holdingSince, now));
+      // Refreshed on every event of a held press, so only silence expires it.
+      escapeState.set(contents, { pageLocked: state.pageLocked, holdingSince: step.holding ? now : null });
       if (step.action !== 'pass') {
         event.preventDefault();
         if (step.action === 'release') contents.send(IPC.releasePointerLock);
@@ -468,6 +532,9 @@ async function runMainAction(action: HotkeyAction, contents: WebContents): Promi
 
 // A debounced config write still pending is lost if we exit first.
 app.on('before-quit', () => {
+  // Never leave Escape registered with the OS after the client has gone.
+  releaseEscapeShortcut();
+  globalShortcut.unregisterAll();
   config.flush();
   disposeThemeWatch?.();
   pinger.stop();
