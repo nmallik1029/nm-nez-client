@@ -95,6 +95,8 @@ export interface KillStreakConfig {
   readonly pack: string;
   /** 0 to 1. */
   readonly volume: number;
+  /** The picture at the bottom of the screen. Off keeps the sounds. */
+  readonly banners: boolean;
 }
 
 export interface VisualsConfig {
@@ -241,6 +243,9 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       // pack anyone picked.
       pack: isPackId(killStreak.pack) ? killStreak.pack : '',
       volume: clamp(killStreak.volume, 0, 1, DEFAULT_VISUALS.killStreak.volume),
+      // Anything but an explicit false is on. Configs saved before this
+      // switch existed have no field, and they were showing banners.
+      banners: killStreak.banners !== false,
     },
   };
 }
@@ -286,7 +291,7 @@ export const DEFAULT_VISUALS: VisualsConfig = {
     offsetX: 0,
     offsetY: 0,
   },
-  killStreak: { on: false, pack: '', volume: 0.3 },
+  killStreak: { on: false, pack: '', volume: 0.3, banners: true },
 };
 
 export { MARKER_PRESETS, SKY_PRESETS };

@@ -43,6 +43,13 @@ function render(body: HTMLElement, ctx: TabContext): void {
       on: start.on,
       onToggle: () => commit({ on: !current().on }, true),
     }),
+    featureRow({
+      icon: 'image',
+      name: 'Show banners',
+      sub: 'The picture at the bottom of the screen for each kill. Off keeps the sounds.',
+      on: start.banners,
+      onToggle: () => commit({ banners: !current().banners }, true),
+    }),
     slider({
       label: 'Volume',
       min: 0,

@@ -101,6 +101,8 @@ function apply(next: KillStreakConfig): void {
     stop();
     return;
   }
+  // Switched off mid-streak: take down the one already on screen too.
+  if (!next.banners) hideBanner();
   const pack = resolvePack(next.pack);
   // Every volume nudge comes through here; only a different pack reloads.
   if (pack?.id !== active?.id) load(pack);
@@ -159,7 +161,7 @@ function onKills(gained: number): void {
     void audio.play().catch(() => {});
   }
 
-  const bannerTier = tierFor(streak, active.banners);
+  const bannerTier = config.banners ? tierFor(streak, active.banners) : 0;
   if (bannerTier > 0) showBanner(packFileUrl(active.id, bannerTier, 'banner'));
 
   clearTimeout(resetTimer);
@@ -169,6 +171,10 @@ function onKills(gained: number): void {
 function reset(): void {
   streak = 0;
   clearTimeout(resetTimer);
+  hideBanner();
+}
+
+function hideBanner(): void {
   document.getElementById(UI_IDS.killStreakBanner)?.classList.remove('in', 'pop');
 }
 
