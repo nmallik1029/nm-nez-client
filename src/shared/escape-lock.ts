@@ -50,16 +50,18 @@ export interface EscapeStep {
 /**
  * Should Escape be taken at the OS level right now?
  *
- * Only while all three hold. Focus is what keeps this from ever taking Escape
- * off another application: the moment the game window is not the one you are
+ * Only while both hold. Focus is what keeps this from ever taking Escape off
+ * another application: the moment the game window is not the one you are
  * typing into, the shortcut goes.
+ *
+ * There is no setting for it. It used to be one, but Escape costing two
+ * seconds to click back in was a bug, not a preference.
  */
 export function wantEscapeShortcut(state: {
-  readonly enabled: boolean;
   readonly pageLocked: boolean;
   readonly focused: boolean;
 }): boolean {
-  return state.enabled && state.pageLocked && state.focused;
+  return state.pageLocked && state.focused;
 }
 
 /**

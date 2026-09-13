@@ -53,7 +53,7 @@ export function createMainWindow(deps: MainWindowDeps): BrowserWindow {
       // guard against pages trapping the cursor in an ordinary browser, and
       // this window only ever holds the game. The name is Blink's own kill
       // switch for it, in runtime_enabled_features.json5.
-      ...(fixes.escapePointerLock ? { disableBlinkFeatures: 'RateLimitPointerLockRequests' } : {}),
+      disableBlinkFeatures: 'RateLimitPointerLockRequests',
       spellcheck: false,
       devTools: true,
     },

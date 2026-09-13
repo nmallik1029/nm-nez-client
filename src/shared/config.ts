@@ -149,8 +149,6 @@ export interface FixConfig {
    * weapon switch.
    */
   scrollFramePacing: boolean;
-  /** Release pointer lock on Escape, which Krunker swallows. */
-  escapePointerLock: boolean;
   /** Keep rendering at full rate while unfocused. */
   disableBackgroundThrottle: boolean;
   /**
@@ -318,7 +316,6 @@ export const DEFAULT_CONFIG: AppConfig = {
   },
   fixes: {
     scrollFramePacing: true,
-    escapePointerLock: true,
     disableBackgroundThrottle: true,
     rawInput: true,
   },

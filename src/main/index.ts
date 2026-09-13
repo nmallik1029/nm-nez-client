@@ -324,7 +324,6 @@ function installEscapeLockIpc(): void {
 function syncEscapeShortcut(contents: WebContents): void {
   const win = contents.isDestroyed() ? null : BrowserWindow.fromWebContents(contents);
   const want = wantEscapeShortcut({
-    enabled: config.get('fixes').escapePointerLock,
     pageLocked: (escapeState.get(contents) ?? NO_ESCAPE).pageLocked,
     focused: win !== null && !win.isDestroyed() && win.isFocused(),
   });
@@ -480,17 +479,15 @@ function installHotkeys(contents: WebContents): void {
   contents.on('before-input-event', (event, input) => {
     // Ahead of everything else, including the keyDown filter below: taking an
     // Escape press means taking its keyUp and repeats too. See escape-lock.ts.
-    if (config.get('fixes').escapePointerLock) {
-      const state = escapeState.get(contents) ?? NO_ESCAPE;
-      const now = Date.now();
-      const step = stepEscape(input, state.pageLocked, stillHolding(state.holdingSince, now));
-      // Refreshed on every event of a held press, so only silence expires it.
-      escapeState.set(contents, { pageLocked: state.pageLocked, holdingSince: step.holding ? now : null });
-      if (step.action !== 'pass') {
-        event.preventDefault();
-        if (step.action === 'release') contents.send(IPC.releasePointerLock);
-        return;
-      }
+    const state = escapeState.get(contents) ?? NO_ESCAPE;
+    const now = Date.now();
+    const step = stepEscape(input, state.pageLocked, stillHolding(state.holdingSince, now));
+    // Refreshed on every event of a held press, so only silence expires it.
+    escapeState.set(contents, { pageLocked: state.pageLocked, holdingSince: step.holding ? now : null });
+    if (step.action !== 'pass') {
+      event.preventDefault();
+      if (step.action === 'release') contents.send(IPC.releasePointerLock);
+      return;
     }
 
     if (input.type !== 'keyDown') return;

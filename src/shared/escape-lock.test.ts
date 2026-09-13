@@ -85,20 +85,16 @@ describe('stepEscape', () => {
 });
 
 describe('wantEscapeShortcut', () => {
-  it('takes Escape only when enabled, locked and focused, all three', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: true })).toBe(true);
+  it('takes Escape only when the mouse is locked and the window focused, both', () => {
+    expect(wantEscapeShortcut({ pageLocked: true, focused: true })).toBe(true);
   });
 
   it('never while the game window is not focused, so no other app loses Escape', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: false })).toBe(false);
+    expect(wantEscapeShortcut({ pageLocked: true, focused: false })).toBe(false);
   });
 
   it('never while the mouse is free, so Escape still closes menus and chat', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: false, focused: true })).toBe(false);
-  });
-
-  it('never with the fix switched off', () => {
-    expect(wantEscapeShortcut({ enabled: false, pageLocked: true, focused: true })).toBe(false);
+    expect(wantEscapeShortcut({ pageLocked: false, focused: true })).toBe(false);
   });
 });
 
