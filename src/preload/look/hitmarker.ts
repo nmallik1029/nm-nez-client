@@ -1,6 +1,7 @@
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import type { HitmarkerConfig } from '../../shared/visuals';
 import { defineStyle, removeStyle } from '../style';
+import { HIT_SOUNDS, onGameSound } from './game-sound';
 import { paintMarker } from './paint';
 
 /**
@@ -25,9 +26,6 @@ import { paintMarker } from './paint';
  * quarter of a second on screen.
  */
 
-/** The sounds Krunker plays when a shot of yours lands. */
-const HIT_SOUNDS: ReadonlySet<string> = new Set(['hit_0', 'headshot_0', 'instantkill_0']);
-
 /**
  * How long it stays up.
  *
@@ -37,26 +35,11 @@ const HIT_SOUNDS: ReadonlySet<string> = new Set(['hit_0', 'headshot_0', 'instant
  */
 const SHOW_MS = 240;
 
-/** The sound manager only exists once the game has booted. */
-const HOOK_RETRY_MS = 2000;
-/**
- * How many times to look for it before giving up.
- *
- * Two minutes. The preload also runs on Krunker's other pages, and social.html
- * has no sound manager and never will, so something has to stop asking.
- */
-const HOOK_ATTEMPTS = 60;
-
-interface SoundManager {
-  play: (name: string, ...rest: unknown[]) => unknown;
-}
-
 let img: HTMLImageElement | null = null;
 let current: HitmarkerConfig | null = null;
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
-let retryTimer: ReturnType<typeof setInterval> | null = null;
-let hooked = false;
-let attempts = 0;
+/** Subscribed to the game's sounds; done once, the first time this is on. */
+let listening = false;
 
 export function setHitmarker(config: HitmarkerConfig): void {
   current = config;
@@ -91,7 +74,12 @@ export function setHitmarker(config: HitmarkerConfig): void {
   // disagree about where the middle of the screen is.
   img.style.transform = `translate(calc(-50% + ${config.offsetX}px), calc(-50% + ${config.offsetY}px))`;
 
-  hookSound();
+  if (!listening) {
+    listening = true;
+    onGameSound((name) => {
+      if (HIT_SOUNDS.has(name)) flash();
+    });
+  }
 }
 
 /** Put it on screen for a moment. Called for each hit. */
@@ -104,43 +92,4 @@ function flash(): void {
     hideTimer = null;
     img?.classList.remove('on');
   }, SHOW_MS);
-}
-
-/**
- * Wrap the game's sound manager.
- *
- * Wrapped rather than replaced, and the original is always called: this hook
- * is on the path that makes the hit sound you hear, so anything it swallows
- * or throws is audible. The built-in headshot script wraps the same function,
- * and two wrappers compose without either one knowing about the other.
- */
-function hookSound(): void {
-  if (hooked) return;
-
-  const sound = (window as unknown as { SOUND?: SoundManager }).SOUND;
-  if (!sound || typeof sound.play !== 'function') {
-    // The manager arrives with the game, a few seconds after the page.
-    attempts += 1;
-    if (attempts >= HOOK_ATTEMPTS) {
-      stopRetrying();
-      return;
-    }
-    if (retryTimer === null) retryTimer = setInterval(hookSound, HOOK_RETRY_MS);
-    return;
-  }
-
-  const original = sound.play.bind(sound);
-  sound.play = function patched(name: string, ...rest: unknown[]): unknown {
-    if (HIT_SOUNDS.has(name)) flash();
-    return original(name, ...rest);
-  };
-
-  hooked = true;
-  stopRetrying();
-}
-
-function stopRetrying(): void {
-  if (retryTimer === null) return;
-  clearInterval(retryTimer);
-  retryTimer = null;
 }
