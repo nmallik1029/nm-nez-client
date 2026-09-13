@@ -11,6 +11,7 @@ import {
   setRawInput,
 } from './fixes';
 import { installChangelogItem, showPatchNotes } from './changelog';
+import { installEscapeLockRelease } from './escape-lock';
 import { setCrosshair } from './look/crosshair';
 import { setHitmarker } from './look/hitmarker';
 import { setKillStreak } from './look/killstreak';
@@ -119,6 +120,9 @@ async function bootstrap(): Promise<void> {
   setSky(cfg.visuals.sky);
 
   installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
+  // Escape leaving the game through main rather than the page, which is what
+  // lets you click straight back in. See shared/escape-lock.ts.
+  if (cfg.fixes.escapePointerLock) installEscapeLockRelease();
   // A stylesheet only, so it can go in before the page has built anything.
   setDeathStatsHiding(cfg.features.hideDeathStats);
   // Listener only. It sits idle until main reports a sample, so installing it
