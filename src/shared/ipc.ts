@@ -114,6 +114,14 @@ export const IPC = {
   /** Renderer -> main. Kill streak packs in swap/sounds/killstreak, with their tier counts. */
   killPacksGet: 'killpacks:get',
   /**
+   * Game page -> main. Whether an Escape press should be taken by main and
+   * turned into a release: true while the mouse is locked and nothing is
+   * being typed into. See shared/escape-lock.ts.
+   */
+  escapeReleasesLock: 'pointer-lock:escape-releases',
+  /** Main -> game page. Release pointer lock from code, in place of the Escape main took. */
+  releasePointerLock: 'pointer-lock:release',
+  /**
    * Renderer -> main. What is in the scripts folder, without the sources.
    *
    * Its own channel rather than a flag on userscriptsGet, because that one

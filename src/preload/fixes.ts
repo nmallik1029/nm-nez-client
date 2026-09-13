@@ -58,6 +58,11 @@ export function installScrollFramePacingFix(): void {
  * Krunker binds Escape to its own menu and swallows the event, so the cursor
  * stays captured and you can't leave the window with the keyboard. Capture
  * phase gets there before the game's listener.
+ *
+ * Now the fallback. Escape is normally taken in the main process before it
+ * reaches this page at all, because a lock released on the Escape keypress
+ * took about two seconds to get back; see shared/escape-lock.ts. This still
+ * catches a press that lands before the page has reported the lock to main.
  */
 export function installEscapePointerLockFix(): void {
   document.addEventListener(

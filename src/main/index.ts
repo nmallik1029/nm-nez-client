@@ -5,6 +5,7 @@ import { gameFontBase64 } from './game-font';
 import { BRANDING } from '../shared/branding';
 import { IPC } from '../shared/ipc';
 import { DEFAULT_CONFIG, type AppConfig, type HotkeyAction } from '../shared/config';
+import { stepEscape } from '../shared/escape-lock';
 import { findAction } from '../shared/keybind';
 import { ConfigStore } from './config/store';
 import { hotkeyLock } from './hotkey-lock';
@@ -246,6 +247,7 @@ function start(): void {
 
   installHotkeys(mainWindow.webContents);
   installRankedIpc();
+  installEscapeLockIpc();
 
   if (config.get('updates').autoCheck && canUpdate()) {
     setTimeout(() => updater.check(false), UPDATE_CHECK_DELAY_MS).unref();
@@ -276,6 +278,21 @@ function start(): void {
  * of these come from our own queue window and it has no Krunker origin to
  * check against. The channels the game page uses still verify the sender.
  */
+/**
+ * What each page last said about Escape, and whether a press is being taken.
+ * Per WebContents so a second window can never take the game's keys.
+ */
+const escapeState = new WeakMap<WebContents, { pageLocked: boolean; holding: boolean }>();
+
+function installEscapeLockIpc(): void {
+  ipcMain.on(IPC.escapeReleasesLock, (event, value: unknown) => {
+    // A page that is not the game has no business deciding what Escape does.
+    if (!isKrunkerOrigin(event.senderFrame?.url ?? '')) return;
+    const prev = escapeState.get(event.sender) ?? { pageLocked: false, holding: false };
+    escapeState.set(event.sender, { ...prev, pageLocked: value === true });
+  });
+}
+
 function installRankedIpc(): void {
   ipcMain.on(IPC.rankedToken, (event, token: unknown) => {
     // Only the real game page may hand us an auth token.
@@ -362,6 +379,19 @@ function rescanSwap(): number {
  */
 function installHotkeys(contents: WebContents): void {
   contents.on('before-input-event', (event, input) => {
+    // Ahead of everything else, including the keyDown filter below: taking an
+    // Escape press means taking its keyUp and repeats too. See escape-lock.ts.
+    if (config.get('fixes').escapePointerLock) {
+      const state = escapeState.get(contents) ?? { pageLocked: false, holding: false };
+      const step = stepEscape(input, state.pageLocked, state.holding);
+      escapeState.set(contents, { pageLocked: state.pageLocked, holding: step.holding });
+      if (step.action !== 'pass') {
+        event.preventDefault();
+        if (step.action === 'release') contents.send(IPC.releasePointerLock);
+        return;
+      }
+    }
+
     if (input.type !== 'keyDown') return;
     // Rebind dialog is capturing. Let the key through to the page so it can
     // be bound, and don't act on it.
