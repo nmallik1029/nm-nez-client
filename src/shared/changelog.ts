@@ -16,6 +16,17 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.51',
+    date: '2026-09-13',
+    changes: [
+      { kind: 'fixed', text: 'Clicking back in after Escape is now instant every time, in pubs and in ranked. It could still take up to two seconds when you pressed Escape while crouching or sliding, when a quick tap came back up before the mouse was released, or after escaping and clicking back in four or five times in a row.' },
+      { kind: 'changed', text: 'Escape releasing the cursor is no longer a setting. It is how the client works, so the option is gone from the client tab.' },
+      { kind: 'fixed', text: 'Kill streak sounds no longer replay their start a few seconds in. It mostly hit the first-kill sound, and it affected any swapped sound or video big enough to load in pieces.' },
+      { kind: 'added', text: 'Coloured player names now show on the end-of-match table as well as the leaderboard and player list.' },
+      { kind: 'changed', text: 'YBG_Wallace now has the same name colour as drainciity.' },
+    ],
+  },
+  {
     version: '0.1.50',
     date: '2026-09-13',
     changes: [
