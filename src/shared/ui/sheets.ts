@@ -611,12 +611,20 @@ const rankedPanel = `
 /**
  * Badges in front of a name, on the two scoreboards.
  *
- * Written to match what Krunker already does beside a name. Their own
- * verification and premium marks are material-icon glyphs carrying
- * `vertical-align:middle; margin-right:3px`, and premium adds
- * `margin-bottom:-2px`; all three are read off the game's own stylesheet and
- * all three are what this copies. The drop is the reason a badge sits a
- * little low rather than dead centre, which is the look being matched.
+ * Sat on the baseline, which is where Krunker's own mark sits.
+ *
+ * This started as a copy of their declarations, which say
+ * `vertical-align:middle`, and that was wrong: middle means the middle of the
+ * parent's x-height, and the x-height GameFont reports puts an image about
+ * seven pixels lower than the same declaration puts one of their glyphs. A
+ * glyph is positioned by the font's own baseline metrics and an image is not,
+ * so the two do not land in the same place from the same rule. Measured in a
+ * real board: theirs 20px tall at 1.0px below the middle of the text, ours at
+ * 8.0px below before this and 1.5px below after it.
+ *
+ * So the alignment is stated rather than inherited. `--nm-badge-drop` is a
+ * length, meaning an offset from the baseline: 0 sits the badge's bottom
+ * exactly on it, and a negative value pushes it below.
  *
  * The height is in em, so one rule covers a board at 18px and the end-of-match
  * one at 15px. `--nm-badge-size` is where to change it.
@@ -631,8 +639,7 @@ const rankedPanel = `
 const badges = `
 .${UI_CLASSES.badge}{
   height:var(--nm-badge-size);width:auto;max-width:var(--nm-badge-max);
-  vertical-align:middle;margin-right:var(--nm-badge-gap);
-  margin-bottom:var(--nm-badge-drop);
+  vertical-align:var(--nm-badge-drop);margin-right:var(--nm-badge-gap);
   flex-shrink:0;object-fit:contain;image-rendering:auto;
   /* Nothing here is clickable, and the boards are drawn over the game. */
   pointer-events:none}

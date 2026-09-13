@@ -207,7 +207,7 @@ describe('loadBadges', () => {
 
   it('leaves out anything too big to be a badge', () => {
     png('fine.png');
-    png('huge.png', 256 * 1024 + 1);
+    png('huge.png', 1024 * 1024 + 1);
     expect(loadBadges(dir).map((b) => b.id)).toEqual(['fine']);
   });
 

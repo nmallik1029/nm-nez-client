@@ -169,7 +169,14 @@ export function loadSkyScenes(bundledDir: string): SkyScene[] {
  * given machine happens to have in a folder: an override would let anyone
  * hand themselves the owner badge on their own screen.
  */
-const MAX_BADGE_BYTES = 256 * 1024;
+/*
+ * A megabyte, which is far more than a badge needs and is the point: the
+ * first real one dropped in here was a 640x634 PNG at 330KB, over an earlier
+ * 256KB ceiling, and it did not appear at all. A limit that quietly deletes
+ * someone's work is worse than a limit that lets a fat file through, so this
+ * is generous and the skip below says so out loud.
+ */
+const MAX_BADGE_BYTES = 1024 * 1024;
 const MAX_BADGES_ON_DISK = 64;
 
 /** What a badge can be. GIF is in because an animated badge is a badge. */
@@ -208,7 +215,14 @@ export function loadBadges(badgesDir: string): BadgeImage[] {
 
     const full = join(badgesDir, file);
     try {
-      if (statSync(full).size > MAX_BADGE_BYTES) continue;
+      const { size } = statSync(full);
+      if (size > MAX_BADGE_BYTES) {
+        console.warn(
+          `[NM] badge "${file}" is ${Math.round(size / 1024)}KB, over the ` +
+            `${MAX_BADGE_BYTES / 1024}KB limit, so it was skipped`,
+        );
+        continue;
+      }
       out.push({ id, image: `data:${type};base64,${readFileSync(full).toString('base64')}` });
     } catch {
       // Unreadable. Skip it rather than fail the whole load.

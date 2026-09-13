@@ -263,21 +263,30 @@ const SCAN = `
 /**
  * Badges beside a name on the scoreboards.
  *
- * The three numbers that decide whether they look like they came with the
- * game, together, so tuning them is one place and not a hunt through a
- * stylesheet. They start from what Krunker does to its own verification and
- * premium marks, which is `vertical-align:middle`, three pixels of gap, and
- * two pixels of drop.
+ * The numbers that decide whether they look like they came with the game,
+ * together, so tuning them is one place and not a hunt through a stylesheet.
+ *
+ * All of them measured against Krunker's own mark in a real board rather than
+ * copied off their stylesheet, which is what the first attempt did and got
+ * wrong. Their rules say `vertical-align:middle`, but middle means "the
+ * middle of the parent's x-height", and GameFont's x-height metric puts an
+ * image about seven pixels below where the same declaration puts one of their
+ * glyphs. Their mark sits on the baseline, so ours does too: `--nm-badge-drop`
+ * is an offset from it, and 0 is level with it.
+ *
+ * At 1.1em on the in-match board that comes out 20px tall sitting 1.5px below
+ * the middle of the text, against their mark's 20px and 1.0px. Their own drop
+ * of a pixel or so is the slightly-low look worth keeping.
  *
  * The size is in em on purpose: the in-match board sets 18px and the one at
  * the end of a match sets 15px, so a badge in pixels would be right on one
  * of them and wrong on the other.
  */
 const BADGE = `
-  --nm-badge-size:1.25em;
+  --nm-badge-size:1.1em;
   --nm-badge-max:2.5em;
   --nm-badge-gap:3px;
-  --nm-badge-drop:-2px;
+  --nm-badge-drop:0px;
 `;
 
 /**

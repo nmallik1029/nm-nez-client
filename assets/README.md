@@ -61,7 +61,8 @@ Two steps, and one of them is dropping a file in here.
 
 1. Put the picture in `assets/badges/`. **The file name is the badge's id**,
    so `owner.png` is the badge called `owner`. PNG, GIF and WEBP are read;
-   anything else in the folder is ignored, as is anything over 256 KB.
+   anything else in the folder is ignored, as is anything over 1 MB. A file
+   that misses that says so in the console rather than going quiet.
 2. Hand it to someone in `src/shared/badges.ts`, in the two lists at the
    bottom of that file. By name:
 
@@ -74,10 +75,11 @@ Two steps, and one of them is dropping a file in here.
    Three badges each at most, and a person's own come before their clan's.
 
 Size them square and small. They are drawn at the height of the name they sit
-beside, around 22px on the in-match board and 19px at the end of a match, so
-anything past about 64px across is detail nobody will see on an installer that
-already weighs 109 MB. Transparent background, since they sit straight on the
-board.
+beside, about 20px on the in-match board and 17px at the end of a match, which
+is the same size as Krunker's own mark, so 64x64 is already more than enough:
+over twice the drawn size for a high-DPI screen, and a couple of KB. Anything
+past that is detail nobody will see, on an installer that already weighs
+109 MB. Transparent background, since they sit straight on the board.
 
 A badge given to someone with no file behind it draws nothing and says so once
 in the console, so a typo in an id is quiet rather than broken.
