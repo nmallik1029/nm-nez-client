@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.49',
+    date: '2026-09-13',
+    changes: [
+      { kind: 'added', text: 'Live accuracy, in QoL Features under Built-in. Shows how many of your shots have landed this life, in the top right beside kills and deaths, styled like the game’s own stats. Reloads and weapon swaps are not counted as shots, a shotgun shell counts once however many pellets hit, and a knife hit counts nothing. Dying keeps the figure up until your next shot.' },
+    ],
+  },
+  {
     version: '0.1.48',
     date: '2026-09-13',
     changes: [
