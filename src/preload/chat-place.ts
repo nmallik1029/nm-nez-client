@@ -117,6 +117,10 @@ function measureHeight(lift: number, scale: number): number {
 }
 
 function applyLift(): void {
+  // Every trigger comes through here, so this is where a menu rebuild gets
+  // noticed and the size watcher is pointed at the new elements.
+  watchGeometry();
+
   const block = document.getElementById(KRUNKER_DOM_IDS.menuBottomBlock);
   const lift = measureLift();
   if (lift === null || block === null) return;
@@ -128,6 +132,73 @@ function applyLift(): void {
 
 /** Coalesce the bursts of calls a resize or a menu rebuild produces. */
 const scheduleLift = coalesced(applyLift);
+
+/**
+ * Re-measure when the things being measured change size.
+ *
+ * This is the fix for chat going up and staying there. The trigger used to be
+ * a childList observer over #uiBase, which only fires when a node is added or
+ * removed, and most of what moves this doesn't do that:
+ *
+ *   the map name wraps to a second line   text, not nodes
+ *   a badge appears next to it            text, not nodes
+ *   the block is shown or hidden          an attribute, not nodes
+ *   Krunker rescales its UI               neither
+ *
+ * So the block would change height, the lift would not be re-taken, and chat
+ * stayed where the last measurement had put it: usually too high, since it is
+ * lifted for the tallest thing it has seen. It only dropped back when
+ * something unrelated happened to add a node under #uiBase, which is a chat
+ * message or a killfeed line arriving.
+ *
+ * A ResizeObserver is exactly the question being asked: tell me when the box
+ * I measure is a different size. It covers all four cases above, and it costs
+ * two elements instead of every mutation in the game's UI.
+ *
+ * Only the two elements the measurement reads, and deliberately not the chat
+ * input: applying a measurement resizes chat, and observing chat would be a
+ * loop.
+ */
+const sizeWatcher =
+  typeof ResizeObserver === 'function' ? new ResizeObserver(scheduleLift) : null;
+/** The node currently observed for each id, so a rebuild can be noticed. */
+const watched = new Map<string, Element>();
+
+/**
+ * Attach to the measured elements, and re-attach when the game replaces one.
+ *
+ * The re-attaching is the part that matters. Krunker rebuilds its menu as you
+ * navigate (see item 11 in krunker/constants.ts), and an observer left holding
+ * a node that has been swapped out never fires again: it would have traded one
+ * stale-measurement bug for a quieter one.
+ *
+ * Removal is what catches it. A ResizeObserver reports an element going to
+ * nothing when it leaves the document, so the swap wakes us and this then
+ * finds the new node. Called from the measurement itself, which is the one
+ * thing guaranteed to run on every trigger there is.
+ *
+ * Returns true once both are attached, which is what the mount observer in
+ * `installChatPlacement` is waiting for.
+ */
+function watchGeometry(): boolean {
+  const ids = [KRUNKER_DOM_IDS.menuBottomBlock, KRUNKER_DOM_IDS.menuNav];
+  let all = true;
+
+  for (const id of ids) {
+    const el = document.getElementById(id);
+    if (!el) {
+      all = false;
+      continue;
+    }
+    const previous = watched.get(id);
+    if (previous === el) continue;
+    if (previous) sizeWatcher?.unobserve(previous);
+    sizeWatcher?.observe(el);
+    watched.set(id, el);
+  }
+
+  return all;
+}
 
 /**
  * Krunker rebuilds the bottom block whenever the match info changes, and
@@ -145,6 +216,31 @@ export function installChatPlacement(): void {
 
   window.addEventListener('resize', scheduleLift);
 
-  const root = document.getElementById(KRUNKER_DOM_IDS.uiBase) ?? document.body;
-  if (root) new MutationObserver(scheduleLift).observe(root, { childList: true, subtree: true });
+  const ui = document.getElementById(KRUNKER_DOM_IDS.uiBase);
+
+  /*
+   * Going back to the menu is the moment a stale lift becomes visible, since
+   * the rule that uses it is scoped to that class, and nothing measured while
+   * a match was on screen is worth keeping: the block is hidden then, so the
+   * last reading is however things looked before you joined.
+   */
+  if (ui) {
+    new MutationObserver(scheduleLift).observe(ui, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+
+  /*
+   * The elements are built by Krunker's own script, so on an early call they
+   * may not be there. This waits for them and then gets out of the way: it is
+   * the one broad observer here and it should not outlive its errand.
+   */
+  if (watchGeometry()) return;
+  const root = ui ?? document.body;
+  const mount: MutationObserver = new MutationObserver(() => {
+    scheduleLift();
+    if (watchGeometry()) mount.disconnect();
+  });
+  mount.observe(root, { childList: true, subtree: true });
 }
