@@ -115,7 +115,19 @@ export function installRawInputHook(enabled: boolean): void {
     // engages at all.
     return original
       .call(this, { ...options, unadjustedMovement: true })
-      .catch(() => original.call(this, options));
+      .catch((err: unknown) => {
+        // Only a platform that cannot supply raw input gets the plain request.
+        // Anything else -- a SecurityError because the lock was just exited,
+        // a NotAllowedError for too many requests -- would refuse the retry
+        // too, and the retry counts against the same limit. Retrying on those
+        // made every click during a cooldown cost two requests, which ran
+        // into "too many pointer lock requests" and kept you locked out
+        // longer the harder you clicked.
+        if ((err as { name?: unknown } | null)?.name === 'NotSupportedError') {
+          return original.call(this, options);
+        }
+        return Promise.reject(err instanceof Error ? err : new Error(String(err)));
+      });
   };
 }
 
