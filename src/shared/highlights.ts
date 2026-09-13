@@ -116,7 +116,7 @@ export function highlightFor(
 export const FRIENDS: readonly FriendHighlight[] = [
   // { name: 'illegal', color: '#48eaff', isBolded: true },
   { name: 'drainciity', color: '#ccccff' },
-  { name: 'YBG_Wallace', color: '#492769' },
+  { name: 'YBG_Wallace', color: '#ccccff' },
   { name: 'PvlseFN', color: '#ce9a46'},
   { name: 'iliegai', color: '#a8ffec'}
 ];

@@ -5,7 +5,7 @@ import { gameFontBase64 } from './game-font';
 import { BRANDING } from '../shared/branding';
 import { IPC } from '../shared/ipc';
 import { DEFAULT_CONFIG, type AppConfig, type HotkeyAction } from '../shared/config';
-import { stepEscape, stillHolding, wantEscapeShortcut } from '../shared/escape-lock';
+import { ESCAPE_ACCELERATORS, stepEscape, stillHolding, wantEscapeShortcut } from '../shared/escape-lock';
 import { findAction } from '../shared/keybind';
 import { ConfigStore } from './config/store';
 import { hotkeyLock } from './hotkey-lock';
@@ -301,6 +301,8 @@ const NO_ESCAPE: EscapeState = { pageLocked: false, holdingSince: null };
 
 /** Whose Escape the OS shortcut is currently taking, if anyone's. */
 let escapeShortcutOwner: WebContents | null = null;
+/** Which of ESCAPE_ACCELERATORS the OS actually let us have, to give back. */
+let escapeShortcutsHeld: string[] = [];
 
 function installEscapeLockIpc(): void {
   ipcMain.on(IPC.escapeReleasesLock, (event, value: unknown) => {
@@ -322,18 +324,21 @@ function installEscapeLockIpc(): void {
 function syncEscapeShortcut(contents: WebContents): void {
   const win = contents.isDestroyed() ? null : BrowserWindow.fromWebContents(contents);
   const want = wantEscapeShortcut({
-    enabled: config.get('fixes').escapePointerLock,
     pageLocked: (escapeState.get(contents) ?? NO_ESCAPE).pageLocked,
     focused: win !== null && !win.isDestroyed() && win.isFocused(),
   });
 
   if (want && escapeShortcutOwner === null) {
-    // False if something else on the machine already holds Escape. The
-    // before-input-event path is still there, so that is a slower Escape
-    // rather than a broken one.
-    if (globalShortcut.register('Escape', () => takeEscape(contents))) {
-      escapeShortcutOwner = contents;
+    // Each one is false if something else on the machine already holds that
+    // combination, or Windows keeps it for itself. The rest still work, and
+    // the before-input-event path is still there, so a missing one is a
+    // slower Escape rather than a broken one.
+    for (const accelerator of ESCAPE_ACCELERATORS) {
+      if (globalShortcut.register(accelerator, () => takeEscape(contents))) {
+        escapeShortcutsHeld.push(accelerator);
+      }
     }
+    if (escapeShortcutsHeld.length > 0) escapeShortcutOwner = contents;
   } else if (!want && escapeShortcutOwner !== null) {
     releaseEscapeShortcut();
   }
@@ -341,10 +346,35 @@ function syncEscapeShortcut(contents: WebContents): void {
 
 function releaseEscapeShortcut(): void {
   if (escapeShortcutOwner === null) return;
-  globalShortcut.unregister('Escape');
+  for (const accelerator of escapeShortcutsHeld) globalShortcut.unregister(accelerator);
+  escapeShortcutsHeld = [];
   escapeShortcutOwner = null;
 }
 
+/**
+ * Let go of the mouse for an Escape the OS took, before its keyUp can arrive.
+ *
+ * The shortcut only takes the keyDown. The keyUp still reaches the window, and
+ * Electron hands every Escape event, keyUp included, to Chrome's exclusive
+ * access manager before anything else sees it. If the browser still counts the
+ * mouse as locked when that keyUp lands, it releases the lock as the user
+ * escaping and starts the same 1250ms refusal this exists to avoid.
+ *
+ * Asking the page to release it was a race against that keyUp: main to the
+ * renderer, a turn of Krunker's busy main thread, and back to the browser, all
+ * before a quick tap comes back up. A tap that lost it was the one slow click
+ * in every four or five.
+ *
+ * Taking page focus away does it here and now instead. Blurring the web view
+ * unlocks the pointer synchronously on the way to Electron's LostPointerLock,
+ * which clears the locked state with no refusal attached, the same route
+ * Alt-Tab takes and the reason Alt-Tab always clicked straight back in.
+ * WM_HOTKEY is posted at keyDown, so this runs before the keyUp is read. Focus
+ * goes straight back, and the native window never loses it.
+ *
+ * The page is still asked as well, in case the lock is somewhere a blur does
+ * not reach. Releasing an already released lock does nothing.
+ */
 function takeEscape(contents: WebContents): void {
   if (contents.isDestroyed()) return;
   const prev = escapeState.get(contents) ?? NO_ESCAPE;
@@ -352,6 +382,12 @@ function takeEscape(contents: WebContents): void {
   // press held, so its repeats and keyUp -- which reach the window once the
   // shortcut is unregistered -- are taken with it.
   escapeState.set(contents, { ...prev, holdingSince: Date.now() });
+
+  const win = BrowserWindow.fromWebContents(contents);
+  if (win && !win.isDestroyed()) {
+    win.blurWebView();
+    win.focusOnWebView();
+  }
   contents.send(IPC.releasePointerLock);
 }
 
@@ -443,17 +479,15 @@ function installHotkeys(contents: WebContents): void {
   contents.on('before-input-event', (event, input) => {
     // Ahead of everything else, including the keyDown filter below: taking an
     // Escape press means taking its keyUp and repeats too. See escape-lock.ts.
-    if (config.get('fixes').escapePointerLock) {
-      const state = escapeState.get(contents) ?? NO_ESCAPE;
-      const now = Date.now();
-      const step = stepEscape(input, state.pageLocked, stillHolding(state.holdingSince, now));
-      // Refreshed on every event of a held press, so only silence expires it.
-      escapeState.set(contents, { pageLocked: state.pageLocked, holdingSince: step.holding ? now : null });
-      if (step.action !== 'pass') {
-        event.preventDefault();
-        if (step.action === 'release') contents.send(IPC.releasePointerLock);
-        return;
-      }
+    const state = escapeState.get(contents) ?? NO_ESCAPE;
+    const now = Date.now();
+    const step = stepEscape(input, state.pageLocked, stillHolding(state.holdingSince, now));
+    // Refreshed on every event of a held press, so only silence expires it.
+    escapeState.set(contents, { pageLocked: state.pageLocked, holdingSince: step.holding ? now : null });
+    if (step.action !== 'pass') {
+      event.preventDefault();
+      if (step.action === 'release') contents.send(IPC.releasePointerLock);
+      return;
     }
 
     if (input.type !== 'keyDown') return;

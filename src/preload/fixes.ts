@@ -422,7 +422,9 @@ export function installFixes(
   hideMenuPromos: boolean,
 ): void {
   if (fixes.scrollFramePacing) installScrollFramePacingFix();
-  if (fixes.escapePointerLock) installEscapePointerLockFix();
+  // Not a setting. Escape leaving the game instantly is how it should work,
+  // not a preference; see shared/escape-lock.ts.
+  installEscapePointerLockFix();
   // Always installed so the toggle works without a reload. While it's off the
   // wrapper is a straight passthrough.
   installRawInputHook(fixes.rawInput);

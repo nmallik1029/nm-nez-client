@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ESCAPE_ACCELERATORS,
   HOLD_EXPIRY_MS,
   stepEscape,
   stillHolding,
@@ -84,20 +85,45 @@ describe('stepEscape', () => {
 });
 
 describe('wantEscapeShortcut', () => {
-  it('takes Escape only when enabled, locked and focused, all three', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: true })).toBe(true);
+  it('takes Escape only when the mouse is locked and the window focused, both', () => {
+    expect(wantEscapeShortcut({ pageLocked: true, focused: true })).toBe(true);
   });
 
   it('never while the game window is not focused, so no other app loses Escape', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: true, focused: false })).toBe(false);
+    expect(wantEscapeShortcut({ pageLocked: true, focused: false })).toBe(false);
   });
 
   it('never while the mouse is free, so Escape still closes menus and chat', () => {
-    expect(wantEscapeShortcut({ enabled: true, pageLocked: false, focused: true })).toBe(false);
+    expect(wantEscapeShortcut({ pageLocked: false, focused: true })).toBe(false);
+  });
+});
+
+describe('ESCAPE_ACCELERATORS', () => {
+  const held = (accel: string) => new Set(accel.split('+').slice(0, -1));
+
+  it('takes plain Escape', () => {
+    expect(ESCAPE_ACCELERATORS).toContain('Escape');
   });
 
-  it('never with the fix switched off', () => {
-    expect(wantEscapeShortcut({ enabled: false, pageLocked: true, focused: true })).toBe(false);
+  it('takes Escape with crouch or slide held, on Shift or on Ctrl', () => {
+    expect(ESCAPE_ACCELERATORS).toContain('Shift+Escape');
+    expect(ESCAPE_ACCELERATORS).toContain('Control+Escape');
+  });
+
+  it('is Escape and nothing else under the modifiers', () => {
+    for (const accel of ESCAPE_ACCELERATORS) expect(accel.split('+').at(-1)).toBe('Escape');
+  });
+
+  it('never takes Task Manager, with or without Alt on top', () => {
+    for (const accel of ESCAPE_ACCELERATORS) {
+      const mods = held(accel);
+      expect(mods.has('Control') && mods.has('Shift')).toBe(false);
+    }
+  });
+
+  it('lists each combination once', () => {
+    const keys = ESCAPE_ACCELERATORS.map((a) => [...held(a)].sort().join('+'));
+    expect(new Set(keys).size).toBe(keys.length);
   });
 });
 

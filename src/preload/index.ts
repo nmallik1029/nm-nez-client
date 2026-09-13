@@ -121,8 +121,8 @@ async function bootstrap(): Promise<void> {
 
   installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
   // Escape leaving the game through main rather than the page, which is what
-  // lets you click straight back in. See shared/escape-lock.ts.
-  if (cfg.fixes.escapePointerLock) installEscapeLockRelease();
+  // lets you click straight back in. Always on. See shared/escape-lock.ts.
+  installEscapeLockRelease();
   // A stylesheet only, so it can go in before the page has built anything.
   setDeathStatsHiding(cfg.features.hideDeathStats);
   // Listener only. It sits idle until main reports a sample, so installing it

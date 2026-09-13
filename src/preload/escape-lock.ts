@@ -42,6 +42,10 @@ export function installEscapeLockRelease(): void {
   document.addEventListener('focusin', report, true);
   // During focusout nothing has been focused yet, so read it once focus lands.
   document.addEventListener('focusout', () => setTimeout(report, 0), true);
+  // Main keeps the last answer per WebContents, and a new page -- Krunker loads
+  // each match as one -- starts unlocked without a pointerlockchange to say so.
+  // Left alone, an old page's "locked" would keep taking Escape off the menus.
+  report();
 
   ipcRenderer.on(IPC.releasePointerLock, () => {
     if (document.pointerLockElement) document.exitPointerLock();

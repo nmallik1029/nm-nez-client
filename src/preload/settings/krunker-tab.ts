@@ -249,14 +249,6 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         label: 'Hardpoint enemy counter',
         hint: 'How many enemies are on the point, beside the other counters top right. Worked out from how fast their score is climbing, since Hardpoint pays 10 a second for each of them. Only appears in Hardpoint.',
       },
-      {
-        section: 'fixes',
-        key: 'escapePointerLock',
-        label: 'Escape releases the cursor',
-        hint: 'Krunker keeps Escape for its own menu, which leaves your cursor trapped in the window. This hands it back.',
-        // Installed by the preload, which re-runs on a page reload.
-        reload: true,
-      },
     ],
   },
 ];

@@ -13,9 +13,11 @@
  * lock on Escape before Electron emits that event, so by the time the key
  * could be refused it had already counted. So while the game holds the mouse
  * and its window is focused, Escape is registered as a global shortcut, which
- * Windows consumes before the window receives a keystroke at all. The page is
- * then asked to release the lock from code. Registered only for that long, so
- * no other application ever loses the key.
+ * Windows consumes before the window receives a keystroke at all. The lock is
+ * then released from main at once, because the keyUp is not consumed and
+ * counts as escaping just the same if the lock is still held when it lands:
+ * see takeEscape in main/index.ts. Registered only for that long, so no other
+ * application ever loses the key.
  *
  * Only while the mouse is locked and nothing is being typed into, which the
  * page reports. Everywhere else Escape reaches the page untouched: it still
@@ -48,17 +50,42 @@ export interface EscapeStep {
 /**
  * Should Escape be taken at the OS level right now?
  *
- * Only while all three hold. Focus is what keeps this from ever taking Escape
- * off another application: the moment the game window is not the one you are
+ * Only while both hold. Focus is what keeps this from ever taking Escape off
+ * another application: the moment the game window is not the one you are
  * typing into, the shortcut goes.
+ *
+ * There is no setting for it. It used to be one, but Escape costing two
+ * seconds to click back in was a bug, not a preference.
  */
 export function wantEscapeShortcut(state: {
-  readonly enabled: boolean;
   readonly pageLocked: boolean;
   readonly focused: boolean;
 }): boolean {
-  return state.enabled && state.pageLocked && state.focused;
+  return state.pageLocked && state.focused;
 }
+
+/**
+ * Every Escape the OS shortcut has to take, held modifiers and all.
+ *
+ * A Windows hotkey fires only on its exact modifier state, so a shortcut for
+ * Escape alone lets Shift+Escape straight through. Chromium does not care:
+ * its exclusive access manager releases the lock on an Escape with any
+ * modifiers held, and starts the same refusal as a plain one. In a match that
+ * is most presses -- crouch and slide are held on Shift or Ctrl -- which is
+ * why Escape stayed fast on the end screen, where nobody is holding anything,
+ * and kept going slow in game.
+ *
+ * Never Ctrl+Shift+Escape. That is Task Manager, and a game that has frozen
+ * with the mouse locked is exactly when somebody needs it.
+ */
+export const ESCAPE_ACCELERATORS: readonly string[] = [
+  'Escape',
+  'Shift+Escape',
+  'Control+Escape',
+  'Alt+Escape',
+  'Shift+Alt+Escape',
+  'Control+Alt+Escape',
+];
 
 /**
  * How long a taken press stays taken without hearing from its key again.

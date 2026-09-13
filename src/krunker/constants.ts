@@ -78,9 +78,17 @@ export const KRUNKER_NAMES = {
    * The three suffixes are theirs as well: bare is the other team in red,
    * `M` is you in white, `F` is the dimmed one. All three are people with
    * names, so all three are matched.
+   *
+   * `.endTableN` is the name in the end-of-match player table, and the table
+   * rows turned out not to use the families above at all: coloured names never
+   * showed there. It is a link in the same stylesheet, dimmed white with a
+   * `:visited` and an underline on `:hover`, sitting in `#endTable td` beside
+   * the `.endTablePfp` picture and `.endTableFlag`. A link to the player's
+   * profile, the same shape as the player list's anchor, so the clan span
+   * inside it reads the same way.
    */
   boardNameSelector:
-    '.leaderName, .leaderNameM, .leaderNameF, .newLeaderName, .newLeaderNameM, .newLeaderNameF',
+    '.leaderName, .leaderNameM, .leaderNameF, .newLeaderName, .newLeaderNameM, .newLeaderNameF, .endTableN',
 } as const;
 
 /** DOM ids Krunker renders that we read or overwrite. */
