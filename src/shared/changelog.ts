@@ -16,6 +16,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.46',
+    date: '2026-09-13',
+    changes: [
+      {
+        kind: 'added',
+        text: 'Kill streak sounds, in QoL Features under Built-in. A Valorant-style sound and banner for each kill in a row, starting over when you die, a match ends or ten seconds pass without a kill. Press Edit to pick a pack and set the volume; picking one plays its first sound. Packs are folders you add to swap/sounds/killstreak, and the client ships none of its own.',
+      },
+    ],
+  },
+  {
     version: '0.1.45',
     date: '2026-09-12',
     changes: [
