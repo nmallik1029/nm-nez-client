@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.48',
+    date: '2026-09-13',
+    changes: [
+      { kind: 'added', text: 'Hide death stats, in QoL Features under Built-in. Removes the panel that pops up when you die, which freezes the client for a lot of people: its shadow effects and images all load on the frame you die. Switches on and off without a reload.' },
+    ],
+  },
+  {
     version: '0.1.47',
     date: '2026-09-13',
     changes: [
