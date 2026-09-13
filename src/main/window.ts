@@ -44,6 +44,16 @@ export function createMainWindow(deps: MainWindowDeps): BrowserWindow {
       // game you alt-tab out of constantly is a visible lurch every time you
       // come back.
       backgroundThrottling: !fixes.disableBackgroundThrottle,
+      // Chromium 152 refuses a fifth pointer lock within two seconds of the
+      // last one that worked, and every refused click counts as another, so
+      // clicking harder only extends it. Escape, click, Escape, click in a
+      // fight is exactly that pattern: four clean relocks and then up to two
+      // seconds of dead clicks, which is what was left of the Escape delay
+      // once the OS shortcut stopped the user-escape cooldown. The limit is a
+      // guard against pages trapping the cursor in an ordinary browser, and
+      // this window only ever holds the game. The name is Blink's own kill
+      // switch for it, in runtime_enabled_features.json5.
+      ...(fixes.escapePointerLock ? { disableBlinkFeatures: 'RateLimitPointerLockRequests' } : {}),
       spellcheck: false,
       devTools: true,
     },
