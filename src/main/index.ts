@@ -345,6 +345,30 @@ function releaseEscapeShortcut(): void {
   escapeShortcutOwner = null;
 }
 
+/**
+ * Let go of the mouse for an Escape the OS took, before its keyUp can arrive.
+ *
+ * The shortcut only takes the keyDown. The keyUp still reaches the window, and
+ * Electron hands every Escape event, keyUp included, to Chrome's exclusive
+ * access manager before anything else sees it. If the browser still counts the
+ * mouse as locked when that keyUp lands, it releases the lock as the user
+ * escaping and starts the same 1250ms refusal this exists to avoid.
+ *
+ * Asking the page to release it was a race against that keyUp: main to the
+ * renderer, a turn of Krunker's busy main thread, and back to the browser, all
+ * before a quick tap comes back up. A tap that lost it was the one slow click
+ * in every four or five.
+ *
+ * Taking page focus away does it here and now instead. Blurring the web view
+ * unlocks the pointer synchronously on the way to Electron's LostPointerLock,
+ * which clears the locked state with no refusal attached, the same route
+ * Alt-Tab takes and the reason Alt-Tab always clicked straight back in.
+ * WM_HOTKEY is posted at keyDown, so this runs before the keyUp is read. Focus
+ * goes straight back, and the native window never loses it.
+ *
+ * The page is still asked as well, in case the lock is somewhere a blur does
+ * not reach. Releasing an already released lock does nothing.
+ */
 function takeEscape(contents: WebContents): void {
   if (contents.isDestroyed()) return;
   const prev = escapeState.get(contents) ?? NO_ESCAPE;
@@ -352,6 +376,12 @@ function takeEscape(contents: WebContents): void {
   // press held, so its repeats and keyUp -- which reach the window once the
   // shortcut is unregistered -- are taken with it.
   escapeState.set(contents, { ...prev, holdingSince: Date.now() });
+
+  const win = BrowserWindow.fromWebContents(contents);
+  if (win && !win.isDestroyed()) {
+    win.blurWebView();
+    win.focusOnWebView();
+  }
   contents.send(IPC.releasePointerLock);
 }
 

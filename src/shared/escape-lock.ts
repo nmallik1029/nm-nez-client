@@ -13,9 +13,11 @@
  * lock on Escape before Electron emits that event, so by the time the key
  * could be refused it had already counted. So while the game holds the mouse
  * and its window is focused, Escape is registered as a global shortcut, which
- * Windows consumes before the window receives a keystroke at all. The page is
- * then asked to release the lock from code. Registered only for that long, so
- * no other application ever loses the key.
+ * Windows consumes before the window receives a keystroke at all. The lock is
+ * then released from main at once, because the keyUp is not consumed and
+ * counts as escaping just the same if the lock is still held when it lands:
+ * see takeEscape in main/index.ts. Registered only for that long, so no other
+ * application ever loses the key.
  *
  * Only while the mouse is locked and nothing is being typed into, which the
  * page reports. Everywhere else Escape reaches the page untouched: it still
