@@ -22,6 +22,8 @@ export interface AppPaths {
   readonly backgrounds: string;
   /** Sounds the client plays. `match-found.mp3` is the only one so far. */
   readonly sounds: string;
+  /** One folder per kill streak pack. Inside `sounds` so the swapper serves it. */
+  readonly killPacks: string;
   readonly screenshots: string;
 }
 
@@ -41,6 +43,7 @@ export function appPaths(): AppPaths {
     scripts: join(swap, 'scripts'),
     backgrounds: join(swap, 'backgrounds'),
     sounds: join(swap, 'sounds'),
+    killPacks: join(swap, 'sounds', 'killstreak'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
   };
   return cached;
@@ -48,7 +51,14 @@ export function appPaths(): AppPaths {
 
 /** Create the folders up front so they're there to find before first use. */
 export function ensureUserDirs(paths: AppPaths): void {
-  for (const dir of [paths.swap, paths.themes, paths.scripts, paths.backgrounds, paths.sounds]) {
+  for (const dir of [
+    paths.swap,
+    paths.themes,
+    paths.scripts,
+    paths.backgrounds,
+    paths.sounds,
+    paths.killPacks,
+  ]) {
     try {
       mkdirSync(dir, { recursive: true });
     } catch {

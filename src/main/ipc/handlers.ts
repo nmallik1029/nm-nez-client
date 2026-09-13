@@ -26,6 +26,7 @@ import {
   saveUserscript,
   type SaveProblem,
 } from '../assets';
+import { loadKillPacks } from '../killsounds';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
@@ -208,6 +209,11 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   // full list to draw the per-theme switches, and keeping the text in memory
   // is what makes switching instant.
   registry.handle(IPC.themesGet, () => loadThemes(paths.themes));
+
+  // Read each time the editor opens, so a pack dropped in shows up without
+  // a restart. The editor rescans the swapper alongside, which is what lets
+  // the new files actually play.
+  registry.handle(IPC.killPacksGet, () => loadKillPacks(paths.killPacks));
 
   registry.handle(IPC.rankedSound, () =>
     loadMatchSound(paths.sounds, join(app.getAppPath(), 'assets')),

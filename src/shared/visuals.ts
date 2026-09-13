@@ -5,6 +5,7 @@ import {
   SKY_PRESETS,
   SKY_START_COLOR,
 } from './ui/tokens';
+import { isPackId } from './killstreak';
 
 /**
  * The three things the client draws over Krunker's own art: a crosshair, a
@@ -81,10 +82,26 @@ export interface SkyConfig {
   readonly color: string;
 }
 
+/**
+ * Kill streak sounds.
+ *
+ * Not drawn over Krunker's art like the other three, but it is a banner as
+ * much as a sound, and it wants exactly what they already have: an editor in
+ * the QoL panel, applying live as you pick, saved a moment later.
+ */
+export interface KillStreakConfig {
+  readonly on: boolean;
+  /** Folder name under `swap/sounds/killstreak`. Empty until one is picked. */
+  readonly pack: string;
+  /** 0 to 1. */
+  readonly volume: number;
+}
+
 export interface VisualsConfig {
   readonly sky: SkyConfig;
   readonly crosshair: CrosshairConfig;
   readonly hitmarker: HitmarkerConfig;
+  readonly killStreak: KillStreakConfig;
 }
 
 /** Ranges every number is held inside. The editors read them for their sliders. */
@@ -185,6 +202,7 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
   const sky = (raw.sky ?? {}) as Partial<SkyConfig>;
   const crosshair = (raw.crosshair ?? {}) as Partial<CrosshairConfig>;
   const hitmarker = (raw.hitmarker ?? {}) as Partial<HitmarkerConfig>;
+  const killStreak = (raw.killStreak ?? {}) as Partial<KillStreakConfig>;
   const L = MARKER_LIMITS;
 
   return {
@@ -215,6 +233,14 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       marker: normaliseMarker(hitmarker.marker, DEFAULT_VISUALS.hitmarker.marker),
       offsetX: clamp(hitmarker.offsetX, L.offset.min, L.offset.max, 0),
       offsetY: clamp(hitmarker.offsetY, L.offset.min, L.offset.max, 0),
+    },
+    killStreak: {
+      on: killStreak.on === true,
+      // Becomes a folder and a URL, so an id that fails the check is dropped
+      // rather than cleaned: a pack that has been quietly renamed is not the
+      // pack anyone picked.
+      pack: isPackId(killStreak.pack) ? killStreak.pack : '',
+      volume: clamp(killStreak.volume, 0, 1, DEFAULT_VISUALS.killStreak.volume),
     },
   };
 }
@@ -260,6 +286,7 @@ export const DEFAULT_VISUALS: VisualsConfig = {
     offsetX: 0,
     offsetY: 0,
   },
+  killStreak: { on: false, pack: '', volume: 0.3 },
 };
 
 export { MARKER_PRESETS, SKY_PRESETS };

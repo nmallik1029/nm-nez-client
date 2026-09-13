@@ -105,6 +105,8 @@ export const IPC = {
 
   /** Renderer -> main. Userscript sources from the scripts folder. */
   userscriptsGet: 'userscripts:get',
+  /** Renderer -> main. Kill streak packs in swap/sounds/killstreak, with their tier counts. */
+  killPacksGet: 'killpacks:get',
   /**
    * Renderer -> main. What is in the scripts folder, without the sources.
    *
