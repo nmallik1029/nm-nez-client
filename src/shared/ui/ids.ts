@@ -37,6 +37,8 @@ export const UI_IDS = {
   rankedPanel: 'kc-ranked-panel',
   /** Shown while the queue runs and the panel is shut. */
   rankedPill: 'kc-ranked-pill',
+  /** Distance to the next rank, on Krunker's own rank card. */
+  rankProgress: 'kc-rank-progress',
   /** The update prompt, bottom right. */
   updatePanel: 'kc-update',
   /** Client wordmark and version at the top of Krunker's left menu. */
@@ -84,6 +86,7 @@ export const STYLE_IDS = {
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
   rankedPanel: 'kc-ranked-panel-css',
+  rankProgress: 'kc-rank-progress-css',
   hardpointCounter: 'kc-hp-counter-css',
   sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',

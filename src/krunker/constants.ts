@@ -178,6 +178,71 @@ export const TEAM_MODES: ReadonlySet<string> = new Set([
 ]);
 
 /**
+ * The ranked menu's rank card: your badge, your elo and the stats beside it.
+ *
+ * Svelte-compiled like the ranked footer, so every class carries a per-build
+ * hash (`rank-card svelte-s4rbwd`) and these match the stable half only. Same
+ * reasoning as `ranked-button.ts`: matching the whole class breaks on their
+ * next deploy.
+ *
+ * Not measured here, and that is worth being straight about. The menu asks
+ * you to sign in before it draws any of this, and everything in this repo is
+ * measured from throwaway guest profiles, so opening it gets a login box (I
+ * tried). The names come from two clients that mount into this card, glorp
+ * and the Civilian client, whose copy is a port of glorp's. So treat them as
+ * one source, not two. `preload/ranked/rank-progress.ts` checks what it finds
+ * rather than trusting any of it, and shows nothing when a check fails.
+ */
+export const KRUNKER_RANKED_MENU = {
+  /** The card as a whole. */
+  card: '[class*="rank-card"]',
+  /** Badge and stats together. The progress bar is inserted in here. */
+  stats: '[class*="rank-and-stats"]',
+  /** The row of small figures: elo, and whatever else they show beside it. */
+  quickStats: '[class*="quick-stats"]',
+  /** One figure from that row. Both clients read the first as your elo. */
+  quickStatValue: '[class*="quick-stat-value"]',
+} as const;
+
+/**
+ * Where each rank starts, in elo.
+ *
+ * Krunker does not publish this anywhere I can find, and their own script is
+ * obfuscated with a notice in it asking that it not be decoded, so this is
+ * not read out of the game. It is the table glorp carries, which the Civilian
+ * client copied; the two agree because one is the other.
+ *
+ * What IS checked, from here: the tier names. Every badge below answers 200
+ * at `assets.krunker.io/img/ranked/ranks/rank_<tier>.svg` and invented ones
+ * answer 404, so the eight tiers and the fact that the three Bronze steps
+ * share one badge are Krunker's, not glorp's. The numbers beside them are
+ * inherited and could be a season out of date.
+ *
+ * Which is why nothing here is shown on its own. The code compares the rank
+ * this table gives against the rank Krunker itself prints on the card, and
+ * says nothing at all when they disagree: a stale table then shows no bar
+ * rather than a confident wrong one, and that is the signal to come fix this.
+ *
+ * Placements are not in the list. An unranked account has no elo to measure
+ * from, and the disagreement check above is what catches it.
+ */
+export const KRUNKER_RANK_LADDER: readonly { readonly name: string; readonly elo: number }[] = [
+  { name: 'Bronze 1', elo: 0 },
+  { name: 'Bronze 2', elo: 200 },
+  { name: 'Bronze 3', elo: 400 },
+  { name: 'Silver 1', elo: 700 },
+  { name: 'Silver 2', elo: 900 },
+  { name: 'Silver 3', elo: 1100 },
+  { name: 'Gold 1', elo: 1300 },
+  { name: 'Gold 2', elo: 1600 },
+  { name: 'Gold 3', elo: 2000 },
+  { name: 'Platinum', elo: 2300 },
+  { name: 'Diamond', elo: 3000 },
+  { name: 'Master', elo: 3300 },
+  { name: 'Kracked', elo: 4700 },
+];
+
+/**
  * `user-assets.krunker.io` ids for decorative props that cost frame time.
  * Blocking `model.obj` drops the whole prop. A bare id blocks the entire
  * asset folder.

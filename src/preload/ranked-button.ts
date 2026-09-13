@@ -1,9 +1,9 @@
 import { ipcRenderer } from 'electron';
 import { IPC } from '../shared/ipc';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../shared/ui';
+import { watchRankedMenu } from './ranked/menu-watch';
 import { toggleRankedPanel } from './ranked/panel';
 import { defineStyle } from './style';
-import { coalesced } from './schedule';
 
 /**
  * Adds a launcher for the external queue into Krunker's own ranked panel.
@@ -125,16 +125,13 @@ function place(): void {
  * Watch for the ranked panel showing up.
  *
  * It's built and torn down as you navigate, and Svelte re-renders the footer
- * on state changes, so inserting once doesn't stick. The observer puts the
+ * on state changes, so inserting once doesn't stick. The watcher puts the
  * button back whenever it goes missing, and the early return in `place()`
  * keeps the common case down to one querySelector.
+ *
+ * The observer behind it is shared with the rank card's progress bar, which
+ * needs the same signal off the same menu. See `ranked/menu-watch.ts`.
  */
 export function installRankedLaunchButton(): void {
-  place();
-
-  const root = document.getElementById('uiBase') ?? document.body;
-  if (!root) return;
-
-  const observer = new MutationObserver(coalesced(place));
-  observer.observe(root, { childList: true, subtree: true });
+  watchRankedMenu(place);
 }

@@ -608,6 +608,42 @@ const rankedPanel = `
 #${UI_IDS.rankedPill} .stop{border-color:var(--nm-bad-border);color:var(--nm-bad-text)}
 `;
 
+/**
+ * How far the next rank is, on Krunker's own rank card.
+ *
+ * A line and a bar, and no box around them. The card already has its own
+ * frame and its own padding, and a second panel inside it would read as
+ * something bolted on rather than as one more thing the card tells you.
+ *
+ * Every rule is scoped to our id. The card's classes are Svelte's and carry a
+ * build hash, so nothing here reaches for one: this has to be able to sit in
+ * markup none of us can see, and the safe way to do that is to style only
+ * what we made.
+ */
+const rankProgress = `
+#${UI_IDS.rankProgress}{display:flex;flex-direction:column;gap:6px;
+  width:100%;box-sizing:border-box;margin:var(--nm-gap-sm) 0;
+  font-family:var(--nm-font-display)}
+
+/* The rank you are in on the left, what it costs to leave it on the right. */
+#${UI_IDS.rankProgress} .ends{display:flex;justify-content:space-between;
+  align-items:baseline;gap:var(--nm-gap);
+  font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);
+  line-height:var(--nm-lh-tight);text-transform:uppercase}
+#${UI_IDS.rankProgress} .now{color:var(--nm-rank-text-dim)}
+#${UI_IDS.rankProgress} .to{color:var(--nm-rank-text)}
+
+#${UI_IDS.rankProgress} .track{position:relative;height:8px;overflow:hidden;
+  border-radius:var(--nm-radius-2xs);background:var(--nm-rank-track)}
+/*
+ * Width, set inline by rank-progress.ts. The transition is here rather than
+ * there so the bar eases into place when the card re-renders mid-queue
+ * instead of jumping, which is the same treatment the match search bar gets.
+ */
+#${UI_IDS.rankProgress} .fill{display:block;height:100%;width:0;
+  background:var(--nm-rank-fill);transition:width var(--nm-fast) linear}
+`;
+
 const altModal = `
 #${UI_IDS.altModal}-backdrop{position:fixed;inset:0;z-index:var(--nm-z-modal);
   background:var(--nm-game-scrim);
@@ -1944,6 +1980,7 @@ export const SHEETS = {
   queueButton,
   altModal,
   rankedPanel,
+  rankProgress,
   hardpointCounter,
   setupWizard,
   qolPanel,

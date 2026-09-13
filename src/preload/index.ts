@@ -24,6 +24,7 @@ import { installNameHighlights } from './name-highlights';
 import { installProtocolHost } from './protocol/host';
 import { installQol } from './qol/panel';
 import { installRankedPanel } from './ranked/panel';
+import { installRankProgress } from './ranked/rank-progress';
 import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { installSetup, toggleSetup } from './setup/wizard';
@@ -200,6 +201,11 @@ async function bootstrap(): Promise<void> {
 
     // Adds the launcher into Krunker's own ranked panel, beside FIND MATCH.
     installRankedLaunchButton();
+
+    // And, on the card above it, how far the next rank is. Shares the
+    // launcher's observer, so this is a registration rather than a second
+    // pass over the menu.
+    installRankProgress();
 
     // Krunker allows one sign-in per page load, so a logout has to be caught
     // as it happens or the alt manager can't explain itself later.

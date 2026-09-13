@@ -261,6 +261,21 @@ const SCAN = `
 `;
 
 /**
+ * The bar on Krunker's rank card, showing how far the next rank is.
+ *
+ * Sits on their surface rather than ours, so the track is a well sunk into
+ * whatever the card is painted with instead of a colour of our own, and only
+ * the fill is ours. Same green as the match search, so the two bars in this
+ * client read as the same instrument.
+ */
+const RANK = `
+  --nm-rank-track:rgba(0,0,0,.45);
+  --nm-rank-fill:#4ade80;
+  --nm-rank-text:#fff;
+  --nm-rank-text-dim:rgba(255,255,255,.62);
+`;
+
+/**
  * What the game window paints before Krunker's first frame arrives. Black, so
  * the gap between the window appearing and the page drawing isn't a flash.
  */
@@ -728,6 +743,7 @@ export const TOKENS_CSS = `:root{${[
   WATERMARK,
   QUEUE_BUTTON,
   SCAN,
+  RANK,
   UPDATE,
   QUEUE_WINDOW,
   MENU,
