@@ -1145,6 +1145,25 @@ html.kc-scanning .sliderSml::after{
   transition:none !important;
   animation:none !important;
 }
+
+/*
+ * And one of ours, for the same reason. The ranked pill is placed under CLICK
+ * TO PLAY on the menu, which is where the scan note goes, so queueing for
+ * ranked and pressing the search key put two "Searching" lines on top of each
+ * other.
+ *
+ * Hidden rather than moved. #instructions is hidden above by visibility, which
+ * keeps its layout box, so the pill's anchor stays exactly where it was and
+ * there is nowhere for it to be nudged to; and the pill only re-places itself
+ * on its one second tick, so anything driven from JS would spend the first of
+ * a roughly four second scan still overlapping. A class that is added and
+ * removed with the overlay costs neither.
+ *
+ * Nothing is lost by it going: the queue lives in the main process and keeps
+ * running, and the pill comes back with its clock still right the moment the
+ * scan ends.
+ */
+html.kc-scanning #${UI_IDS.rankedPill}{display:none}
 `;
 
 /** Keyed by the surface that installs it. */
