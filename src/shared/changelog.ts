@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.50',
+    date: '2026-09-13',
+    changes: [
+      { kind: 'fixed', text: 'Pressing Escape to leave a match no longer makes clicking back in take about two seconds. The client now takes Escape before it reaches the game while your mouse is locked and releases the mouse itself, the same way Alt-Tab does, which clicks straight back in. Escape still closes chat, menus and windows as before.' },
+      { kind: 'fixed', text: 'Chat stays scrolled to the newest message on click-to-play and the death screen. Chat gets shorter at both, and a shorter chat box was left sitting a little above the bottom until the next message arrived.' },
+    ],
+  },
+  {
     version: '0.1.49',
     date: '2026-09-13',
     changes: [
