@@ -2012,6 +2012,23 @@ const hitmarker = `
  * it has a src, so there is no broken-image box on screen before the first
  * kill.
  */
+/**
+ * Krunker's death screen stats panel, gone.
+ *
+ * Only the box: .death-ui-bottom and its no-killer variant, and the report
+ * line at its top. The respawn prompt is #instructions, a separate element,
+ * and the chat move on death is keyed on #uiBase.onDeathScrn, so neither is
+ * touched.
+ *
+ * display:none rather than anything gentler, because that is what removes
+ * the cost. A hidden element is not laid out, painted or composited, so its
+ * drop-shadow filters never run, and Chromium does not fetch background
+ * images for it -- which is where the weapon and class icons come from.
+ */
+const deathStats = `
+.death-ui-bottom,.death-ui-bottom-empty,.death-report{display:none !important}
+`;
+
 const killStreak = `
 #${UI_IDS.killStreakBanner}{position:fixed;left:50%;bottom:30px;width:200px;height:200px;
   object-fit:contain;pointer-events:none;z-index:var(--nm-z-game-overlay);opacity:0;
@@ -2070,4 +2087,5 @@ export const SHEETS = {
   krunkerWindows,
   hudMinimal,
   killStreak,
+  deathStats,
 } as const;

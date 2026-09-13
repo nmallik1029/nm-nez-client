@@ -1,4 +1,6 @@
 import type { FixConfig } from '../shared/config';
+import { SHEETS, STYLE_IDS } from '../shared/ui';
+import { toggleStyle } from './style';
 
 /** Workarounds for Chromium and Krunker behaviour, all renderer-side. */
 
@@ -123,6 +125,11 @@ export function setRawInput(enabled: boolean): void {
 let adStyle: HTMLStyleElement | null = null;
 
 /** Hide the ad slots the network blocker leaves behind. CSS only, so it toggles live. */
+/** Krunker's death screen stats panel. A stylesheet, so it toggles live. */
+export function setDeathStatsHiding(enabled: boolean): void {
+  toggleStyle(STYLE_IDS.deathStats, SHEETS.deathStats, enabled);
+}
+
 export function setAdContainerHiding(enabled: boolean): void {
   if (!enabled) {
     adStyle?.remove();

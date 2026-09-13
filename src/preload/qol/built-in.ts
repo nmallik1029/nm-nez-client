@@ -96,6 +96,20 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     }),
   );
 
+  const features = ctx.deps.getFeatures();
+  body.append(
+    featureRow({
+      icon: 'visibility_off',
+      name: 'Hide death stats',
+      sub: 'Removes the stats panel that pops up when you die. Its shadows and images all load on the frame you die, which freezes the client for a lot of people.',
+      on: features.hideDeathStats,
+      onToggle: () => {
+        ctx.deps.patchFeatures({ hideDeathStats: !ctx.deps.getFeatures().hideDeathStats });
+        ctx.refresh();
+      },
+    }),
+  );
+
   for (const script of CLIENT_SCRIPTS) {
     body.append(
       featureRow({
