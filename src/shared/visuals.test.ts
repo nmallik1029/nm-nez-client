@@ -212,12 +212,12 @@ describe('normaliseVisuals', () => {
 
 describe('normaliseVisuals: killStreak', () => {
   it('starts off, with no pack and a quiet volume', () => {
-    expect(normaliseVisuals({}).killStreak).toEqual({ on: false, pack: '', volume: 0.3 });
+    expect(normaliseVisuals({}).killStreak).toEqual({ on: false, pack: '', volume: 0.3, banners: true });
   });
 
   it('keeps a real pack id and a volume in range', () => {
     const k = normaliseVisuals({ killStreak: { on: true, pack: 'vct-2025', volume: 0.75 } }).killStreak;
-    expect(k).toEqual({ on: true, pack: 'vct-2025', volume: 0.75 });
+    expect(k).toEqual({ on: true, pack: 'vct-2025', volume: 0.75, banners: true });
   });
 
   it('drops a pack id that could leave the folder, rather than cleaning it', () => {
@@ -231,6 +231,13 @@ describe('normaliseVisuals: killStreak', () => {
     expect(normaliseVisuals({ killStreak: { volume: -1 } }).killStreak.volume).toBe(0);
     expect(normaliseVisuals({ killStreak: { volume: 'loud' } }).killStreak.volume).toBe(0.3);
     expect(normaliseVisuals({ killStreak: { volume: Number.NaN } }).killStreak.volume).toBe(0.3);
+  });
+
+  it('keeps banners on unless they were explicitly switched off', () => {
+    // A config from before the switch existed has no field at all.
+    expect(normaliseVisuals({ killStreak: { on: true } }).killStreak.banners).toBe(true);
+    expect(normaliseVisuals({ killStreak: { banners: false } }).killStreak.banners).toBe(false);
+    expect(normaliseVisuals({ killStreak: { banners: 'no' } }).killStreak.banners).toBe(true);
   });
 
   it('only a real true switches it on', () => {
