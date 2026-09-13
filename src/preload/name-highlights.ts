@@ -1,20 +1,25 @@
 import { KRUNKER_NAMES, PLAYER_LIST_WINDOW_INDEX } from '../krunker/constants';
 import { highlightFor, type Highlight } from '../shared/highlights';
+import { applyBadges } from './badges';
 
 /**
- * Paints friends and clans into the leaderboard and the player list.
+ * One pass over every name Krunker draws on a board, for the two things we
+ * do to names: colour them, and put badges on them.
  *
- * Those two only, on purpose. Chat and the killfeed carry names as well, but
- * they scroll: a colour there is gone before you have read it, and the
- * killfeed already colours by team. The leaderboard and the player list are
- * the two places you go *to* look someone up, which is where a colour earns
- * its keep.
+ * The boards and the player list only, on purpose. Chat and the killfeed
+ * carry names as well, but they scroll: a colour there is gone before you
+ * have read it, and the killfeed already colours by team. A board is
+ * something you look *at*, which is where either of these earns its keep.
  *
- * The two need different treatment because Krunker builds them differently.
- * The leaderboard is standing markup that the game rewrites as scores move,
- * so it gets an observer. The player list does not exist until it is opened:
- * `windows[22].genList()` returns a string of HTML, so that gets wrapped and
- * the string is edited on the way past.
+ * Badges go on the boards and not the player list, which is what was asked
+ * for, and is also where they read as badges rather than as clutter in a
+ * table you opened to look somebody up.
+ *
+ * Boards and player list need different treatment because Krunker builds
+ * them differently. The boards are standing markup that the game rewrites as
+ * scores move, so they get observers. The player list does not exist until it
+ * is opened: `windows[22].genList()` returns a string of HTML, so that gets
+ * wrapped and the string is edited on the way past.
  *
  * Both give the clan as its own `<span>` inside the name, so nothing here
  * parses `Name [CLAN]` out of a blob of text.
@@ -62,8 +67,16 @@ function paint(el: HTMLElement, highlight: Highlight): void {
   }
 }
 
-/** Colour every name inside a root that has not been done already. */
-function paintNames(root: ParentNode, selector: string): void {
+/**
+ * Decorate every name inside a root that has not been done already.
+ *
+ * `badges` is off for the player list and on for the boards. That is the
+ * whole of the difference between the two callers, and it is deliberate: a
+ * badge is meant to be something you notice about someone on a scoreboard,
+ * and the player list is a different kind of screen, one you open to look
+ * something up rather than one that is in front of you all match.
+ */
+function paintNames(root: ParentNode, selector: string, badges = false): void {
   for (const el of root.querySelectorAll<HTMLElement>(selector)) {
     if (el.hasAttribute(DONE_ATTR)) continue;
     // Marked whether or not it matched: an unlisted player is a result too,
@@ -75,27 +88,64 @@ function paintNames(root: ParentNode, selector: string): void {
 
     const highlight = highlightFor(name, clan);
     if (highlight) paint(el, highlight);
+    if (badges) applyBadges(el, name, clan);
   }
 }
 
-// ── leaderboard ──────────────────────────────────────────────────────────
+// ── the boards ───────────────────────────────────────────────────────────
 
-let boardObserver: MutationObserver | null = null;
+const boardObservers: MutationObserver[] = [];
+
+/** Every board element that is in the page right now. */
+function boards(): HTMLElement[] {
+  const out: HTMLElement[] = [];
+  for (const id of KRUNKER_NAMES.boardContainerIds) {
+    const el = document.getElementById(id);
+    if (el) out.push(el);
+  }
+  return out;
+}
+
+function paintBoard(root: ParentNode): void {
+  paintNames(root, KRUNKER_NAMES.boardNameSelector, true);
+}
 
 /**
- * Krunker rebuilds the leaderboard rows whenever the order or a score
- * changes, which throws our colours out with them. The observer puts them
- * back; `DONE_ATTR` means the common case is one attribute check per row.
+ * Krunker rebuilds board rows whenever the order or a score changes, which
+ * throws our colours and badges out with them. One observer per board puts
+ * them back; `DONE_ATTR` means the common case is one attribute check per row.
+ *
+ * All three boards are in the page from the start, empty until a match fills
+ * them, so this can be set up on the menu and never has to be redone.
  */
-function watchLeaderboard(): void {
-  const container = document.getElementById(KRUNKER_NAMES.leaderContainerId);
-  if (!container || boardObserver) return;
+function watchBoards(): boolean {
+  if (boardObservers.length > 0) return true;
 
-  paintNames(container, KRUNKER_NAMES.leaderNameSelector);
-  boardObserver = new MutationObserver(() =>
-    paintNames(container, KRUNKER_NAMES.leaderNameSelector),
-  );
-  boardObserver.observe(container, { childList: true, subtree: true });
+  const found = boards();
+  if (found.length === 0) return false;
+
+  for (const board of found) {
+    paintBoard(board);
+    const observer = new MutationObserver(() => paintBoard(board));
+    observer.observe(board, { childList: true, subtree: true });
+    boardObservers.push(observer);
+  }
+  return true;
+}
+
+/**
+ * Do every board again from scratch.
+ *
+ * For the badge pictures arriving after the first pass has already run: they
+ * come from main over IPC, and a board drawn before they land has no badges
+ * on it and no reason to redraw. Clearing the marks is what makes the next
+ * pass reconsider rows it has already decided about.
+ */
+export function repaintBoards(): void {
+  for (const board of boards()) {
+    for (const el of board.querySelectorAll(`[${DONE_ATTR}]`)) el.removeAttribute(DONE_ATTR);
+    paintBoard(board);
+  }
 }
 
 // ── player list ──────────────────────────────────────────────────────────
@@ -160,9 +210,9 @@ export function installNameHighlights(): void {
   /** True once there is nothing left to wait for. */
   const settled = (): boolean => {
     const listDone = patchPlayerList();
-    watchLeaderboard();
+    const boardsDone = watchBoards();
     attempts += 1;
-    return (listDone && boardObserver !== null) || attempts >= GIVE_UP_AFTER;
+    return (listDone && boardsDone) || attempts >= GIVE_UP_AFTER;
   };
 
   if (settled()) return;

@@ -19,6 +19,7 @@ import { fetchLobbies, fetchRegionPings } from '../matchmaker';
 import {
   listUserscripts,
   loadLookPreviews,
+  loadBadges,
   loadSkyScenes,
   loadMatchSound,
   loadUserscripts,
@@ -222,6 +223,8 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   registry.handle(IPC.setupPreviews, () => loadLookPreviews(join(app.getAppPath(), 'assets')));
 
   registry.handle(IPC.skyScenes, () => loadSkyScenes(join(app.getAppPath(), 'assets')));
+
+  registry.handle(IPC.badges, () => loadBadges(join(app.getAppPath(), 'assets', 'badges')));
 
   registry.handle(IPC.swapperRescan, () => deps.rescanSwap());
 

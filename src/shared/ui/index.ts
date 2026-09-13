@@ -10,7 +10,7 @@
  * the build if one appears. Components import from here, mount their markup
  * and hand a sheet to `preload/style.ts`: they no longer own how they look.
  */
-export { STYLE_IDS, UI_IDS } from './ids';
+export { STYLE_IDS, UI_CLASSES, UI_IDS } from './ids';
 export { SHEETS } from './sheets';
 export {
   GAME_WINDOW_BACKGROUND,

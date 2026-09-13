@@ -153,6 +153,71 @@ export function loadSkyScenes(bundledDir: string): SkyScene[] {
 }
 
 /**
+ * The badges that go beside a name on the scoreboards.
+ *
+ * One file per badge, and the file name is the badge's id: `owner.png` is
+ * the badge that `shared/badges.ts` calls `owner`. Reading the folder rather
+ * than listing them here is the same call as the sky scenes, and for the same
+ * reason: adding one should be dropping a file in, not editing two files and
+ * hoping they agree.
+ *
+ * Handed over as data URLs, like every other picture the page gets from us.
+ * The renderer has no business reading the filesystem, and these are small.
+ *
+ * Bundled only, deliberately. Badges say something about the person wearing
+ * them, so where they come from has to be the client rather than whatever a
+ * given machine happens to have in a folder: an override would let anyone
+ * hand themselves the owner badge on their own screen.
+ */
+const MAX_BADGE_BYTES = 256 * 1024;
+const MAX_BADGES_ON_DISK = 64;
+
+/** What a badge can be. GIF is in because an animated badge is a badge. */
+const BADGE_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+};
+
+export interface BadgeImage {
+  /** File name without the extension, lower-cased: the id badges.ts uses. */
+  readonly id: string;
+  readonly image: string;
+}
+
+export function loadBadges(badgesDir: string): BadgeImage[] {
+  let entries: string[];
+  try {
+    entries = readdirSync(badgesDir);
+  } catch {
+    // No folder is the normal case for a client with no badges in it.
+    return [];
+  }
+
+  const out: BadgeImage[] = [];
+  for (const file of entries.sort()) {
+    if (out.length >= MAX_BADGES_ON_DISK) break;
+
+    const type = BADGE_TYPES[extname(file).toLowerCase()];
+    if (type === undefined) continue;
+
+    const id = basename(file, extname(file)).toLowerCase();
+    // A second file with the same stem, e.g. owner.png and owner.gif. First
+    // one wins rather than whichever happened to be read last.
+    if (id === '' || out.some((badge) => badge.id === id)) continue;
+
+    const full = join(badgesDir, file);
+    try {
+      if (statSync(full).size > MAX_BADGE_BYTES) continue;
+      out.push({ id, image: `data:${type};base64,${readFileSync(full).toString('base64')}` });
+    } catch {
+      // Unreadable. Skip it rather than fail the whole load.
+    }
+  }
+  return out;
+}
+
+/**
  * The files in the scripts folder we are willing to run, in load order.
  *
  * Sorted, so that order is the same on every machine instead of whatever the

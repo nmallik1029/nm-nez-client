@@ -70,6 +70,12 @@ export const IPC = {
    * editor falls back from to a plain block of colour.
    */
   skyScenes: 'sky:scenes',
+  /**
+   * Renderer -> main. The badge pictures that go beside a name on the
+   * scoreboards, as data URLs keyed by the badge id. Empty when the client
+   * ships none, which draws no badges rather than broken images.
+   */
+  badges: 'badges:list',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

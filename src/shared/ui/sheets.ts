@@ -1,5 +1,5 @@
 import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
-import { UI_IDS } from './ids';
+import { UI_CLASSES, UI_IDS } from './ids';
 import hudMinimal from './hud-minimal.css?raw';
 
 /**
@@ -606,6 +606,36 @@ const rankedPanel = `
 #${UI_IDS.rankedPill} button:hover{background:var(--nm-game-btn-bg-hover);
   color:var(--nm-game-text)}
 #${UI_IDS.rankedPill} .stop{border-color:var(--nm-bad-border);color:var(--nm-bad-text)}
+`;
+
+/**
+ * Badges in front of a name, on the two scoreboards.
+ *
+ * Written to match what Krunker already does beside a name. Their own
+ * verification and premium marks are material-icon glyphs carrying
+ * `vertical-align:middle; margin-right:3px`, and premium adds
+ * `margin-bottom:-2px`; all three are read off the game's own stylesheet and
+ * all three are what this copies. The drop is the reason a badge sits a
+ * little low rather than dead centre, which is the look being matched.
+ *
+ * The height is in em, so one rule covers a board at 18px and the end-of-match
+ * one at 15px. `--nm-badge-size` is where to change it.
+ *
+ * Two defences against the markup underneath. The name element is
+ * `overflow:hidden; white-space:nowrap` in their stylesheet, so a badge that
+ * refused to shrink would push the name out of its own box: hence the max
+ * width. And the boards are flex containers, so a badge that inherited
+ * `flex-shrink` would be squashed by a long name instead of the name being
+ * clipped, which is why it is pinned.
+ */
+const badges = `
+.${UI_CLASSES.badge}{
+  height:var(--nm-badge-size);width:auto;max-width:var(--nm-badge-max);
+  vertical-align:middle;margin-right:var(--nm-badge-gap);
+  margin-bottom:var(--nm-badge-drop);
+  flex-shrink:0;object-fit:contain;image-rendering:auto;
+  /* Nothing here is clickable, and the boards are drawn over the game. */
+  pointer-events:none}
 `;
 
 /**
@@ -2023,6 +2053,7 @@ export const SHEETS = {
   altModal,
   rankedPanel,
   rankProgress,
+  badges,
   hardpointCounter,
   setupWizard,
   qolPanel,

@@ -88,6 +88,7 @@ export const STYLE_IDS = {
   queueButton: 'kc-ranked-launch-css',
   altModal: 'kc-alt-modal-css',
   rankedPanel: 'kc-ranked-panel-css',
+  badges: 'nm-badges-css',
   rankProgress: 'kc-rank-progress-css',
   hardpointCounter: 'kc-hp-counter-css',
   sectionNav: 'kc-sectnav-css',
@@ -112,4 +113,17 @@ export const STYLE_IDS = {
   crosshair: 'kc-crosshair-css',
   killStreak: 'nm-killstreak-css',
   hitmarker: 'kc-hitmarker-css',
+} as const;
+
+/**
+ * Classes the client puts on elements Krunker owns.
+ *
+ * Everything above is a one-of-a-kind thing and gets an id. A badge is drawn
+ * once per player per board, so it is a class instead; it is here for the
+ * same reason the ids are, which is that `sheets.ts` builds its selector from
+ * this and the code that mounts one needs the same string.
+ */
+export const UI_CLASSES = {
+  /** One badge image, sitting in front of a name on a scoreboard. */
+  badge: 'nm-badge',
 } as const;

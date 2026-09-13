@@ -261,6 +261,26 @@ const SCAN = `
 `;
 
 /**
+ * Badges beside a name on the scoreboards.
+ *
+ * The three numbers that decide whether they look like they came with the
+ * game, together, so tuning them is one place and not a hunt through a
+ * stylesheet. They start from what Krunker does to its own verification and
+ * premium marks, which is `vertical-align:middle`, three pixels of gap, and
+ * two pixels of drop.
+ *
+ * The size is in em on purpose: the in-match board sets 18px and the one at
+ * the end of a match sets 15px, so a badge in pixels would be right on one
+ * of them and wrong on the other.
+ */
+const BADGE = `
+  --nm-badge-size:1.25em;
+  --nm-badge-max:2.5em;
+  --nm-badge-gap:3px;
+  --nm-badge-drop:-2px;
+`;
+
+/**
  * The bar on Krunker's rank card, showing how far the next rank is.
  *
  * Sits on their surface rather than ours, so the track is a well sunk into
@@ -743,6 +763,7 @@ export const TOKENS_CSS = `:root{${[
   WATERMARK,
   QUEUE_BUTTON,
   SCAN,
+  BADGE,
   RANK,
   UPDATE,
   QUEUE_WINDOW,

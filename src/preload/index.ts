@@ -21,7 +21,8 @@ import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
 import { setHardpointCounter } from './hud/hardpoint-counter';
-import { installNameHighlights } from './name-highlights';
+import { installBadges } from './badges';
+import { installNameHighlights, repaintBoards } from './name-highlights';
 import { installProtocolHost } from './protocol/host';
 import { installQol } from './qol/panel';
 import { installRankedPanel } from './ranked/panel';
@@ -143,6 +144,10 @@ async function bootstrap(): Promise<void> {
     setHardpointCounter(cfg.ui.hardpointCounter);
 
     installNameHighlights();
+
+    // The badge pictures come from main, so they land after that first pass
+    // and it gets redone when they do.
+    installBadges(repaintBoards);
 
     // Picks the queue back up after a reload: main has been running it the
     // whole time, so this asks what state it is in rather than starting one.

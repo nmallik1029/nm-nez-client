@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   isScriptFileName,
+  loadBadges,
   listUserscripts,
   loadUserscripts,
   removeUserscript,
@@ -160,5 +161,57 @@ describe('removeUserscript', () => {
 
     expect(removeUserscript(scripts, '../outside.js')).toBe(false);
     expect(existsSync(outside)).toBe(true);
+  });
+});
+
+/**
+ * Badges.
+ *
+ * The id is the file name, which is the whole of the registration step, so
+ * what matters here is which files become badges and which are ignored: a
+ * badge that quietly fails to load is a badge someone thinks they gave out.
+ */
+describe('loadBadges', () => {
+  const png = (name: string, bytes = 16): void => {
+    writeFileSync(join(dir, name), Buffer.alloc(bytes, 7));
+  };
+
+  it('names each badge after its file, lower-cased', () => {
+    png('Owner.png');
+    expect(loadBadges(dir).map((b) => b.id)).toEqual(['owner']);
+  });
+
+  it('hands the picture over as a data URL of the right type', () => {
+    png('owner.png');
+    png('spin.gif');
+    const byId = new Map(loadBadges(dir).map((b) => [b.id, b.image]));
+    expect(byId.get('owner')).toMatch(/^data:image\/png;base64,/);
+    expect(byId.get('spin')).toMatch(/^data:image\/gif;base64,/);
+  });
+
+  it('ignores anything that is not a picture', () => {
+    png('real.png');
+    writeFileSync(join(dir, 'notes.txt'), 'hello');
+    writeFileSync(join(dir, 'sneaky.js'), 'alert(1)');
+    expect(loadBadges(dir).map((b) => b.id)).toEqual(['real']);
+  });
+
+  it('takes one file per id rather than whichever was read last', () => {
+    png('dupe.gif');
+    png('dupe.png');
+    const badges = loadBadges(dir);
+    expect(badges).toHaveLength(1);
+    // Sorted, so .gif is the one that got there first.
+    expect(badges[0]?.image).toMatch(/^data:image\/gif;/);
+  });
+
+  it('leaves out anything too big to be a badge', () => {
+    png('fine.png');
+    png('huge.png', 256 * 1024 + 1);
+    expect(loadBadges(dir).map((b) => b.id)).toEqual(['fine']);
+  });
+
+  it('is empty rather than throwing when there is no folder', () => {
+    expect(loadBadges(join(dir, 'nope'))).toEqual([]);
   });
 });

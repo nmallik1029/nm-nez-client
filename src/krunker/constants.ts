@@ -54,6 +54,33 @@ export const KRUNKER_NAMES = {
   leaderContainerId: 'leaderContainer',
   leaderNameSelector: '.leaderName, .leaderNameM',
   playerListNameSelector: '.pListName > a, .pListName',
+  /**
+   * Every board a name gets drawn on, hidden or not.
+   *
+   * All three are in the page from the moment it loads, which is worth
+   * knowing: they can be hooked on the menu and are empty until a match
+   * fills them, so nothing here has to wait for a round to start.
+   *
+   *   leaderContainer     the running board in the corner of a match
+   *   centerLeaderDisplay the big one in the middle, holding one
+   *                       centerLeaderContainer per team
+   *   endUI               the end-of-match screen, tables and all
+   */
+  boardContainerIds: ['leaderContainer', 'centerLeaderDisplay', 'endUI'],
+  /**
+   * A name on any of them.
+   *
+   * Two families, because the end-of-match tables use their own copy of the
+   * board's classes: `.leaderItem` is 18px and `.newLeaderItem` is 15px, and
+   * their stylesheet has a `td > .newLeaderItem` rule, which is what says the
+   * second set is the one in the tables. Read out of the game's own CSS.
+   *
+   * The three suffixes are theirs as well: bare is the other team in red,
+   * `M` is you in white, `F` is the dimmed one. All three are people with
+   * names, so all three are matched.
+   */
+  boardNameSelector:
+    '.leaderName, .leaderNameM, .leaderNameF, .newLeaderName, .newLeaderNameM, .newLeaderNameF',
 } as const;
 
 /** DOM ids Krunker renders that we read or overwrite. */
