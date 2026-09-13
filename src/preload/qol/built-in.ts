@@ -108,6 +108,16 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
         ctx.refresh();
       },
     }),
+    featureRow({
+      icon: 'track_changes',
+      name: 'Live accuracy',
+      sub: 'How many of your shots have landed this life, in the top right beside kills and deaths. Starts over when you die.',
+      on: features.accuracyCounter,
+      onToggle: () => {
+        ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter });
+        ctx.refresh();
+      },
+    }),
   );
 
   for (const script of CLIENT_SCRIPTS) {

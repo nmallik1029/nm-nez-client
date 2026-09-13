@@ -4,6 +4,7 @@ import { packFileUrl, tierFor, type KillPack } from '../../shared/killstreak';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import type { KillStreakConfig } from '../../shared/visuals';
 import { defineStyle } from '../style';
+import { watchCounter } from './hud-counter';
 
 /**
  * Kill streak sounds: a sound and a banner for each kill in a row.
@@ -15,14 +16,8 @@ import { defineStyle } from '../style';
  * showing, even hidden, which is the same thing the built-in headshot sound
  * found out in a live match. #deathCount does the same job for dying.
  *
- * The rules for both counters: going up is an event, going down is a new
- * match, and the first reading after attaching is only a baseline. Joining a
- * match already on twelve kills is not twelve kills just now, and nor is
- * Krunker rebuilding its HUD mid-round.
- *
- * Re-attached on a timer rather than once, because Krunker replaces chunks of
- * its HUD and an observer left on a detached node goes quiet without ever
- * erroring. The timer only runs while this is switched on.
+ * Both counters are read the way hud-counter.ts describes, re-attached on a
+ * timer that only runs while this is switched on.
  */
 
 const KILLS_ID = 'killsVal';
@@ -201,48 +196,6 @@ function banner(): HTMLImageElement | null {
   return image;
 }
 
-interface Counter {
-  attach(): void;
-  stop(): void;
-}
-
-function counter(id: string, onUp: (gained: number) => void, onDown: () => void): Counter {
-  let el: HTMLElement | null = null;
-  let last: number | null = null;
-  let observer: MutationObserver | null = null;
-
-  const read = (): void => {
-    if (!el) return;
-    const value = Number.parseInt(el.textContent ?? '', 10);
-    if (Number.isNaN(value)) return;
-    const previous = last;
-    last = value;
-    if (previous === null) return;
-    if (value < previous) onDown();
-    else if (value > previous) onUp(value - previous);
-  };
-
-  return {
-    attach(): void {
-      const now = document.getElementById(id);
-      if (!now || now === el) return;
-      observer?.disconnect();
-      el = now;
-      last = null;
-      observer = new MutationObserver(read);
-      observer.observe(now, { childList: true, characterData: true, subtree: true });
-      // The baseline, so the first real change is a change.
-      read();
-    },
-    stop(): void {
-      observer?.disconnect();
-      observer = null;
-      el = null;
-      last = null;
-    },
-  };
-}
-
-const kills = counter(KILLS_ID, onKills, reset);
+const kills = watchCounter(KILLS_ID, onKills, reset);
 // Dying ends a streak, and so does the death counter going back to zero.
-const deaths = counter(DEATHS_ID, reset, reset);
+const deaths = watchCounter(DEATHS_ID, reset, reset);

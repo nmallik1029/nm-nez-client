@@ -2025,6 +2025,22 @@ const hitmarker = `
  * drop-shadow filters never run, and Chromium does not fetch background
  * images for it -- which is where the weapon and class icons come from.
  */
+/**
+ * Live accuracy, in the top-right HUD strip beside Krunker's kills and deaths.
+ *
+ * Built from the game's own statIcon and greyInner classes, like the
+ * hardpoint counter, so size, colour and spacing all come from the game.
+ * Unlike that counter, nothing here enlarges or recolours the number: the
+ * whole point is that it reads as one of Krunker's own stats.
+ */
+const accuracyCounter = `
+#${UI_IDS.accuracyCounter} .greyInner{display:flex;align-items:center;gap:6px}
+#${UI_IDS.accuracyCounter} .lbl{font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track-md);
+  text-transform:uppercase}
+/* Tabular and a fixed width, so the strip does not shuffle as 9% becomes 10%. */
+#${UI_IDS.accuracyCounter} .val{min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+`;
+
 const deathStats = `
 .death-ui-bottom,.death-ui-bottom-empty,.death-report{display:none !important}
 `;
@@ -2088,4 +2104,5 @@ export const SHEETS = {
   hudMinimal,
   killStreak,
   deathStats,
+  accuracyCounter,
 } as const;

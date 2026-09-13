@@ -33,6 +33,8 @@ export const UI_IDS = {
   altManagerButton: 'kc-alt-manager-button',
   /** Enemies standing on the hardpoint, in the top-right HUD counters. */
   hardpointCounter: 'kc-hp-counter',
+  /** Live accuracy, in the same HUD strip. */
+  accuracyCounter: 'nm-accuracy',
   /** The ranked queue, in the page rather than its own window. */
   rankedPanel: 'kc-ranked-panel',
   /** Shown while the queue runs and the panel is shut. */
@@ -91,6 +93,7 @@ export const STYLE_IDS = {
   badges: 'nm-badges-css',
   rankProgress: 'kc-rank-progress-css',
   hardpointCounter: 'kc-hp-counter-css',
+  accuracyCounter: 'nm-accuracy-css',
   sectionNav: 'kc-sectnav-css',
   changelog: 'kc-changelog-css',
   menuButtons: 'kc-class-buttons-css',

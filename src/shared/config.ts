@@ -97,6 +97,12 @@ export interface FeatureConfig {
    */
   hideDeathStats: boolean;
   /**
+   * A live accuracy readout for the current life, in the HUD beside kills
+   * and deaths. Counted from the ammo counter and the game's hit sound; see
+   * shared/accuracy.ts.
+   */
+  accuracyCounter: boolean;
+  /**
    * Restyle Krunker's menu and the windows it opens: one accent instead of
    * five button colours, a gradient backdrop instead of a text shadow on
    * every label, the frame rate and ping set as numbers, and one settings
@@ -304,6 +310,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     betterChat: true,
     hideMenuPromos: true,
     hideDeathStats: false,
+    accuracyCounter: false,
     menuSkin: false,
     enabledScripts: [],
     chatHistoryLimit: 200,
