@@ -47,6 +47,7 @@ let reinserting = false;
 
 let scrollPaused = false;
 let savedScrollTop = 0;
+let resizeObserver: ResizeObserver | null = null;
 
 function isMessage(node: Node): node is HTMLElement {
   return (
@@ -158,6 +159,31 @@ function handleMutations(mutations: MutationRecord[]): void {
   }
 }
 
+/**
+ * Keep following when chat changes size underneath you.
+ *
+ * A scroll box that gets shorter keeps its scrollTop, so it ends up sitting
+ * above the bottom by however much it lost -- and no scroll event fires,
+ * because scrollTop never moved, so handleScroll never hears about it and this
+ * still believes you are following. It stayed short of the bottom until the
+ * next message made Krunker scroll.
+ *
+ * Chat gets shorter at exactly the moments you look at it: click-to-play puts
+ * #uiBase on the menu, where chat-place.ts fits the list between the nav and
+ * the buttons, and Krunker's own death screen cuts it to 165px.
+ *
+ * An image in a message that finishes loading after Krunker has scrolled is
+ * the same problem from the other side, taller content under the same
+ * scrollTop, so a load re-pins too.
+ *
+ * Only while following. Scrolled up, the browser keeping scrollTop is what
+ * holds your place, and that is left alone.
+ */
+function followToBottom(): void {
+  if (!chatList || scrollPaused || reinserting) return;
+  chatList.scrollTop = chatList.scrollHeight;
+}
+
 function handleScroll(): void {
   if (!chatList || reinserting) return;
 
@@ -229,6 +255,11 @@ export function attachChat(): boolean {
   observer = new MutationObserver(handleMutations);
   observer.observe(chatList, { childList: true });
   chatList.addEventListener('scroll', handleScroll, { passive: true });
+  resizeObserver?.disconnect();
+  resizeObserver = new ResizeObserver(followToBottom);
+  resizeObserver.observe(chatList);
+  // load does not bubble, so it is caught on the way down.
+  chatList.addEventListener('load', followToBottom, true);
 
   syncMergeStyle();
   installChannelKey();
