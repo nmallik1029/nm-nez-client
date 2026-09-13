@@ -89,6 +89,14 @@ export interface FeatureConfig {
    */
   hideMenuPromos: boolean;
   /**
+   * Hide the stats panel Krunker puts up when you die: who killed you, their
+   * class, weapon and kills. Nearly every piece of it carries a drop-shadow
+   * filter and it lands together with weapon and class images, all on the
+   * frame you die, which is a hitch on a lot of machines. Hidden rather than
+   * removed, so nothing Krunker looks up by class goes missing.
+   */
+  hideDeathStats: boolean;
+  /**
    * Restyle Krunker's menu and the windows it opens: one accent instead of
    * five button colours, a gradient backdrop instead of a text shadow on
    * every label, the frame rate and ping set as numbers, and one settings
@@ -295,6 +303,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     disabledUserscripts: [],
     betterChat: true,
     hideMenuPromos: true,
+    hideDeathStats: false,
     menuSkin: false,
     enabledScripts: [],
     chatHistoryLimit: 200,

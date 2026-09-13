@@ -6,6 +6,7 @@ import { initChat, setChatOptions } from './chat';
 import {
   installFixes,
   setAdContainerHiding,
+  setDeathStatsHiding,
   setMenuPromoHiding,
   setRawInput,
 } from './fixes';
@@ -117,6 +118,8 @@ async function bootstrap(): Promise<void> {
   setSky(cfg.visuals.sky);
 
   installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
+  // A stylesheet only, so it can go in before the page has built anything.
+  setDeathStatsHiding(cfg.features.hideDeathStats);
   // Listener only. It sits idle until main reports a sample, so installing it
   // unconditionally costs nothing and saves a reload when the setting goes on.
   installRealPing();
@@ -375,6 +378,8 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
         merged: features?.betterChat === true,
         historyLimit: features?.chatHistoryLimit ?? 0,
       });
+    } else if (key === 'hideDeathStats') {
+      setDeathStatsHiding(value === true);
     } else if (key === 'hideMenuPromos') {
       // Just a stylesheet, so it toggles without a reload.
       setMenuPromoHiding(value === true);

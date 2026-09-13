@@ -112,6 +112,7 @@ export const STYLE_IDS = {
    */
   crosshair: 'kc-crosshair-css',
   killStreak: 'nm-killstreak-css',
+  deathStats: 'nm-death-stats-css',
   hitmarker: 'kc-hitmarker-css',
 } as const;
 
