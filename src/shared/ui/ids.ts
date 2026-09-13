@@ -57,6 +57,8 @@ export const UI_IDS = {
    * krunker/constants.ts, which is where that was measured.
    */
   crosshair: 'nm-crosshair',
+  /** The kill streak banner, bottom centre. */
+  killStreakBanner: 'nm-killstreak-banner',
   /**
    * The client's own hitmarker, same place.
    *
@@ -108,5 +110,6 @@ export const STYLE_IDS = {
    * it every time it writes. See preload/look/slot.ts.
    */
   crosshair: 'kc-crosshair-css',
+  killStreak: 'nm-killstreak-css',
   hitmarker: 'kc-hitmarker-css',
 } as const;

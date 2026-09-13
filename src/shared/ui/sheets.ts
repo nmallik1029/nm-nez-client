@@ -1970,6 +1970,48 @@ const hitmarker = `
 #${UI_IDS.hitmarker}.on{opacity:1;transition:none}
 `;
 
+/**
+ * The kill streak banner, and the pack grid in its QoL editor.
+ *
+ * One sheet for both because they are one feature: the banner needs defining
+ * the first time a streak lands, the grid the first time the editor opens,
+ * and whichever comes first brings the other along for nothing.
+ *
+ * The banner sits on the game-overlay layer, under Krunker's own windows, so
+ * opening settings mid-streak still puts settings in front of it. Hidden until
+ * it has a src, so there is no broken-image box on screen before the first
+ * kill.
+ */
+const killStreak = `
+#${UI_IDS.killStreakBanner}{position:fixed;left:50%;bottom:30px;width:200px;height:200px;
+  object-fit:contain;pointer-events:none;z-index:var(--nm-z-game-overlay);opacity:0;
+  transform:translateX(-50%) scale(1);
+  transition:opacity var(--nm-slow),transform var(--nm-slow)}
+#${UI_IDS.killStreakBanner}:not([src]){display:none}
+#${UI_IDS.killStreakBanner}.in{opacity:1}
+#${UI_IDS.killStreakBanner}.pop{transform:translateX(-50%) scale(1.3)}
+
+#${UI_IDS.qolPanel} .find{display:block;width:100%;box-sizing:border-box;margin:4px 0 10px;
+  padding:7px 9px;font-family:inherit;font-size:var(--nm-fs-md);
+  background:var(--nm-game-input-bg);color:var(--nm-game-text);
+  border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none}
+#${UI_IDS.qolPanel} .find:focus{border-color:var(--nm-game-input-focus)}
+#${UI_IDS.qolPanel} .packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+/* A button, so it inherits the panel's button look; these just re-lay it out
+   as a tile and win on specificity, a class beating the type selector. */
+#${UI_IDS.qolPanel} .pack{display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 6px;text-align:center;background:var(--nm-game-row-bg);
+  border-color:var(--nm-game-border)}
+#${UI_IDS.qolPanel} .pack img{width:64px;height:64px;object-fit:contain}
+#${UI_IDS.qolPanel} .pack .material-icons{width:64px;height:64px;display:flex;align-items:center;
+  justify-content:center;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .pack .nm{font-size:var(--nm-fs-xs);line-height:var(--nm-lh);
+  color:var(--nm-game-text-body)}
+#${UI_IDS.qolPanel} .pack .meta{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint)}
+#${UI_IDS.qolPanel} .pack.on{border-color:var(--nm-accent)}
+#${UI_IDS.qolPanel} .pack.on .nm{color:var(--nm-game-text)}
+`;
+
 export const SHEETS = {
   crosshair,
   hitmarker,
@@ -1996,4 +2038,5 @@ export const SHEETS = {
   menuSkin,
   krunkerWindows,
   hudMinimal,
+  killStreak,
 } as const;

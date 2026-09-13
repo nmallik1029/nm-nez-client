@@ -12,6 +12,7 @@ import {
 import { installChangelogItem, showPatchNotes } from './changelog';
 import { setCrosshair } from './look/crosshair';
 import { setHitmarker } from './look/hitmarker';
+import { setKillStreak } from './look/killstreak';
 import { installSkyHook, setSky } from './look/sky';
 import { debounced } from './schedule';
 import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
@@ -134,6 +135,7 @@ async function bootstrap(): Promise<void> {
     // no reason to be a frame late into a match that is already running.
     setCrosshair(cfg.visuals.crosshair);
     setHitmarker(cfg.visuals.hitmarker);
+    setKillStreak(cfg.visuals.killStreak);
 
     hud = createPerfHud({ corner: cfg.ui.perfHudCorner, detail: cfg.ui.perfHudDetail });
     if (cfg.ui.perfHud) hud.show();
@@ -318,6 +320,10 @@ function patchVisuals(cfg: AppConfig, partial: Partial<VisualsConfig>): void {
   if (partial.hitmarker) {
     setHitmarker(next.hitmarker);
     dirtyVisuals.hitmarker = next.hitmarker;
+  }
+  if (partial.killStreak) {
+    setKillStreak(next.killStreak);
+    dirtyVisuals.killStreak = next.killStreak;
   }
 
   saveVisuals();

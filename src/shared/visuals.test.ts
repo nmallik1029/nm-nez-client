@@ -209,3 +209,37 @@ describe('normaliseVisuals', () => {
     expect(normaliseVisuals({ crosshair: null }).crosshair).toEqual(DEFAULT_VISUALS.crosshair);
   });
 });
+
+describe('normaliseVisuals: killStreak', () => {
+  it('starts off, with no pack and a quiet volume', () => {
+    expect(normaliseVisuals({}).killStreak).toEqual({ on: false, pack: '', volume: 0.3 });
+  });
+
+  it('keeps a real pack id and a volume in range', () => {
+    const k = normaliseVisuals({ killStreak: { on: true, pack: 'vct-2025', volume: 0.75 } }).killStreak;
+    expect(k).toEqual({ on: true, pack: 'vct-2025', volume: 0.75 });
+  });
+
+  it('drops a pack id that could leave the folder, rather than cleaning it', () => {
+    for (const pack of ['../evil', 'a/b', 'VCT 2025', 'x.y', 42]) {
+      expect(normaliseVisuals({ killStreak: { on: true, pack, volume: 0.5 } }).killStreak.pack).toBe('');
+    }
+  });
+
+  it('holds volume between 0 and 1, and falls back when it is not a number', () => {
+    expect(normaliseVisuals({ killStreak: { volume: 4 } }).killStreak.volume).toBe(1);
+    expect(normaliseVisuals({ killStreak: { volume: -1 } }).killStreak.volume).toBe(0);
+    expect(normaliseVisuals({ killStreak: { volume: 'loud' } }).killStreak.volume).toBe(0.3);
+    expect(normaliseVisuals({ killStreak: { volume: Number.NaN } }).killStreak.volume).toBe(0.3);
+  });
+
+  it('only a real true switches it on', () => {
+    expect(normaliseVisuals({ killStreak: { on: 'yes' } }).killStreak.on).toBe(false);
+  });
+
+  it('leaves the other visuals alone when an old config has no killStreak at all', () => {
+    const before = normaliseVisuals({ sky: { on: true, color: '#112233' } });
+    expect(before.sky).toEqual({ on: true, color: '#112233' });
+    expect(before.killStreak).toEqual(DEFAULT_VISUALS.killStreak);
+  });
+});

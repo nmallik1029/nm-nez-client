@@ -3,6 +3,7 @@ import { isScriptRunning, setScriptEnabled } from '../scripts/runner';
 import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
+import { killStreakEditor } from './killstreak-editor';
 import { featureRow } from './row';
 import { showToast } from '../toast';
 import { skyEditor } from './sky-editor';
@@ -10,8 +11,7 @@ import { skyEditor } from './sky-editor';
 /**
  * The Built-in tab: the things the client does that Krunker does not.
  *
- * Two kinds of row. The first three are pieces of the game we draw ourselves,
- * and each opens an editor, because "which crosshair" is not a question with
+ * Two kinds of row. The first four each open an editor, because "which crosshair" is not a question with
  * a yes or a no. Under them are the scripts, which are.
  *
  * The scripts read from the runner rather than from config, because the
@@ -82,6 +82,17 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
         showToast('The sky is built when a map loads, so this lands on the next one', 3600);
       },
       editor: skyEditor,
+    }),
+    openable({
+      icon: 'military_tech',
+      name: 'Kill streak sounds',
+      sub: 'Valorant-style: a sound and a banner for each kill in a row. Pick a pack, or add your own to swap/sounds/killstreak.',
+      on: visuals.killStreak.on,
+      toggle: () =>
+        ctx.deps.patchVisuals({
+          killStreak: { ...visuals.killStreak, on: !visuals.killStreak.on },
+        }),
+      editor: killStreakEditor,
     }),
   );
 
