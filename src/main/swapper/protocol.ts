@@ -1,5 +1,9 @@
+import { createReadStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { Readable } from 'node:stream';
 import { pathToFileURL } from 'node:url';
 import { net, protocol } from 'electron';
+import { mediaTypeFor, parseByteRange } from './range';
 
 export const SWAP_SCHEME = 'swap';
 
@@ -81,13 +85,50 @@ export class SwapServer {
 
 /** Install the protocol handler. Call after `app.whenReady()`. */
 export function handleSwapProtocol(server: SwapServer): void {
-  protocol.handle(SWAP_SCHEME, (request) => {
+  protocol.handle(SWAP_SCHEME, async (request) => {
     // swap://f/<id>
     const id = new URL(request.url).pathname.replace(/^\/+/, '');
     // Nothing on disk backs this one; it is the "load nothing" target.
     if (id === EMPTY_ID) return new Response('', { status: 200 });
     const filePath = server.resolve(id);
     if (filePath === null) return new Response('Not found', { status: 404 });
-    return net.fetch(pathToFileURL(filePath).toString());
+
+    const fileUrl = pathToFileURL(filePath).toString();
+    // Everything but audio and video asks for the whole file.
+    const header = request.headers.get('range');
+    if (header === null) return net.fetch(fileUrl);
+    return servePiece(filePath, fileUrl, header);
+  });
+}
+
+/**
+ * Answer a Range request with exactly the bytes it asked for.
+ *
+ * This is not optional over a custom scheme: Chromium's media loader takes
+ * whatever comes back to begin at the position it asked for. See range.ts.
+ */
+async function servePiece(filePath: string, fileUrl: string, header: string): Promise<Response> {
+  let size: number;
+  try {
+    size = (await stat(filePath)).size;
+  } catch {
+    return new Response('Not found', { status: 404 });
+  }
+
+  const range = parseByteRange(header, size);
+  if (range === null) return net.fetch(fileUrl);
+  if (range === 'unsatisfiable') {
+    return new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${size}` } });
+  }
+
+  const piece = Readable.toWeb(createReadStream(filePath, { start: range.start, end: range.end }));
+  return new Response(piece as ReadableStream<Uint8Array>, {
+    status: 206,
+    headers: {
+      'Content-Type': mediaTypeFor(filePath),
+      'Content-Length': String(range.end - range.start + 1),
+      'Content-Range': `bytes ${range.start}-${range.end}/${size}`,
+      'Accept-Ranges': 'bytes',
+    },
   });
 }
