@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.52',
+    date: '2026-09-15',
+    changes: [
+      { kind: 'fixed', text: 'Badges sit on the baseline beside a name, where the game puts its own mark, rather than about seven pixels low. A badge file over a megabyte is skipped with a note in the console instead of being loaded.' },
+      { kind: 'changed', text: 'biooom now shows in the same name colour as drainciity and YBG_Wallace.' },
+    ],
+  },
+  {
     version: '0.1.51',
     date: '2026-09-13',
     changes: [
