@@ -1,109 +1,33 @@
 # NM/NZ
 
-A Krunker client for Windows, built around one thing: the game should feel exactly as
-responsive as your hardware says it is. Everything else here is quality of life on top of
-that.
-
-It runs a patched Electron so uncapped FPS doesn't come with the aim freeze, takes raw
-mouse deltas so flicks land where you point them, and adds the usual client features
-(resource swapper, themes, alt manager, external ranked queue) without anything that would
-give you an unfair advantage.
-
-## Getting it running
-
-```bash
-npm install
-npm start
-```
-
-`npm install` pulls the patched Electron build as part of postinstall, which is a 380MB
-download the first time and cached afterwards. See [the section on it](#why-a-patched-electron)
-if you want to know what you're running.
-
-Settings live under `F1`, in a Client tab inside Krunker's own settings window.
-
-**Unlock frame rate is off by default.** On a stock Electron it makes the game feel worse
-than a browser tab, so leave it off until the patched build is in place. Everything else
-in here works fine on stock Electron 44.
+Krunker client FOR WINDOWS made by competitive players, there are tons of very good, capable clients (Glorp, Crankshaft, KCC, etc) but, for us atleast, they don't work 100% of the time and sometimes have weird bugs that take a little long to resolve. Like KCC (and maybe Glorp idk) NM/NZ uses a patched build of electron that eliminates mouse flicks and keeps FPS high and smooth. Older electron builds had weird frametime bugs, so many electron-based apps across games in general are using patched builds like this one. We are not professionals so keep that in mind when downloading the client or using any software :3
 
 ## What's in it
 
 ### Performance
 
-- Unlocked frame rate with no aim freeze, and an exact FPS cap that holds above your
-  monitor's refresh rate. Both need the patched build.
-- **Raw mouse input.** Pointer lock hands you OS-adjusted deltas by default, which on
-  Windows means "Enhance pointer precision" is baked into every movement. That curve
-  multiplies fast movement more than slow, so tracking feels right and then a flick sails
-  past. This asks for the sensor deltas instead.
-- **Scroll frame-pacing fix.** Chromium paces frames to vsync for the length of a wheel
-  gesture, which drops an uncapped framerate to your refresh rate until you stop
-  scrolling. In-game the wheel is your weapon switch, so that lands mid-fight.
-- Full frame rate while alt-tabbed. Chromium halves it otherwise, and you feel the lurch
-  coming back.
-- Chromium switch layer: ANGLE backend, GPU rasterisation, debloat, all toggleable.
-- Ad, tracker and telemetry blocking at the network layer. The URL filter is matched down
-  in Chromium's C++ layer, so anything that doesn't match never reaches JavaScript, which
-  matters on a map load that fires thousands of requests.
-- Optional prop culling for bunny NPCs and Turf Wars clan banners.
+The client uses several fixes and settings modifications to stabilize FPS and make the game overall smoother to play.
+- In a lot of clients (and official at some point) the FPS cap just straight up doesn't work. In our testing, NM/NZ client's FPS cap works fully with no aim freezes or anything.
+- Proper raw mouse input
+- Chromium switch layer: ANGLE backend, GPU rasterisation, debloat, which are all toggleable if it doesn't work for you. <- These are EXPERIMENTAL!!
+- Optional prop culling for bunny NPCs and Turf Wars clan banners (basically you can hide them and it'll be like they don't exist, not that they're hidden because it increases performance a bit on specific machines)
 
 ### Frame-time HUD (`F10`)
 
-FPS, frame time, and your worst 1% and 0.1% of frames. The lows are the number worth
-watching: 300 FPS with regular hitches feels considerably worse than a steady 200, and a
-plain FPS counter hides exactly that.
-
-It samples every frame but only repaints four times a second, because a HUD that reflows
-text 300 times a second is its own performance problem.
+This is pretty useless but if you want a more specific, tuned FPS and ping meter for your game you can use this. 
 
 ### Matchmaker (`F6`)
 
 Set your filters once in settings (region, mode, map, player count, time left), then one
-key scans the live lobby list and drops you into the best match. No browsing.
-
-On screen it's a title and a loading bar. It used to flick through every rejected lobby
-with its map preview, which looked busier than it was; the only thing you can do while it
-runs is press Escape, so the bar says which region you're joining and nothing else.
+key scans the live lobby list and drops you into the best match.
 
 ### External ranked queue
 
-Krunker's own ranked queue dies with the tab holding it. This one is a socket the app
-owns, in its own little window, so you can close the game, reload it, or go and do
-something else and keep your place in line. It brings itself to the front when you match.
-
-Launch it from the button next to FIND MATCH in Krunker's ranked panel.
+Like basically everybody knows, clients like Glorp basically revolutionized queueing ranked with an External Ranked Queue. This isn't necessarily a bad thing but another window on my screen when I alt+tab was really annoying. So queuing for ranked is in basically the same layout as the normal ranked menu, but persists throughout lobby hopping, refreshing, etc. Closing the client will remove you from queue. 
 
 ### Tournament links (`nmnez://`)
 
-The client registers the `nmnez://` URL scheme, so a tournament bot can post a button that
-puts the match lobby up for you. Clicking it brings the client to the front, opens
-Krunker's comp server setup with the map, team names, rosters, team size, class limits and
-the result webhook already filled in, and creates the room.
-
-The link looks like this, and it's the same shape three other Krunker clients already
-take, so a bot that builds them only has to learn the scheme name:
-
-```
-nmnez://game?action=host-comp&mapId=Burg&team1Name=Alpha&team2Name=Bravo&teamSize=3v3
-  &team1Players=one,%20two,%20three&team2Players=four,%20five,%20six
-  &spectators=caster1&classes={"ak":2}&webhook=https://your-bot/krunker&region=NY
-```
-
-`region` is a game-id region code (`NY`, `DAL`, `FRA`...) or one of Krunker's own server
-keys (`us-nj`). Switching region needs a page load, so the client only reloads when the
-region you asked for isn't the one already set. `webhook` is Krunker's own field: the game
-posts the final scoreboard there when the match ends, the client never sees it. Anything
-in a link that isn't one of these is ignored, and a value that makes no sense is dropped
-rather than typed into the form.
-
-Nothing else uses the scheme, and no other action is implemented: a link the client
-doesn't recognise does nothing at all. There's no prompt of our own before a lobby goes
-up, because your browser already asks before handing a custom scheme to an app.
-
-Registration happens when the client is installed, so this needs an installed build. A
-portable exe registers the scheme itself on first run; a `npm start` development run
-deliberately doesn't, since it would point every `nmnez://` link on the machine at a bare
-Electron binary.
+This was one of the main reasons we made this client. KCC is a very useful, feature-rich client but unfortunately it simply does not have this (atleast rn). As the owners of CKL, where we host pugs daily, we need a way to use a custom URL scheme to host through a link with the Krunker webhook in order to receive data, push automation, etc. 
 
 ### QoL Features
 
@@ -217,157 +141,3 @@ Custom loading backgrounds aren't implemented.)
 | `Ctrl+J` | Join from clipboard |
 
 All rebindable in the settings tab.
-
-## Why a patched Electron
-
-`--disable-frame-rate-limit` is how you uncap the frame rate, and on stock Chromium it
-also causes the aim freeze: 50 to 300ms where your shots don't register, always while
-you're holding the mouse and moving.
-
-The cause is scheduling. Continuous mouse input runs at `kHighestPriority` on the
-renderer's main-thread scheduler, and Chromium's task-queue selector has no cross-priority
-anti-starvation, so held input plus the compositor cascade behind it monopolises the main
-thread and WebSocket `onmessage` never gets a turn. None of that is reachable from
-JavaScript or from a command-line flag, because the priorities are compiled in.
-
-Three patches fix it:
-
-| Patch | What it does |
-|---|---|
-| `ws-priority` | Drops input from `kHighestPriority` to `kNormalPriority` and caps compositor priority the same way. Counterintuitively this *raises* both FPS and input throughput. |
-| `frame-pacing` | Puts back the pending-frame limits that `--disable-frame-rate-limit` throws away, so the compositor stops flooding the main thread with begin-frame tasks. |
-| `frame-cap` | Adds a pacing gate in `DidReceiveSwapBuffersAck()`, giving an exact FPS cap that holds above the display refresh rate plus a runtime `win.setFrameCap()` API. |
-
-Worth being clear that the aim *flick* is a completely separate bug with a one-line fix in
-the preload (`unadjustedMovement` on pointer lock). Patching the binary does nothing for
-it, and it took us an embarrassingly long time to work that out.
-
-### Installing it
-
-The build comes from
-[bigjakk/Electron-Websocket-Fix](https://github.com/bigjakk/Electron-Websocket-Fix)
-(GPL-3.0), the same binary Krunker Civilian Client ships. `npm install` fetches it. To
-reinstall by hand:
-
-```bash
-npm run electron:patch
-```
-
-It unpacks over `node_modules/electron/dist` and writes `path.txt`, which stops the
-electron package pulling a stock binary down on top of it.
-
-Be aware of what this is: a prebuilt, unsigned Chromium from someone else's GitHub
-release, running with full local privileges. Upstream publishes no checksums, so
-[`scripts/fetch-electron.mjs`](scripts/fetch-electron.mjs) pins the SHA-256 of the build
-we actually downloaded and looked at. A mismatch aborts, because a mismatch means the
-asset was swapped after we pinned it. After extracting it greps the binary for
-`setFrameCap`, a patch symbol that isn't in stock builds, so a quiet fallback to stock
-fails loudly instead of turning up weeks later as "aim still freezes".
-
-`electron-builder.yml` points `electronDist` at the same tree. Without that, `npm run
-dist` packages a stock Electron from electron-builder's own CDN cache and puts the freeze
-back into every installer, while `npm start` stays fine and you have no idea why.
-
-One gotcha from upstream: **don't combine `CustomFrameCap` with
-`CustomMaxPendingFrames:count/N` where N is 2 or more.** The frame rates invert.
-`computeSwitches()` won't let you: `count/2` is only emitted when no frame cap is set.
-
-## Contributing
-
-```bash
-npm run verify
-```
-
-Typecheck, lint and tests. All three have to pass.
-
-| Script | What it does |
-|---|---|
-| `npm run typecheck` | `tsc` across all three projects. Vite strips types without checking them, so this is the only thing actually type-checking anything. |
-| `npm run lint` | ESLint, type-aware rules on |
-| `npm test` | Vitest (230 tests) |
-| `npm run build` | Bundle main and preload into `dist/` |
-| `npm start` | Build, then launch |
-| `npm run dist` | Verify, build, package a Windows installer |
-| `npm run electron:patch` | Force-reinstall the patched Electron |
-
-Shipping a release is its own checklist: [RELEASING.md](RELEASING.md).
-
-### Layout
-
-```
-src/
-  shared/       branding, config contract, IPC channel names, pure logic
-  krunker/      every coupling to Krunker's internals, one file
-  main/
-    platform/   Chromium switch computation, user-agent
-    config/     dependency-free atomic config store
-    ipc/        origin-checked IPC registry and handlers
-    net/        request blocking and real ping
-    ranked/     external queue socket and its window
-    swapper/    asset index and the swap:// protocol
-    accounts.ts encrypted account storage
-  preload/
-    hud/        frame-time statistics and overlay
-    settings/   the in-page settings panel
-    accounts/   alt manager UI and the login driver
-    matchmaker/ the scan animation
-```
-
-### Things to know before you change anything
-
-**All IPC goes through the registry. Never call `ipcMain.handle` directly.**
-`contextIsolation` is off on the game view, because hooking page globals ahead of
-Krunker's script means sharing the main world. That in turn means page script (including
-any userscript you've enabled) can reach the preload and call any channel we register. The
-registry throws out calls from a frame that isn't a Krunker origin before the handler body
-runs. Lint enforces this.
-
-**Anything Krunker-specific belongs in `src/krunker/constants.ts`.** DOM ids, the
-`windows[]` index of the player list, blockable asset ids. These are the things that break
-when the game updates, and having them in one file means a break is one file to read
-rather than a repo-wide search.
-
-**Keep the logic pure and the wiring thin.** Switch computation, block decisions, swap
-resolution, hotkey matching, lobby filtering and frame statistics are all pure functions
-with no Electron import, which is why they're testable at all. The Electron-touching layer
-is a shell over the top.
-
-**No `innerHTML` in the renderer.** Our overlays share a world with Krunker's script and
-render values that have been round-tripped through disk. `textContent` and
-`createElement`, always.
-
-**Three tsconfigs, and main has no `DOM` lib.** Partly accuracy, mostly one specific
-headache: the DOM lib declares a global `Clipboard` that shadows Electron's, so
-`clipboard.readText()` types as `Promise<string>` and `writeImage` looks like it doesn't
-exist. Leaving DOM out fixes that and stops main-process code reaching for `window`.
-
-**Every user-visible string comes from
-[`src/shared/branding.ts`](src/shared/branding.ts).** Rename there and nowhere else. The
-display name has a slash in it, so anything that becomes a path or an installer artifact
-uses `fileSafeName` (`NM-NZ`) instead.
-
-The one exception is the app icon, which is a binary and lives in
-[`build/`](build/README.md). Drop an `icon.ico` in there and it covers the exe, the
-installer, the shortcuts and the dev window.
-
-### Electron 44 changed the clipboard
-
-`writeImage`/`readImage` are gone, `readText()` returns a promise, and images go through
-`clipboard.write([new ClipboardItem({ 'image/png': blob })])`. Both clients we cribbed
-from are still on Electron 43 and use the old synchronous calls everywhere, so anything
-ported across needs [`src/main/clipboard.ts`](src/main/clipboard.ts).
-
-## Scope
-
-Performance, quality of life, cosmetics. **Nothing that gives you an unfair advantage.**
-No aim assistance, no seeing through geometry, no reading game state you're not meant to
-have. Not interested in PRs that add any of it.
-
-## Licence
-
-GPL-3.0-or-later, see [LICENSE](LICENSE).
-
-Built on [Krunker Civilian Client](https://github.com/bigjakk/Krunker-Civilian-Client)
-(bigjakk), with a look at [Crankshaft](https://github.com/KraXen72/crankshaft) (KraXen72)
-and [Glorp](https://github.com/slavcp/glorp) (slavcp) along the way. All GPL-3.0. Any
-build you distribute has to ship its source and keep these credits.
