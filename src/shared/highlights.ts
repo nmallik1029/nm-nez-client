@@ -118,6 +118,8 @@ export const FRIENDS: readonly FriendHighlight[] = [
   { name: 'drainciity', color: '#ccccff' },
   { name: 'YBG_Wallace', color: '#ccccff' },
   { name: 'biooom', color: '#ccccff' },
+  { name: 'zeit2k', color: '#dc143c' },
+  { name: 'blueeyes4044', color: '#000000' },
   { name: 'PvlseFN', color: '#ce9a46'},
   { name: 'iliegai', color: '#a8ffec'}
 ];
