@@ -1,4 +1,5 @@
 import { BLOCKABLE_ASSETS } from '../../krunker/constants';
+import { KILL_PACK_BASE } from '../../shared/killstreak';
 import { EMPTY_SWAP_URL } from '../swapper/protocol';
 
 /**
@@ -66,6 +67,14 @@ const GAME_ASSET_PATTERN = '*://*.krunker.io/*';
 /** Props live here, and nothing else we block does. */
 const PROP_PATTERN = '*://user-assets.krunker.io/*';
 
+/**
+ * Kill streak pack files. An address on the game's CDN that the game itself
+ * never asks for, so covering it costs a map load nothing: the only requests
+ * that ever match are the ones the kill streak player makes. See
+ * shared/killstreak.ts.
+ */
+const KILL_PACK_PATTERN = `${KILL_PACK_BASE.replace(/^https:/, '*:')}*`;
+
 /** What the filter has to cover, given what is switched on right now. */
 export interface FilterNeeds {
   readonly blockAds: boolean;
@@ -88,7 +97,8 @@ export interface FilterNeeds {
  * So the list is built from what is actually switched on. Nothing wants game
  * assets on a default profile, so none are intercepted at all and they are
  * matched and dropped in Chromium's C++ layer instead. What is left is a
- * handful of ad hosts and the socket.
+ * handful of ad hosts, the socket, and the kill pack address the game never
+ * uses.
  *
  * It has to be rebuilt whenever one of those answers changes: a feature
  * toggled, or a rescan that finds the first file in the swap folder. See
@@ -98,9 +108,14 @@ export function requestPatterns(needs: FilterNeeds): string[] {
   const patterns = [GAME_SOCKET_PATTERN];
   if (needs.blockAds) patterns.push(...AD_HOST_PATTERNS);
 
-  // The broad pattern already covers user-assets, so the two are exclusive.
-  if (needs.swapping) patterns.push(GAME_ASSET_PATTERN);
-  else if (needs.blockingProps) patterns.push(PROP_PATTERN);
+  // The broad pattern already covers user-assets and the kill packs, so it
+  // is exclusive with both.
+  if (needs.swapping) {
+    patterns.push(GAME_ASSET_PATTERN);
+  } else {
+    if (needs.blockingProps) patterns.push(PROP_PATTERN);
+    patterns.push(KILL_PACK_PATTERN);
+  }
 
   return patterns;
 }
@@ -109,6 +124,12 @@ export interface RequestContext {
   readonly blockAds: boolean;
   readonly hideBunnies: boolean;
   readonly hideTurfBanners: boolean;
+  /**
+   * Returns a replacement URL for a kill streak pack file, or null. Asked
+   * whatever the swapper toggle says: the shipped packs are part of the
+   * client, not something the user swapped in.
+   */
+  readonly resolveKillPack: (url: string) => string | null;
   /** Returns a replacement URL for a swapped asset, or null. */
   readonly resolveSwap: (url: string) => string | null;
 }
@@ -150,6 +171,9 @@ export function decideRequest(url: string, ctx: RequestContext): RequestDecision
   if (ctx.hideTurfBanners && TURF_BANNER_RE?.test(url)) {
     return { kind: 'redirect', url: EMPTY_RESPONSE };
   }
+
+  const pack = ctx.resolveKillPack(url);
+  if (pack !== null) return { kind: 'redirect', url: pack };
 
   const swapped = ctx.resolveSwap(url);
   if (swapped !== null) return { kind: 'redirect', url: swapped };

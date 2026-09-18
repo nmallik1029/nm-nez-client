@@ -15,7 +15,8 @@ import { RankedQueue, type QueueState } from './ranked/queue';
 import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
 import { installRequestFilter, type RequestFilter } from './net/request-filter';
-import { appPaths, ensureUserDirs, migrateUserData } from './paths';
+import { resolveKillPackFile } from './killsounds';
+import { appPaths, ensureUserDirs, killPackDirs, migrateUserData } from './paths';
 import { createProtocolInbox, registerProtocolClient } from './protocol';
 import { findProtocolUrl } from '../shared/protocol';
 import { applySwitches, computeSwitches } from './platform/flags';
@@ -217,8 +218,15 @@ function start(): void {
   if (config.get('features').resourceSwapper) rescanSwap();
   handleSwapProtocol(swapServer);
 
+  const packDirs = killPackDirs(paths);
   requestFilter = installRequestFilter(session.defaultSession, {
     getFeatures: () => config.get('features'),
+    // Served over the swapper's scheme, which answers the ranges audio is
+    // loaded in. Ids are only minted for files this found, as for swaps.
+    resolveKillPack: (url) => {
+      const file = resolveKillPackFile(url, packDirs);
+      return file === null ? null : swapServer.urlFor(file);
+    },
     resolveSwap: (url) => resolveSwapUrl(url, swapIndex, (abs) => swapServer.urlFor(abs)),
     swapFileCount: () => swapIndex.size,
     onGameSocket: (host, port) => {

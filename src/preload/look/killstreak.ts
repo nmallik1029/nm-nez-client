@@ -1,6 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { IPC } from '../../shared/ipc';
-import { packFileUrl, tierFor, type KillPack } from '../../shared/killstreak';
+import { packFileUrl, pickPack, tierFor, type KillPack } from '../../shared/killstreak';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import type { KillStreakConfig } from '../../shared/visuals';
 import { defineStyle } from '../style';
@@ -42,20 +42,11 @@ let hideTimer: ReturnType<typeof setTimeout> | undefined;
 let popTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
- * The packs on disk, asked for again.
- *
- * `rescan` tells the swapper to look at its folder too. A pack dropped in
- * after launch is listed either way, but it cannot be played until the
- * swapper knows its files exist, and nothing else would tell it.
+ * The packs on disk, asked for again: the shipped ones and the user's own.
+ * A pack dropped in after launch is in the list and playable the moment this
+ * answers, because main looks its files up as they are asked for.
  */
-export async function listKillPacks(rescan = false): Promise<readonly KillPack[]> {
-  if (rescan) {
-    try {
-      await ipcRenderer.invoke(IPC.swapperRescan);
-    } catch {
-      // The list is still worth having. The new pack just waits for a restart.
-    }
-  }
+export async function listKillPacks(): Promise<readonly KillPack[]> {
   try {
     packs = (await ipcRenderer.invoke(IPC.killPacksGet)) as KillPack[];
   } catch {
@@ -66,13 +57,9 @@ export async function listKillPacks(rescan = false): Promise<readonly KillPack[]
   return packs;
 }
 
-/**
- * The pack a config means: the one it names if it is still there, otherwise
- * the first one there is. So switching this on with nothing picked yet still
- * plays something, and deleting the chosen folder does not leave it silent.
- */
+/** The pack a config means, out of the last list main sent. See `pickPack`. */
 export function resolvePack(id: string, list: readonly KillPack[] = packs): KillPack | null {
-  return list.find((pack) => pack.id === id) ?? list[0] ?? null;
+  return pickPack(id, list);
 }
 
 /** One sound, straight away, for the editor. Not part of any streak. */

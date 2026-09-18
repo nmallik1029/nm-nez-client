@@ -32,7 +32,7 @@ import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
 import { hotkeyLock } from '../hotkey-lock';
-import type { AppPaths } from '../paths';
+import { killPackDirs, type AppPaths } from '../paths';
 import { createIpcRegistry, type IpcMainLike, type IpcRegistry } from './registry';
 
 export interface HandlerDeps {
@@ -212,9 +212,9 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   registry.handle(IPC.themesGet, () => loadThemes(paths.themes));
 
   // Read each time the editor opens, so a pack dropped in shows up without
-  // a restart. The editor rescans the swapper alongside, which is what lets
-  // the new files actually play.
-  registry.handle(IPC.killPacksGet, () => loadKillPacks(paths.killPacks));
+  // a restart. Its files are looked up as they are asked for, so it plays
+  // straight away as well.
+  registry.handle(IPC.killPacksGet, () => loadKillPacks(killPackDirs(paths)));
 
   registry.handle(IPC.rankedSound, () =>
     loadMatchSound(paths.sounds, join(app.getAppPath(), 'assets')),

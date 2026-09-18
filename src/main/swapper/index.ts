@@ -12,8 +12,21 @@ import { join, posix, sep } from 'node:path';
  * happened to hit last.
  *
  * Subfolders belonging to other features aren't assets, so they're skipped.
+ * They are paths from the swap root, not bare names: `textures/themes` is
+ * still a folder of textures.
+ *
+ * Kill streak packs are served on their own narrower route (see
+ * killsounds.ts). Indexing them here as well would put their file names in
+ * the bare-filename table, where `default_1.png` could answer for a real game
+ * asset, and would have a folder holding nothing but packs switch on
+ * interception of every asset the game loads.
  */
-export const RESERVED_SUBDIRS: readonly string[] = ['themes', 'scripts', 'backgrounds'];
+export const RESERVED_SUBDIRS: readonly string[] = [
+  'themes',
+  'scripts',
+  'backgrounds',
+  'sounds/killstreak',
+];
 
 /** Files we will never serve, regardless of where they sit in the swap tree. */
 const IGNORED_FILES = new Set(['.ds_store', 'thumbs.db', 'desktop.ini']);
@@ -118,7 +131,7 @@ export function scanSwapDir(root: string): SwapFile[] {
       const rel = prefix === '' ? name : `${prefix}/${name}`;
 
       if (entry.isDirectory()) {
-        if (depth === 0 && RESERVED_SUBDIRS.includes(name.toLowerCase())) continue;
+        if (RESERVED_SUBDIRS.includes(rel.toLowerCase())) continue;
         walk(join(dir, name), rel, depth + 1);
       } else if (entry.isFile()) {
         if (IGNORED_FILES.has(name.toLowerCase())) continue;

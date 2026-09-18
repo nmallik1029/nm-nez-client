@@ -6,9 +6,12 @@ const ctx = (over: Partial<RequestContext> = {}): RequestContext => ({
   blockAds: true,
   hideBunnies: false,
   hideTurfBanners: false,
+  resolveKillPack: () => null,
   resolveSwap: () => null,
   ...over,
 });
+
+const KILL_PACK_PATTERN = '*://assets.krunker.io/sounds/killstreak/*';
 
 describe('isAdHost', () => {
   it('matches known ad and analytics hosts', () => {
@@ -90,6 +93,22 @@ describe('decideRequest', () => {
     const decision = decideRequest(bunny, ctx({ hideBunnies: true, resolveSwap: () => 'swap://x' }));
     expect(decision).toEqual({ kind: 'redirect', url: EMPTY_SWAP_URL });
   });
+
+  it('redirects a kill pack file to where main found it', () => {
+    const url = 'https://assets.krunker.io/sounds/killstreak/prime/prime_1.mp3';
+    const decision = decideRequest(url, ctx({
+      resolveKillPack: (u) => (u === url ? 'swap://f/7' : null),
+    }));
+    expect(decision).toEqual({ kind: 'redirect', url: 'swap://f/7' });
+  });
+
+  it('asks for a kill pack before a swap, and falls through when there is none', () => {
+    const url = 'https://assets.krunker.io/sounds/killstreak/prime/prime_1.mp3';
+    expect(decideRequest(url, ctx({ resolveKillPack: () => 'swap://f/1', resolveSwap: () => 'swap://f/2' })))
+      .toEqual({ kind: 'redirect', url: 'swap://f/1' });
+    expect(decideRequest(url, ctx({ resolveSwap: () => 'swap://f/2' })))
+      .toEqual({ kind: 'redirect', url: 'swap://f/2' });
+  });
 });
 
 describe('requestPatterns', () => {
@@ -124,8 +143,23 @@ describe('requestPatterns', () => {
     expect(patterns).toHaveLength(new Set(patterns).size);
   });
 
+  it('always covers the kill pack address, and nothing else of the asset host', () => {
+    // Every profile has the shipped packs, so this is on a default profile,
+    // and the reason it is safe there is that the game never asks for it.
+    for (const blockingProps of [true, false]) {
+      const patterns = requestPatterns({ ...NEEDS, blockAds: true, blockingProps });
+      expect(patterns).toContain(KILL_PACK_PATTERN);
+      expect(patterns).not.toContain('*://*.krunker.io/*');
+      expect(patterns).not.toContain('*://assets.krunker.io/*');
+    }
+  });
+
+  it('leaves the kill pack address to the broad pattern when swapping', () => {
+    expect(requestPatterns({ ...NEEDS, swapping: true })).not.toContain(KILL_PACK_PATTERN);
+  });
+
   it('leaves the ad hosts out when ad blocking is off', () => {
-    expect(requestPatterns(NEEDS)).toEqual(['wss://*.krunker.io/*']);
+    expect(requestPatterns(NEEDS)).toEqual(['wss://*.krunker.io/*', KILL_PACK_PATTERN]);
   });
 
   it('never hands Electron an empty list, which would match everything', () => {
