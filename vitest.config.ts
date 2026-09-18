@@ -9,6 +9,9 @@ export default defineConfig({
       // electron would fail a whole test file on a runner with no binary. See
       // src/test/electron.ts.
       electron: fileURLToPath(new URL('./src/test/electron.ts', import.meta.url)),
+      // Electron's untouched fs only exists inside Electron. Outside it, plain
+      // fs is exactly what original-fs is.
+      'original-fs': 'node:fs',
     },
   },
   test: {

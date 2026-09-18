@@ -53,6 +53,19 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # The same release as files the client can swap in itself, without
+      # running the installer, which Windows Smart App Control refuses to
+      # start. Straight after publishing, to keep the window where a client
+      # can see the release but not these as short as it can be; a client
+      # that lands in it uses the installer. See src/shared/lite-update.ts.
+      - name: Publish the no-installer update
+        shell: bash
+        run: |
+          node scripts/lite-release.mjs
+          gh release upload "$GITHUB_REF_NAME" out/lite/* --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # electron-builder leaves the body empty, so the changelog goes on after.
       - name: Attach release notes
         shell: bash
