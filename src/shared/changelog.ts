@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.63',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: 'Fortnite gun sounds. Press Edit on Soundpacks, open the Fortnite tab and Install (about 2 MB), then pick a Fortnite gun for each Krunker gun: the SCAR, the AR, the Heavy AR and more for the Assault Rifle, the Bolt-Action, the Heavy Sniper and more for the Sniper, and so on for 22 guns. Picking one plays it, and the play button next to each lets you hear it again. It is in the game from your next shot, on your shots and everyone else\'s, whatever skin the gun has.' },
+      { kind: 'added', text: 'Fortnite\'s hit marker and headshot sounds, picked on the same tab. Any gun or sound can stay on Krunker\'s own, and Remove takes the Fortnite sounds off your PC again.' },
+      { kind: 'changed', text: 'Kill streak sounds is now called Soundpacks, with a tab for each game. The Valorant tab has the kill streak packs, the same as before, and if you had them on they stay on. The Soundpacks switch turns everything in it on or off at once, and each game has its own switch as well.' },
+    ],
+  },
+  {
     version: '0.1.62',
     date: '2026-09-18',
     changes: [
