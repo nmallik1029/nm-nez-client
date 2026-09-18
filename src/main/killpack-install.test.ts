@@ -108,8 +108,8 @@ describe('listKillPackEntries', () => {
       installed: [],
       removable: [],
       available: [
-        { id: 'ion', name: 'Ion', sounds: 2, banners: 1, bytes: 5 + 10 + 6 },
-        { id: 'gaia-s-vengeance', name: "Gaia's Vengeance", sounds: 1, banners: 0, bytes: 4 },
+        { id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1, bytes: 5 + 10 + 6 },
+        { id: 'gaia-s-vengeance', name: "Gaia's Vengeance", sounds: 1, banners: 0, variants: 1, bytes: 4 },
       ],
     });
   });
@@ -117,7 +117,7 @@ describe('listKillPackEntries', () => {
   it('moves an installed pack out of the offer and makes it removable', async () => {
     await installKillPack('ion', installed, serve, CATALOG);
     const listing = listKillPackEntries(dirs, installed, CATALOG);
-    expect(listing.installed).toEqual([{ id: 'ion', name: 'Ion', sounds: 2, banners: 1 }]);
+    expect(listing.installed).toEqual([{ id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1 }]);
     expect(listing.removable).toEqual(['ion']);
     expect(listing.available.map((pack) => pack.id)).toEqual(['gaia-s-vengeance']);
   });
@@ -135,6 +135,18 @@ describe('listKillPackEntries', () => {
     ]);
     expect(listing.removable).toEqual([]);
     expect(listing.available.map((pack) => pack.id)).toEqual(['gaia-s-vengeance']);
+  });
+});
+
+describe('listKillPackEntries: colours', () => {
+  it("says how many colours a pack not yet installed comes in, counted as they will be on disk", () => {
+    const names = ['aeris_1.mp3', 'aeris_1.png', 'aeris_2.png', 'aeris_v2_1.png', 'aeris_v2_2.png', 'aeris_v3_1.png', 'aeris_v4_1.png', 'aeris_v4_2.png'];
+    const catalog: KillCatalog = {
+      source: SOURCE,
+      packs: [{ id: 'aeris', name: 'Aeris', files: names.map((name) => ({ name, size: 1, sha512: '' })) }],
+    };
+    // v3 is missing its second banner, so it and v4 after it do not count.
+    expect(listKillPackEntries(dirs, installed, catalog).available[0]).toMatchObject({ banners: 2, variants: 2 });
   });
 });
 

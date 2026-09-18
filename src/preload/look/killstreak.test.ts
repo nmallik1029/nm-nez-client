@@ -34,7 +34,7 @@ let answer: 'ok' | 'fail' | 'hold';
 let held: Map<string, (ok: boolean) => void>;
 
 function entry(id: string): KillPack {
-  return { id, name: CATALOG[id] ?? id, sounds: 1, banners: 0 };
+  return { id, name: CATALOG[id] ?? id, sounds: 1, banners: 0, variants: 1 };
 }
 
 function listing(): KillPackListing {
@@ -77,6 +77,7 @@ const config = (over: Partial<KillStreakConfig> = {}): KillStreakConfig => ({
   pack: '',
   volume: 0.3,
   banners: true,
+  variants: {},
   ...over,
 });
 

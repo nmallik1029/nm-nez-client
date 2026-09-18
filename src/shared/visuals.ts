@@ -5,7 +5,7 @@ import {
   SKY_PRESETS,
   SKY_START_COLOR,
 } from './ui/tokens';
-import { isPackId } from './killstreak';
+import { isPackId, MAX_VARIANTS } from './killstreak';
 import { DEFAULT_FORTNITE, normaliseFortnite, type FortniteConfig } from './soundpacks';
 
 /**
@@ -98,6 +98,12 @@ export interface KillStreakConfig {
   readonly volume: number;
   /** The picture at the bottom of the screen. Off keeps the sounds. */
   readonly banners: boolean;
+  /**
+   * The colour picked for each pack that comes in more than one, by pack id.
+   * Per pack, so going back to one finds it the colour you left it in. A
+   * pack with no entry shows its first.
+   */
+  readonly variants: Readonly<Record<string, number>>;
 }
 
 /**
@@ -260,6 +266,7 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       // Anything but an explicit false is on. Configs saved before this
       // switch existed have no field, and they were showing banners.
       banners: killStreak.banners !== false,
+      variants: normaliseVariants(killStreak.variants),
     },
     soundpacks: {
       // Saved before Soundpacks existed, the row it replaced switched kill
@@ -278,6 +285,27 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
  * everyone already knows, so the first thing anyone sees is a crosshair that
  * looks like a crosshair rather than a blank canvas and eight sliders.
  */
+/** Picks past this many are dropped: one per pack in the catalog, and room for the user's own. */
+const MAX_VARIANT_PICKS = 256;
+
+/**
+ * Keep a colour pick only for a real pack id and a colour past the first:
+ * the first is what a pack with no entry shows anyway. Whether the pack has
+ * that many colours is for the player to decide, against the pack on disk.
+ */
+function normaliseVariants(value: unknown): Record<string, number> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return {};
+  const picks: Record<string, number> = {};
+  let kept = 0;
+  for (const [id, pick] of Object.entries(value)) {
+    if (kept >= MAX_VARIANT_PICKS) break;
+    if (!isPackId(id) || typeof pick !== 'number' || !Number.isInteger(pick) || pick < 2 || pick > MAX_VARIANTS) continue;
+    picks[id] = pick;
+    kept++;
+  }
+  return picks;
+}
+
 export const DEFAULT_VISUALS: VisualsConfig = {
   sky: { on: false, color: SKY_START_COLOR },
   crosshair: {
@@ -312,7 +340,7 @@ export const DEFAULT_VISUALS: VisualsConfig = {
     offsetX: 0,
     offsetY: 0,
   },
-  killStreak: { on: false, pack: '', volume: 0.3, banners: true },
+  killStreak: { on: false, pack: '', volume: 0.3, banners: true, variants: {} },
   soundpacks: { on: false },
   fortnite: DEFAULT_FORTNITE,
 };
