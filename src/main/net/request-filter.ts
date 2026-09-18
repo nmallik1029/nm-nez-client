@@ -6,6 +6,8 @@ import { gameSocketTarget } from './ping';
 export interface RequestFilterDeps {
   /** Read live, so toggling a feature takes effect without a restart. */
   readonly getFeatures: () => FeatureConfig;
+  /** Returns a `swap://` URL for a kill streak pack file, or null. */
+  readonly resolveKillPack: (url: string) => string | null;
   /** Returns a `swap://` URL for a swapped asset, or null. */
   readonly resolveSwap: (url: string) => string | null;
   /** How many files the swap folder has right now. */
@@ -67,6 +69,7 @@ export function installRequestFilter(session: Session, deps: RequestFilterDeps):
         blockAds: live.blockAds,
         hideBunnies: live.hideBunnies,
         hideTurfBanners: live.hideTurfBanners,
+        resolveKillPack: deps.resolveKillPack,
         resolveSwap: live.resourceSwapper ? deps.resolveSwap : () => null,
       });
 

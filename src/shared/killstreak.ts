@@ -1,16 +1,20 @@
 /**
  * Kill streak sounds: what main and the page have to agree on.
  *
- * A pack is a folder under `swap/sounds/killstreak`, named by its id, holding
- * `<id>_1.mp3` for the first kill of a streak, `<id>_2.mp3` for the second,
- * and so on, with an optional `<id>_N.png` banner beside each. The client
- * ships none. Main lists what is there; the page plays it.
+ * A pack is a folder named by its id, holding `<id>_1.mp3` for the first kill
+ * of a streak, `<id>_2.mp3` for the second, and so on, with an optional
+ * `<id>_N.png` banner beside each. The client ships a set of them in
+ * `assets/killstreak`, and anyone can add their own to `swap/sounds/killstreak`;
+ * one of theirs with the same id as a shipped pack replaces it. Main lists
+ * what is there; the page plays it.
  *
- * The files are fetched from a krunker.io address that does not exist. That
- * is deliberate: the resource swapper answers any krunker.io request whose
- * path matches a file in the swap folder, so `sounds/killstreak/<id>/<id>_3.mp3` is
- * served straight off disk, and only the pack in use is ever loaded. It needs
- * no second route into the filesystem, and the page never sees a path.
+ * The files are fetched from a krunker.io address that does not exist, and
+ * main answers it from disk the same way the resource swapper answers a
+ * swapped asset, so only the pack in use is ever loaded and the page never
+ * sees a path. It is its own narrow route rather than a job for the swapper,
+ * because the swapper having anything to serve means intercepting every
+ * asset the game loads, and shipping packs to everyone would otherwise mean
+ * doing that on every profile.
  */
 
 export interface KillPack {
@@ -33,8 +37,29 @@ export interface KillPack {
  */
 export const MAX_TIERS = 12;
 
-/** Where the swapper serves pack files from. See the note at the top. */
+/** Where the page asks for pack files. See the note at the top. */
 export const KILL_PACK_BASE = 'https://assets.krunker.io/sounds/killstreak/';
+
+/**
+ * The pack played when none has been picked: Valorant's own stock sounds,
+ * which are the ones anyone switching this on expects to hear first.
+ */
+export const DEFAULT_PACK_ID = 'default';
+
+/**
+ * The pack a config means: the one it names if it is still there, otherwise
+ * the stock one, otherwise the first there is. So switching this on with
+ * nothing picked yet still plays something, and deleting the chosen folder
+ * does not leave it silent.
+ */
+export function pickPack(id: string, list: readonly KillPack[]): KillPack | null {
+  return (
+    list.find((pack) => pack.id === id) ??
+    list.find((pack) => pack.id === DEFAULT_PACK_ID) ??
+    list[0] ??
+    null
+  );
+}
 
 /**
  * Is this safe to use as a pack id?

@@ -72,8 +72,8 @@ function render(body: HTMLElement, ctx: TabContext): void {
   grid.append(hint('Looking for packs...'));
   body.append(find, grid);
 
-  void listKillPacks(true).then((packs) => {
-    // Opening this rescans the swap folder, which can take a moment. By the
+  void listKillPacks().then((packs) => {
+    // The list is a round trip to main and a walk of two folders. By the
     // time it answers the panel may be showing something else entirely.
     if (!ctx.live()) return;
 

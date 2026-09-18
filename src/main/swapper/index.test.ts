@@ -117,6 +117,16 @@ describe('scanSwapDir', () => {
     expect(scanSwapDir(root).map((f) => f.relative)).toEqual(['textures/themes/pattern.png']);
   });
 
+  it('leaves kill streak packs to their own route', () => {
+    // Indexed here, `default_1.png` would answer for any game asset of that
+    // name, and a folder of nothing but packs would switch on interception of
+    // every asset the game loads.
+    write('sounds/killstreak/default/default_1.mp3');
+    write('Sounds/KillStreak/prime/prime_1.png');
+    write('sounds/shot.mp3');
+    expect(scanSwapDir(root).map((f) => f.relative)).toEqual(['sounds/shot.mp3']);
+  });
+
   it('ignores dotfiles and OS junk', () => {
     write('.hidden.png');
     write('Thumbs.db');

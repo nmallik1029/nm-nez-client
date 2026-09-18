@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPackId, nameFromId, packFileUrl, tierFor } from './killstreak';
+import { isPackId, nameFromId, packFileUrl, pickPack, tierFor, type KillPack } from './killstreak';
 
 /**
  * The pack id is the part worth being strict about. It is written to config
@@ -47,8 +47,29 @@ describe('tierFor', () => {
   });
 });
 
+describe('pickPack', () => {
+  const p = (id: string): KillPack => ({ id, name: id, sounds: 1, banners: 0 });
+  // Sorted by name, as main sends them, so the stock pack is not first.
+  const list = [p('aemondir'), p('default'), p('prime')];
+
+  it('plays the pack that was picked', () => {
+    expect(pickPack('prime', list)?.id).toBe('prime');
+  });
+
+  it('plays the stock pack when none is picked, or the picked one is gone', () => {
+    // Not whichever sorts first: that is a skin somebody might never have chosen.
+    expect(pickPack('', list)?.id).toBe('default');
+    expect(pickPack('deleted', list)?.id).toBe('default');
+  });
+
+  it('plays something rather than nothing when the stock pack is gone too', () => {
+    expect(pickPack('', [p('aemondir'), p('prime')])?.id).toBe('aemondir');
+    expect(pickPack('', [])).toBeNull();
+  });
+});
+
 describe('packFileUrl', () => {
-  it('points at a krunker.io path the swapper will answer from disk', () => {
+  it('points at a krunker.io path main will answer from disk', () => {
     expect(packFileUrl('vct-2025', 3, 'sound')).toBe(
       'https://assets.krunker.io/sounds/killstreak/vct-2025/vct-2025_3.mp3',
     );

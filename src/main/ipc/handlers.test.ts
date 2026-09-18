@@ -82,6 +82,7 @@ beforeEach(() => {
       backgrounds: join(dir, 'backgrounds'),
       sounds: join(dir, 'sounds'),
       killPacks: join(dir, 'sounds', 'killstreak'),
+      bundledKillPacks: join(dir, 'bundled-killstreak'),
       screenshots: join(dir, 'shots'),
     },
     getWindow: () => null,

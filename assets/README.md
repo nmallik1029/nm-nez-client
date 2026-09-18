@@ -6,11 +6,13 @@ read by electron-builder while making the installer and never ends up in it.
 `electron-builder.yml` lists this folder under `files`, so everything here is
 packed into the asar. Main resolves it with `app.getAppPath()`, which is the
 repo root in development and the asar in a build, so the same path works
-either way and there is nothing to special-case.
+either way and there is nothing to special-case. The one exception is
+`killstreak/`, below.
 
 Keep it small. Every byte here is a byte on the installer that already weighs
 109 MB, and anything large enough to notice belongs somewhere it can be
-downloaded instead.
+downloaded instead. `killstreak/` is the deliberate exception, and why is
+written down with it.
 
 ## match-found.mp3
 
@@ -25,6 +27,38 @@ A few seconds at most, and quiet. It plays over whatever you were doing.
 Anyone who would rather use their own can still put one at
 `%APPDATA%\nmnez\swap\sounds\match-found.mp3`; that takes precedence and this
 one is the fallback. With neither, the queue is silent and nothing breaks.
+
+## killstreak/
+
+The kill streak packs everyone gets: 29 Valorant packs, one folder each,
+picked from in QoL Features under Built-in.
+
+A pack is a folder named by its id (lowercase letters, digits and hyphens,
+nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
+second and so on, an optional `<id>_N.png` banner beside each, and an optional
+`pack.json` of `{"name": "Shown Name"}`. Numbering stops at the first gap. The
+rules are in `src/shared/killstreak.ts` and `src/main/killsounds.ts`. Adding
+one to the client is dropping a folder in here.
+
+**This folder is not in the asar.** `electron-builder.yml` leaves it out of
+`files` and copies it to `resources/killstreak` with `extraResources`, and
+main finds it through `process.resourcesPath` (`bundledKillPacks` in
+`src/main/paths.ts`). The page loads the audio in byte ranges, and Electron can
+only open a file inside an asar for that by copying it out to a temp file
+first.
+
+**Why it ships at all, at about 34 MB.** The same reason as the match sound:
+until this, kill streak sounds only played for someone who had found the packs
+somewhere and knew which folder to put them in. They are 320 kbps mp3 and PNG,
+which do not compress, so the installer grows by about what the folder weighs.
+
+Anyone can still add their own in `%APPDATA%\nmnez\swap\sounds\killstreak`. One
+there with the same id as a pack here replaces it whole: its own sounds,
+banners and name, never a mix of the two.
+
+These are Riot Games' sounds and art from Valorant, not ours, and the
+project's licence does not cover them. They are here the way they are in the
+community scripts they came from, as a fan-made extra for a free game.
 
 ## sky-*.png
 

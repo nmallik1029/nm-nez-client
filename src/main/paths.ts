@@ -22,8 +22,14 @@ export interface AppPaths {
   readonly backgrounds: string;
   /** Sounds the client plays. `match-found.mp3` is the only one so far. */
   readonly sounds: string;
-  /** One folder per kill streak pack. Inside `sounds` so the swapper serves it. */
+  /** Kill streak packs of the user's own, one folder each. They win over the shipped ones. */
   readonly killPacks: string;
+  /**
+   * The kill streak packs the client ships. Beside the asar in a package,
+   * not in it, because audio is served in ranges, and a file inside an asar
+   * cannot be opened for that without first being copied out to a temp file.
+   */
+  readonly bundledKillPacks: string;
   readonly screenshots: string;
 }
 
@@ -44,9 +50,19 @@ export function appPaths(): AppPaths {
     backgrounds: join(swap, 'backgrounds'),
     sounds: join(swap, 'sounds'),
     killPacks: join(swap, 'sounds', 'killstreak'),
+    // electron-builder's extraResources copies the repo's assets/killstreak
+    // here. In development there is no package, so it is read in place.
+    bundledKillPacks: app.isPackaged
+      ? join(process.resourcesPath, 'killstreak')
+      : join(app.getAppPath(), 'assets', 'killstreak'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
   };
   return cached;
+}
+
+/** Where kill streak packs are read from, the user's first so theirs win. */
+export function killPackDirs(paths: AppPaths): readonly string[] {
+  return [paths.killPacks, paths.bundledKillPacks];
 }
 
 /** Create the folders up front so they're there to find before first use. */
