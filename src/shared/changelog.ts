@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.60',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'changed', text: 'Kill streak packs no longer come with the client, which makes it about 34 MB smaller. Every pack is still listed when you press Edit on Kill streak sounds: press Install under the ones you want and each downloads in a second or two, then plays so you can hear it. The x in the corner of an installed pack takes it off your PC again.' },
+      { kind: 'changed', text: 'If you had kill streak sounds on, the pack you were using downloads again by itself the first time you start this version, even if you also have packs of your own. Switching kill streak sounds on with nothing installed fetches the Default pack, so it still just works.' },
+    ],
+  },
+  {
     version: '0.1.59',
     date: '2026-09-18',
     changes: [
