@@ -126,7 +126,9 @@ Sniper Rifle. Which Fortnite guns each Krunker gun offers, best fit first, is
 picked file instead, as the resource swapper does: so it plays where Krunker's
 would have, placed in 3D for other people's shots, at Krunker's volume. A gun
 is `weapon_<n>` and every skin's `weapon_<n>_<m>`, so the pick holds whatever
-skin is on it. The hit marker is `hit_0` and the headshot `headshot_0`.
+skin is on it. The hit marker is `hit_0`, and the headshot is both `crit_0`,
+which Krunker plays for a shot that lands on the head, and `headshot_0`, for
+a kill with one.
 
 **Where they come from.** The [Fortnite wiki](https://fortnite.fandom.com/)'s
 ripped game audio, which has each gun's firing sounds as separate files, named
