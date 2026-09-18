@@ -16,6 +16,7 @@ import {
   previewKillPack,
   removeKillPack,
   resolvePack,
+  staying,
 } from '../look/killstreak';
 import { showToast } from '../toast';
 import { defineStyle } from '../style';
@@ -52,9 +53,15 @@ function render(body: HTMLElement, ctx: TabContext): void {
   // without redrawing, so a copy taken when this was drawn would let a volume
   // change put back the pack you picked a moment before, or the other way.
   const current = (): KillStreakConfig => ctx.deps.getVisuals().killStreak;
+  // A change to `on` always redraws, whatever the caller asked. The switch is
+  // drawn once, from the config at the time, so a config switched off under a
+  // switch still reading ON is one that pressing to turn off turns on, and
+  // on with nothing picked fetches Default. From a drawing that is no longer
+  // on screen as well: refresh paints whatever is, the Built-in list included.
   const commit = (change: Partial<KillStreakConfig>, redraw: boolean): void => {
+    const was = current().on;
     ctx.deps.patchVisuals({ killStreak: { ...current(), ...change } });
-    if (redraw) ctx.refresh();
+    if (redraw || current().on !== was) ctx.refresh();
   };
 
   const start = current();
@@ -98,6 +105,8 @@ function render(body: HTMLElement, ctx: TabContext): void {
   let listing: KillPackListing | null = null;
 
   const pick = (pack: KillPack): void => {
+    // On its way off the disk: picking it would have the player fetch it back.
+    if (isRemoving(pack.id)) return;
     previewKillPack(pack, current().volume);
     commit({ pack: pack.id }, false);
     draw();
@@ -127,16 +136,17 @@ function render(body: HTMLElement, ctx: TabContext): void {
 
   /**
    * Where the pick goes when the pack it was on did not arrive: back to the
-   * one before if that is still on disk, else whatever plays now, else a
-   * download still running. With none of those there is nothing to play,
-   * which is off. Never a pack that is not there: the player fetches
-   * whatever the pick names, so that would download it unasked, even one
-   * removed while this was downloading.
+   * one before if that is on disk or still downloading, else whatever plays
+   * now, else any download still running. With none of those there is
+   * nothing to play, which is off. Never a pack that is not there or is on
+   * its way off: the player fetches whatever the pick names, so that would
+   * download it unasked, even one removed while this was downloading.
    */
   const fallback = (before: string): Partial<KillStreakConfig> => {
     const named = before === '' ? DEFAULT_PACK_ID : before;
-    if (resolvePack(before)?.id === named) return { pack: before };
-    const plays = resolvePack('');
+    const there = staying();
+    if (there.some((p) => p.id === named) || isInstalling(named)) return { pack: before };
+    const plays = resolvePack('', there);
     if (plays) return { pack: plays.id };
     const coming = listing?.available.find((p) => isInstalling(p.id));
     if (coming) return { pack: coming.id };
@@ -165,13 +175,20 @@ function render(body: HTMLElement, ctx: TabContext): void {
     else if (named === pack.id) {
       commit({ pack: resolvePack('', left)?.id ?? coming[0]?.id ?? '' }, false);
     }
-    void removeKillPack(pack.id, current()).then((ok) => {
-      if (!ok) {
-        // Still on disk, so put back what was set.
+    const keep = current();
+    void removeKillPack(pack.id, keep).then((ok) => {
+      if (ok) return;
+      // Already gone, deleted from the folder by hand, is gone all the same:
+      // the config is off it, which is where it should be.
+      if (!staying().some((p) => p.id === pack.id)) return;
+      showToast(`Could not remove ${pack.name}. It may be in use; try again.`, 3600);
+      // Put back what this removal changed, but only if that is still what is
+      // set. Anything since, another x or a pick, is newer than this, and
+      // restoring over it could name a pack that has gone in the meantime.
+      const now = current();
+      if (now.on === keep.on && now.pack === keep.pack) {
         commit({ on: before.on, pack: before.pack }, false);
-        showToast(`Could not remove ${pack.name}. It may be in use; try again.`, 3600);
       }
-      if (last && ctx.live()) ctx.refresh();
     });
   };
 
@@ -252,6 +269,8 @@ function installedTile(
     text('nm', pack.name),
     text('meta', pack.banners > 0 ? `${pack.sounds} kills` : `${pack.sounds} kills, no banner`),
   );
+  // Not while its removal runs: see pick.
+  face.disabled = spec.removing;
   face.addEventListener('click', spec.pick);
   tile.append(face);
 

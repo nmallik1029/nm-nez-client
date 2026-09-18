@@ -15,9 +15,9 @@ import type { KillStreakConfig } from '../../shared/visuals';
  * not retried on every volume nudge.
  */
 
-const invoke = vi.fn<(channel: string, id?: unknown) => unknown>();
+const invoke = vi.fn<(channel: string, ...args: unknown[]) => unknown>();
 vi.mock('electron', () => ({
-  ipcRenderer: { invoke: (channel: string, id?: unknown) => invoke(channel, id) },
+  ipcRenderer: { invoke: (channel: string, ...args: unknown[]) => invoke(channel, ...args) },
 }));
 const showToast = vi.fn<(message: string, durationMs?: number) => void>();
 vi.mock('../toast', () => ({
@@ -221,7 +221,8 @@ describe('removing a pack', () => {
     const saved = channels.indexOf(IPC.configPatch);
     expect(saved).toBeGreaterThanOrEqual(0);
     expect(saved).toBeLessThan(channels.indexOf(IPC.killPacksRemove));
-    expect(invoke.mock.calls[saved]?.[1]).toBe('visuals');
+    // What was saved, not just that something was: the config off the pack.
+    expect(invoke.mock.calls[saved]?.slice(1)).toEqual(['visuals', { killStreak: keep }]);
   });
 
   it('fetches it again when switching on asks for it, even if it was fetched this session', async () => {

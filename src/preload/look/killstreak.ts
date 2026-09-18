@@ -90,6 +90,11 @@ export function isRemoving(id: string): boolean {
   return removing.has(id);
 }
 
+/** The packs on disk, less any on their way off it. What a pick can safely land on. */
+export function staying(): readonly KillPack[] {
+  return packs.filter((pack) => !removing.has(pack.id));
+}
+
 /**
  * Called with the new listing whenever a pack is installed or removed, or a
  * download starts. The editor redraws from it; returns the unsubscribe.

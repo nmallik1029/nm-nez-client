@@ -148,13 +148,35 @@ function describe(pack: CatalogPack): AvailablePack {
 }
 
 /**
- * Files of one pack downloaded at once. Under the six connections Chromium
- * opens to a host over HTTP/1.1, which is what a proxy or antivirus that
- * intercepts TLS turns GitHub's HTTP/2 into: past that, a file would sit
- * waiting for a connection with its stall timer running and nothing able to
- * reset it, and on a slow line give up before it had started.
+ * Files downloaded at once, across every pack being installed. Under the six
+ * connections Chromium opens to a host over HTTP/1.1, which is what a proxy
+ * or antivirus that intercepts TLS turns GitHub's HTTP/2 into: past that, a
+ * file would sit waiting for a connection with its stall timer running and
+ * nothing able to reset it, and on a slow line give up before it had started.
+ * Across every pack, not per pack, because two Installs pressed together are
+ * one host's connections all the same.
  */
 const PARALLEL = 4;
+
+let slotsTaken = 0;
+const waitingForSlot: (() => void)[] = [];
+
+/**
+ * Run `work` once one of the PARALLEL slots is free. A slot that frees up is
+ * handed straight to the next in line rather than released and retaken, so
+ * nothing arriving in between can take it and make five.
+ */
+async function inSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (slotsTaken < PARALLEL) slotsTaken++;
+  else await new Promise<void>((resolve) => waitingForSlot.push(resolve));
+  try {
+    return await work();
+  } finally {
+    const next = waitingForSlot.shift();
+    if (next) next();
+    else slotsTaken--;
+  }
+}
 
 /** One download per pack, however many times Install is pressed while it runs. */
 const running = new Map<string, Promise<void>>();
@@ -200,25 +222,27 @@ async function download(
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
 
-  // A few at a time, and every one finished before anything is cleared, so
-  // no fetch is still writing into the folder after a failure has emptied it.
-  // After a failure no new file is started: the pack is not going in anyway.
-  const queue = [...pack.files];
+  // A few at a time (see PARALLEL), and every one finished before anything
+  // is cleared, so no fetch is still writing into the folder after a failure
+  // has emptied it. After a failure no new file is started: the pack is not
+  // going in anyway.
   const failures: unknown[] = [];
-  const worker = async (): Promise<void> => {
-    for (let file = queue.shift(); file && failures.length === 0; file = queue.shift()) {
-      try {
-        const data = await fetchFile(`${from}${file.name}`, file.size);
-        if (data.length !== file.size || sha512(data) !== file.sha512) {
-          throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+  await Promise.all(
+    pack.files.map((file) =>
+      inSlot(async () => {
+        if (failures.length > 0) return;
+        try {
+          const data = await fetchFile(`${from}${file.name}`, file.size);
+          if (data.length !== file.size || sha512(data) !== file.sha512) {
+            throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+          }
+          writeFileSync(join(staging, file.name), data);
+        } catch (reason) {
+          failures.push(reason);
         }
-        writeFileSync(join(staging, file.name), data);
-      } catch (reason) {
-        failures.push(reason);
-      }
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(PARALLEL, pack.files.length) }, worker));
+      }),
+    ),
+  );
 
   try {
     if (failures.length > 0) throw failures[0];

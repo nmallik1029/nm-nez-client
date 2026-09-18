@@ -2145,6 +2145,7 @@ const killStreak = `
 #${UI_IDS.qolPanel} .pack .face{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
   gap:4px;padding:8px 6px;text-align:center;background:none;border:0}
 #${UI_IDS.qolPanel} .pack button.face:hover{background:var(--nm-game-btn-bg-hover)}
+#${UI_IDS.qolPanel} .pack button.face:disabled{cursor:default;background:none}
 #${UI_IDS.qolPanel} .pack img{width:64px;height:64px;object-fit:contain}
 #${UI_IDS.qolPanel} .pack .face .material-icons{width:64px;height:64px;display:flex;
   align-items:center;justify-content:center;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}

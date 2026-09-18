@@ -14,9 +14,9 @@ import type { KillStreakConfig } from '../../shared/visuals';
  * download runs.
  */
 
-const invoke = vi.fn<(channel: string, arg?: unknown) => unknown>();
+const invoke = vi.fn<(channel: string, ...args: unknown[]) => unknown>();
 vi.mock('electron', () => ({
-  ipcRenderer: { invoke: (channel: string, arg?: unknown) => invoke(channel, arg) },
+  ipcRenderer: { invoke: (channel: string, ...args: unknown[]) => invoke(channel, ...args) },
 }));
 const toasts: string[] = [];
 vi.mock('../toast', () => ({ showToast: (message: string) => toasts.push(message) }));
@@ -95,12 +95,16 @@ class FakeEl {
 
 const CATALOG: Record<string, string> = { default: 'Default', reaver: 'Reaver', ion: 'Ion' };
 
-/** Main: what is on disk, what it was asked to fetch, and what the page saved. */
+/** Main: what is on disk, what it was asked to fetch and delete, and what the page saved. */
 let installed: Set<string>;
 let installs: string[];
 let answer: 'ok' | 'fail' | 'hold';
 let held: Map<string, (ok: boolean) => void>;
 let failRemove: boolean;
+let holdRemove: boolean;
+let heldRemove: Map<string, () => void>;
+/** Every channel main was sent, in order, and the kill streak config it was last told to save. */
+let calls: string[];
 let saved: KillStreakConfig | null;
 
 function listing(): unknown {
@@ -115,11 +119,20 @@ function listing(): unknown {
   };
 }
 
-function main(channel: string, arg?: unknown): unknown {
-  const id = typeof arg === 'string' ? arg : '';
+function main(channel: string, ...args: unknown[]): unknown {
+  calls.push(channel);
+  const id = typeof args[0] === 'string' ? args[0] : '';
   if (channel === IPC.killPacksGet) return Promise.resolve(listing());
-  if (channel === IPC.configPatch) return Promise.resolve(true);
-  if (channel === IPC.killPacksRemove) return Promise.resolve(!failRemove && installed.delete(id));
+  if (channel === IPC.configPatch) {
+    const patch = args[1] as { killStreak?: KillStreakConfig };
+    if (args[0] === 'visuals' && patch.killStreak) saved = patch.killStreak;
+    return Promise.resolve(true);
+  }
+  if (channel === IPC.killPacksRemove) {
+    const go = (): boolean => !failRemove && installed.delete(id);
+    if (!holdRemove) return Promise.resolve(go());
+    return new Promise((resolve) => heldRemove.set(id, () => resolve(go())));
+  }
   if (channel === IPC.killPacksInstall) {
     installs.push(id);
     if (answer === 'hold') {
@@ -151,11 +164,11 @@ async function open(start: Pick<KillStreakConfig, 'on' | 'pack'>) {
     getFeatures: () => ({}),
     patchFeatures: () => {},
     getVisuals: () => ({ killStreak }),
-    // Applied at once, as the preload does; the save is what main sees.
+    // Applied at once, as the preload does. Its save is 250 ms later and not
+    // modelled: what these tests check is the save the removal sends itself.
     patchVisuals: (partial: { killStreak?: KillStreakConfig }) => {
       if (!partial.killStreak) return;
       killStreak = partial.killStreak;
-      saved = killStreak;
       player.setKillStreak(killStreak);
     },
     reload: () => {},
@@ -195,16 +208,20 @@ async function open(start: Pick<KillStreakConfig, 'on' | 'pack'>) {
     if (!found) throw new Error(`no ${button} on ${name}`);
     found.click();
   };
-  const toggle = (label: string): void => {
+  const sw = (label: string): FakeEl | undefined => {
     const row = [...body.walk()].find(
       (el) => el.className.startsWith('row') && [...el.walk()].some((c) => c.textContent === label),
     );
-    [...(row?.walk() ?? [])].find((el) => el.className.startsWith('sw'))?.click();
+    return [...(row?.walk() ?? [])].find((el) => el.className.startsWith('sw'));
   };
+  const toggle = (label: string): void => sw(label)?.click();
+  /** What the switch says, which has to be what the config is. */
+  const shows = (): string | undefined => sw('Play kill streak sounds')?.textContent;
 
   return {
     press,
     toggle,
+    shows,
     config: () => killStreak,
     plays: () => player.resolvePack(killStreak.pack)?.id ?? null,
   };
@@ -216,10 +233,13 @@ beforeEach(() => {
   answer = 'ok';
   held = new Map();
   failRemove = false;
+  holdRemove = false;
+  heldRemove = new Map();
+  calls = [];
   saved = null;
   toasts.length = 0;
   invoke.mockReset();
-  invoke.mockImplementation((channel, arg) => main(channel, arg));
+  invoke.mockImplementation((channel, ...args) => main(channel, ...args));
   vi.stubGlobal('document', {
     createElement: (tag: string) => new FakeEl(tag),
     getElementById: () => null,
@@ -294,6 +314,48 @@ describe('Install', () => {
     expect(toasts).toHaveLength(1);
   });
 
+  it('that fails goes back to the old pick when it is still there', async () => {
+    installed.add('default');
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: 'reaver' });
+    answer = 'fail';
+    editor.press('Ion', 'get');
+    await settle();
+    expect(editor.config()).toMatchObject({ on: true, pack: 'reaver' });
+  });
+
+  it('that fails goes back to an earlier Install that is still downloading', async () => {
+    installed.add('default');
+    const editor = await open({ on: true, pack: '' });
+    answer = 'hold';
+    editor.press('Reaver', 'get');
+    editor.press('Ion', 'get');
+    held.get('ion')?.(false);
+    await settle();
+    expect(editor.config().pack).toBe('reaver');
+    held.get('reaver')?.(true);
+    await settle();
+    expect(editor.plays()).toBe('reaver');
+    expect(installs).toEqual(['reaver', 'ion']);
+  });
+
+  it('that fails with nothing to fall back on switches off, and the switch says so', async () => {
+    // Updating from 0.1.59 with kill streaks on and nothing on disk, offline.
+    answer = 'fail';
+    const editor = await open({ on: true, pack: 'reaver' });
+    expect(installs).toEqual(['reaver']);
+    editor.press('Reaver', 'get');
+    await settle();
+    expect(editor.config()).toMatchObject({ on: false, pack: '' });
+    expect(editor.shows()).toBe('OFF');
+    // Then it lands on a second try: picked, and still off, as the switch says.
+    answer = 'ok';
+    editor.press('Reaver', 'get');
+    await settle();
+    expect(editor.config()).toMatchObject({ on: false, pack: 'reaver' });
+    expect(editor.shows()).toBe('OFF');
+  });
+
   it('that fails twice in a row lands on a pack that is there', async () => {
     installed.add('default');
     const editor = await open({ on: true, pack: '' });
@@ -337,15 +399,84 @@ describe('the x', () => {
     expect(installs).toEqual([]);
   });
 
-  it('on the last pack switches off, saved before the pack is gone', async () => {
+  it('on the last pack switches off, shows it at once, and saves it before the pack is gone', async () => {
     installed.add('reaver');
     const editor = await open({ on: true, pack: 'reaver' });
+    holdRemove = true;
     editor.press('Reaver', 'rm');
+    // Before main has answered: a switch still reading ON here is one that,
+    // pressed to turn off, would turn on and fetch Default.
+    expect(editor.shows()).toBe('OFF');
+    await settle();
+    expect(saved).toMatchObject({ on: false, pack: '' });
+    expect(calls.lastIndexOf(IPC.configPatch)).toBeLessThan(calls.indexOf(IPC.killPacksRemove));
+    heldRemove.get('reaver')?.();
     await settle();
     expect(editor.config()).toMatchObject({ on: false, pack: '' });
-    expect(saved).toMatchObject({ on: false, pack: '' });
     installs = [];
     await open(editor.config());
+    expect(installs).toEqual([]);
+  });
+
+  it('pressed on two packs quickly leaves the pick on neither', async () => {
+    installed.add('default');
+    installed.add('ion');
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: '' });
+    holdRemove = true;
+    editor.press('Default', 'rm');
+    await settle();
+    editor.press('Ion', 'rm');
+    await settle();
+    expect(editor.config().pack).toBe('reaver');
+    heldRemove.get('default')?.();
+    heldRemove.get('ion')?.();
+    await settle();
+    installs = [];
+    const next = await open(editor.config());
+    expect(installs).toEqual([]);
+    expect(next.plays()).toBe('reaver');
+  });
+
+  it('on the picked pack, with another downloading, moves the pick to the one coming', async () => {
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: 'reaver' });
+    answer = 'hold';
+    editor.press('Ion', 'get');
+    // Changed their mind back to the pack on disk, then removed it.
+    editor.press('Reaver', 'face');
+    editor.press('Reaver', 'rm');
+    await settle();
+    expect(editor.config()).toMatchObject({ on: true, pack: 'ion' });
+    held.get('ion')?.(true);
+    await settle();
+    expect(installs).toEqual(['ion']);
+    expect(editor.plays()).toBe('ion');
+  });
+
+  it('cannot pick a pack whose removal is still running', async () => {
+    installed.add('default');
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: 'reaver' });
+    holdRemove = true;
+    editor.press('Reaver', 'rm');
+    await settle();
+    editor.press('Reaver', 'face');
+    expect(editor.config().pack).toBe('default');
+    heldRemove.get('reaver')?.();
+    await settle();
+    expect(installs).toEqual([]);
+  });
+
+  it('on a pack already deleted by hand leaves the pick off it, and says nothing', async () => {
+    installed.add('default');
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: 'reaver' });
+    installed.delete('reaver');
+    editor.press('Reaver', 'rm');
+    await settle();
+    expect(editor.config().pack).toBe('default');
+    expect(toasts).toEqual([]);
     expect(installs).toEqual([]);
   });
 

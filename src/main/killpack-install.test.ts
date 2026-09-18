@@ -193,6 +193,25 @@ describe('installKillPack', () => {
     expect(readdirSync(join(installed, 'prime'))).toHaveLength(11);
   });
 
+  it('shares the four between packs installed at the same time', async () => {
+    // Two Install presses are one host's connections all the same.
+    let now = 0;
+    let most = 0;
+    const counting: FetchFile = async (url, size) => {
+      most = Math.max(most, ++now);
+      await new Promise((resolve) => setImmediate(resolve));
+      now--;
+      return serve(url, size);
+    };
+    const both: KillCatalog = { source: SOURCE, packs: [...CATALOG.packs, ...BIG.packs] };
+    await Promise.all([
+      installKillPack('prime', installed, counting, both),
+      installKillPack('ion', installed, counting, both),
+    ]);
+    expect(most).toBeLessThanOrEqual(4);
+    expect(readdirSync(installed).sort()).toEqual(['ion', 'prime']);
+  });
+
   it('starts no more files once one has failed', async () => {
     const fetchFile = vi.fn<FetchFile>((url, size) =>
       url.endsWith('prime_1.mp3') ? Promise.reject(new Error('gone')) : serve(url, size),
