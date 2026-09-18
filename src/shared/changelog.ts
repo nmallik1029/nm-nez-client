@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.56',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'fixed', text: 'Updates no longer need the installer, which Windows Smart App Control refuses to run on a lot of PCs, leaving the client stuck on an old version. The client now downloads just the files that changed, checks every one against the release, and swaps them in when you press Restart. This is the last update that needs the installer: from the next one on, updating works with Smart App Control on. If a release ever changes the Electron runtime itself, the client uses the installer for that one, as before.' },
+    ],
+  },
+  {
     version: '0.1.55',
     date: '2026-09-18',
     changes: [
