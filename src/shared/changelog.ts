@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.61',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: '30 more kill streak packs, 59 in all, including every Valorant skin line released since the packs were last updated: Dolmir\'s Revenge, ORA by OneTap, Ayakashi, Blackthorn and Holo Meridian. Also Elderflame, Glitchpop, Oni, RGX 11z Pro, Spectrum, Sovereign, Singularity and more. Press Edit on Kill streak sounds and Install the ones you want.' },
+      { kind: 'fixed', text: 'Bolt, EX.O, Neptune and VCT 2025 played the wrong sound on some kills, repeating one and skipping the next. They play in kill order now, and Default has its sixth-kill sound. If you already installed any of them, the client fetches the fixed version by itself the next time you start it.' },
+      { kind: 'fixed', text: 'Blank banners: Arcane Collector\'s Set showed nothing on the first kill and Champions 2025 nothing on the second to fourth. Mystbloom and Primordium now have a banner, and Champs 2024 downloads four times smaller.' },
+    ],
+  },
+  {
     version: '0.1.60',
     date: '2026-09-18',
     changes: [
