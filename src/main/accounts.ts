@@ -7,12 +7,18 @@ import type { AccountSummary, Credentials, StoredAccount } from '../shared/accou
  *
  * These are real passwords, so they go through `safeStorage`, which on Windows
  * is DPAPI keyed to your Windows user. Another user on the same machine can't
- * read them even holding the file.
+ * read them even holding the file. On Linux it is the desktop's keyring,
+ * through libsecret or KWallet.
  *
  * With DPAPI unavailable this refuses to save at all rather than falling back
  * to base64. Base64 is the worst option going: it looks encrypted in the file
  * so it earns trust it hasn't got, and it reverses in one line. Better to fail
  * loudly and let the user decide.
+ *
+ * Linux has its own version of that trap. With no keyring to talk to,
+ * Chromium's fallback is `basic_text`: AES under a password compiled into
+ * every copy of Chromium, which is base64 with extra steps. That counts as
+ * unavailable here too.
  */
 
 export interface AccountStore {
@@ -38,13 +44,26 @@ export interface CryptoLike {
   isEncryptionAvailable(): boolean;
   encryptString(plain: string): Buffer;
   decryptString(encrypted: Buffer): string;
+  /** Linux only. Electron doesn't define it at all elsewhere. */
+  getSelectedStorageBackend?(): string;
+}
+
+function usesPlainTextBackend(crypto: CryptoLike): boolean {
+  try {
+    return crypto.getSelectedStorageBackend?.() === 'basic_text';
+  } catch {
+    return false;
+  }
 }
 
 export function createAccountStore(deps: AccountStoreDeps): AccountStore {
   const crypto: CryptoLike = deps.crypto ?? safeStorage;
-  const canEncrypt = crypto.isEncryptionAvailable();
+  const plainText = usesPlainTextBackend(crypto);
+  const canEncrypt = crypto.isEncryptionAvailable() && !plainText;
 
-  if (!canEncrypt) {
+  if (plainText) {
+    deps.log('no OS keyring, only the fixed-key fallback; account saving is off');
+  } else if (!canEncrypt) {
     deps.log('OS encryption unavailable, account saving is off');
   }
 

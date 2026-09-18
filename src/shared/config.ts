@@ -21,9 +21,17 @@ export interface RankedConfig {
  * of them owns.
  */
 
-export type AngleBackend = 'default' | 'gl' | 'd3d11' | 'd3d11on12';
+export type AngleBackend = 'default' | 'gl' | 'd3d11' | 'd3d11on12' | 'vulkan';
 
-export const ANGLE_BACKENDS: readonly AngleBackend[] = ['default', 'gl', 'd3d11', 'd3d11on12'];
+/**
+ * The backends worth offering on each OS. Direct3D only exists on Windows, and
+ * on Linux the default already is OpenGL, so Vulkan is the one real
+ * alternative there. Keyed on `process.platform`; anything that isn't Linux
+ * gets the Windows list, which is what every build had before Linux did.
+ */
+export function angleBackendsFor(platform: string): readonly AngleBackend[] {
+  return platform === 'linux' ? ['default', 'gl', 'vulkan'] : ['default', 'gl', 'd3d11', 'd3d11on12'];
+}
 
 export interface PerformanceConfig {
   /** Remove the frame-rate limit. Needs the patched Electron to be safe. */

@@ -30,11 +30,14 @@
  *
  * Worth being clear about what this does: it downloads a prebuilt, unsigned
  * Chromium from someone else's GitHub release and runs it with full local
- * privileges. Upstream publishes no checksums, so ASSET_SHA256 below is the
- * hash of the build we actually downloaded, looked at and decided to trust. A
- * mismatch aborts, because a mismatch means the release asset was swapped
- * after we pinned it, and that's the exact thing worth stopping for. To move
- * to a newer build, check it yourself and update the pin.
+ * privileges. Upstream publishes no checksums, so each sha256 in BUILDS below
+ * is the hash of the build we actually downloaded, looked at and decided to
+ * trust. A mismatch aborts, because a mismatch means the release asset was
+ * swapped after we pinned it, and that's the exact thing worth stopping for.
+ * To move to a newer build, check it yourself and update the pin.
+ *
+ * Upstream builds the same patches for Windows x64, Linux x64 and macOS arm64
+ * from one tag. The first two are pinned; anything else gets stock Electron.
  */
 
 import { createHash } from 'node:crypto';
@@ -48,14 +51,28 @@ import { fileURLToPath } from 'node:url';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const RELEASE_TAG = 'v44.0.0';
-const ASSET = 'electron-v44.0.0-ws-frameThrottle-frameCap2-patched-windows-x64.zip';
-const ASSET_SHA256 = '02ec5c8b383a65938559957ffc20492ed9198b638d8cb08a254b31e4e345d72d';
 /** Has to match the `electron` devDependency or the ABI won't line up. */
 const ELECTRON_VERSION = '44.0.0';
 
+/**
+ * One entry per `${process.platform}-${process.arch}` we ship. `exe` is the
+ * binary inside the archive, which is also what path.txt has to name.
+ */
+const BUILDS = {
+  'win32-x64': {
+    asset: 'electron-v44.0.0-ws-frameThrottle-frameCap2-patched-windows-x64.zip',
+    sha256: '02ec5c8b383a65938559957ffc20492ed9198b638d8cb08a254b31e4e345d72d',
+    exe: 'electron.exe',
+  },
+  'linux-x64': {
+    asset: 'electron-v44.0.0-ws-frameThrottle-frameCap2-patched-linux-x64.zip',
+    sha256: '065cc0710379068249f0e4a9fde81241288c1ffd173bb2b1b6ddf93053c58a12',
+    exe: 'electron',
+  },
+};
+
 const URL_BASE = 'https://github.com/bigjakk/Electron-Websocket-Fix/releases/download';
 const CACHE_DIR = join(ROOT, '.electron-cache');
-const CACHED_ZIP = join(CACHE_DIR, ASSET);
 const DIST_DIR = join(ROOT, 'node_modules', 'electron', 'dist');
 const PATH_TXT = join(ROOT, 'node_modules', 'electron', 'path.txt');
 /** Records which build is installed, so reruns are cheap. */
@@ -64,14 +81,16 @@ const STAMP = join(ROOT, 'node_modules', 'electron', '.patched-build.json');
 const force = process.argv.includes('--force');
 
 async function main() {
-  // The asset is a windows-x64 build, and unpacking it needs bsdtar or
-  // PowerShell, neither of which a Linux runner has. Without this guard
-  // postinstall downloads 380MB on every CI job and then fails trying to
-  // extract it, which is exactly what it did the first time this was pushed.
-  if (process.platform !== 'win32') {
-    console.log(`skipping patched Electron: windows-x64 only, this is ${process.platform}`);
+  // No patched build for this machine means stock Electron, which is what
+  // the electron package's own postinstall has already put in place. The
+  // client runs on it; only the uncapped frame rate turns bad.
+  const target = `${process.platform}-${process.arch}`;
+  const build = BUILDS[target];
+  if (build === undefined) {
+    console.log(`skipping patched Electron: none pinned for ${target}`);
     return;
   }
+  const cachedZip = join(CACHE_DIR, build.asset);
 
   // The conventional "don't fetch binaries" flag. CI sets it on the job that
   // only typechecks, lints and tests. An explicit --force still wins, since
@@ -83,31 +102,31 @@ async function main() {
 
   await assertVersionMatch();
 
-  if (!force && (await installedHash()) === ASSET_SHA256) {
+  if (!force && (await installedHash()) === build.sha256) {
     console.log(`patched Electron ${RELEASE_TAG} already installed`);
     return;
   }
 
   await mkdir(CACHE_DIR, { recursive: true });
 
-  let hash = await hashIfPresent(CACHED_ZIP);
-  if (hash === ASSET_SHA256) {
-    console.log(`using cached ${ASSET}`);
+  let hash = await hashIfPresent(cachedZip);
+  if (hash === build.sha256) {
+    console.log(`using cached ${build.asset}`);
   } else {
     if (hash !== null) {
       console.log('cached archive does not match the pin; re-downloading');
-      await rm(CACHED_ZIP, { force: true });
+      await rm(cachedZip, { force: true });
     }
-    await download(`${URL_BASE}/${RELEASE_TAG}/${ASSET}`, CACHED_ZIP);
-    hash = await hashIfPresent(CACHED_ZIP);
+    await download(`${URL_BASE}/${RELEASE_TAG}/${build.asset}`, cachedZip);
+    hash = await hashIfPresent(cachedZip);
   }
 
-  if (hash !== ASSET_SHA256) {
-    await rm(CACHED_ZIP, { force: true });
+  if (hash !== build.sha256) {
+    await rm(cachedZip, { force: true });
     throw new Error(
-      `SHA-256 mismatch.\n  expected ${ASSET_SHA256}\n  got      ${hash}\n` +
+      `SHA-256 mismatch.\n  expected ${build.sha256}\n  got      ${hash}\n` +
         'The release asset changed since it was pinned. Verify the new build ' +
-        'before updating ASSET_SHA256 in this script.',
+        `before updating the ${target} sha256 in this script.`,
     );
   }
 
@@ -115,18 +134,18 @@ async function main() {
   // The archive has the contents of dist/ at its root, so it unpacks straight
   // over the stock tree. Anything not in the archive is a stock file the patch
   // doesn't touch and has to stay put.
-  extract(CACHED_ZIP, DIST_DIR);
+  extract(cachedZip, DIST_DIR);
 
   // Tells the electron package where its binary is, so its own postinstall
   // sees one already there and doesn't pull a stock build down over ours.
-  await writeFile(PATH_TXT, 'electron.exe', 'utf8');
+  await writeFile(PATH_TXT, build.exe, 'utf8');
   await writeFile(
     STAMP,
-    `${JSON.stringify({ tag: RELEASE_TAG, asset: ASSET, sha256: ASSET_SHA256 }, null, 2)}\n`,
+    `${JSON.stringify({ tag: RELEASE_TAG, asset: build.asset, sha256: build.sha256 }, null, 2)}\n`,
     'utf8',
   );
 
-  await assertPatched();
+  await assertPatched(join(DIST_DIR, build.exe));
   console.log(`patched Electron ${RELEASE_TAG} installed`);
 }
 
@@ -150,8 +169,7 @@ async function assertVersionMatch() {
  * fallback to stock here, because otherwise the only symptom is "aim still
  * freezes" and that takes a while to trace back to the binary.
  */
-async function assertPatched() {
-  const exe = join(DIST_DIR, 'electron.exe');
+async function assertPatched(exe) {
   const bytes = await readFile(exe);
   if (!bytes.includes('setFrameCap')) {
     throw new Error(`${exe} does not look patched: setFrameCap marker missing`);
@@ -199,17 +217,47 @@ async function download(url, dest) {
   await pipeline(response.body.pipeThrough(progress), createWriteStream(dest));
 }
 
+function extract(zip, dest) {
+  if (process.platform === 'win32') extractOnWindows(zip, dest);
+  else extractOnUnix(zip, dest);
+}
+
 /**
  * bsdtar ships with Windows 10 1803 and up and reads zip. It's far quicker
  * than Expand-Archive on a 380 MB tree, so that's only the fallback.
  */
-function extract(zip, dest) {
+function extractOnWindows(zip, dest) {
   try {
     execFileSync('tar', ['-xf', zip, '-C', dest], { stdio: 'inherit' });
   } catch {
     console.log('tar unavailable; falling back to Expand-Archive');
     const cmd = `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${dest}' -Force`;
     execFileSync('powershell', ['-NoProfile', '-Command', cmd], { stdio: 'inherit' });
+  }
+}
+
+/**
+ * GNU tar, the tar on most Linux machines, can't read zip at all, so this is
+ * unzip first and bsdtar after. Both keep the archive's Unix permissions,
+ * which matters here: the Linux zip carries the executable bits for electron,
+ * chrome-sandbox and chrome_crashpad_handler, and a binary without them is a
+ * "permission denied" at npm start rather than anything that says why.
+ */
+function extractOnUnix(zip, dest) {
+  try {
+    execFileSync('unzip', ['-o', '-q', zip, '-d', dest], { stdio: 'inherit' });
+    return;
+  } catch {
+    console.log('unzip unavailable or failed; trying bsdtar');
+  }
+  try {
+    execFileSync('bsdtar', ['-xf', zip, '-C', dest], { stdio: 'inherit' });
+  } catch {
+    throw new Error(
+      'Could not extract the patched Electron: neither unzip nor bsdtar worked. ' +
+        'Install unzip (apt install unzip, dnf install unzip, pacman -S unzip) and ' +
+        'run npm run electron:patch.',
+    );
   }
 }
 

@@ -1,17 +1,24 @@
 /**
- * Chromium command-line switches. Windows only.
+ * Chromium command-line switches, for Windows and Linux.
  *
  * Based on Krunker Civilian Client's `src/main/platform.ts` (GPL-3.0,
- * bigjakk). The feature-set accumulation fix and a good few of the switch
- * choices come from there. Reshaped into a pure function that returns a list,
- * so it can be tested without booting Electron; the original applies them as
- * a side effect and there's no way to get at that from a test.
+ * bigjakk). The feature-set accumulation fix, a good few of the switch choices
+ * and the Linux GPU-process switches come from there. Reshaped into a pure
+ * function that returns a list, so it can be tested without booting Electron;
+ * the original applies them as a side effect and there's no way to get at that
+ * from a test.
+ *
+ * One Linux switch is missing on purpose: `--ozone-platform=x11`. Chromium
+ * picks its display backend in early C++ startup, before any of this runs, so
+ * appending it here is silently ignored. It goes on the real command line
+ * instead, from the launcher that scripts/after-pack.mjs puts in the package
+ * and from scripts/start.mjs for `npm start`.
  */
 
-import type { AdvancedConfig, PerformanceConfig } from '../../shared/config';
+import type { AdvancedConfig, AngleBackend, PerformanceConfig } from '../../shared/config';
 
 export type { AdvancedConfig, AngleBackend, PerformanceConfig } from '../../shared/config';
-export { ANGLE_BACKENDS } from '../../shared/config';
+export { angleBackendsFor } from '../../shared/config';
 
 export interface CommandSwitch {
   readonly name: string;
@@ -44,7 +51,10 @@ export function clampFrameCap(raw: unknown): number {
 export function computeSwitches(
   performance: PerformanceConfig,
   advanced: AdvancedConfig,
+  platform: NodeJS.Platform,
 ): CommandSwitch[] {
+  const isWindows = platform === 'win32';
+  const isLinux = platform === 'linux';
   const switches: CommandSwitch[] = [];
   const enabledFeatures = new Set<string>();
   const disabledFeatures = new Set<string>();
@@ -84,11 +94,27 @@ export function computeSwitches(
   add('ignore-gpu-blocklist');
 
   // ── ANGLE backend ──
-  add('use-angle', advanced.angleBackend === 'default' ? 'd3d11' : advanced.angleBackend);
+  const angle = angleSwitchValue(advanced.angleBackend, platform);
+  if (angle !== null) add('use-angle', angle);
 
-  // Windows-only feature disables.
-  disabledFeatures.add('CalculateNativeWinOcclusion');
-  disabledFeatures.add('HardwareMediaKeyHandling');
+  if (isWindows) {
+    disabledFeatures.add('CalculateNativeWinOcclusion');
+    disabledFeatures.add('HardwareMediaKeyHandling');
+  }
+
+  if (isLinux) {
+    // The GPU sandbox fails outright inside an AppImage's FUSE mount and on
+    // some Mesa versions, and a GPU process that can't start is a black
+    // window. The renderer sandbox, the one between page script and the
+    // machine, is untouched by this.
+    add('disable-gpu-sandbox');
+    // NVIDIA's proprietary driver has no VA-API. Probing libva for it logs
+    // vaInitialize failures and can crash the GPU process while it is still
+    // setting up. Krunker decodes no video that would miss hardware for it.
+    add('disable-accelerated-video-decode');
+    add('disable-accelerated-video-encode');
+    add('disable-accelerated-mjpeg-decode');
+  }
 
   // ── Debloat ──
   // Only switches Electron actually has. The chrome-layer ones other clients
@@ -109,7 +135,8 @@ export function computeSwitches(
     add('disable-gpu-driver-bug-workarounds');
     add('disable-software-rasterizer');
     add('force-high-performance-gpu');
-    add('raise-timer-frequency');
+    // The 1ms Windows timer. There is no equivalent to ask for elsewhere.
+    if (isWindows) add('raise-timer-frequency');
     add('disable-best-effort-tasks');
     // Skips proxy resolution outright, which does break proxied setups.
     add('no-proxy-server');
@@ -120,6 +147,22 @@ export function computeSwitches(
   if (disabledFeatures.size > 0) add('disable-features', [...disabledFeatures].join(','));
 
   return switches;
+}
+
+/**
+ * The `--use-angle` value for a configured backend, or null to leave Chromium
+ * its own choice.
+ *
+ * Windows pins D3D11 for "default", as it always has. On Linux Chromium's own
+ * default is already OpenGL, so there is nothing to pin, and a Direct3D value
+ * (a config carried over from Windows, say) is dropped rather than handed to a
+ * GPU process that has no idea what it means.
+ */
+export function angleSwitchValue(backend: AngleBackend, platform: NodeJS.Platform): string | null {
+  if (platform === 'linux') {
+    return backend === 'gl' || backend === 'vulkan' ? backend : null;
+  }
+  return backend === 'default' ? 'd3d11' : backend;
 }
 
 /** Apply a computed switch list to Electron's command line. */

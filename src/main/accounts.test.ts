@@ -144,4 +144,32 @@ describe('account store', () => {
     createAccountStore({ read: () => [], write: () => {}, log, crypto: fakeCrypto(false) });
     expect(log).toHaveBeenCalledOnce();
   });
+
+  // Linux with no keyring. Chromium still calls this "available" when told to,
+  // but the key is the same in every copy of Chromium, so it is only base64 in
+  // disguise and gets the same refusal.
+  it('refuses the basic_text fallback even when it reports itself available', () => {
+    let accounts: StoredAccount[] = [];
+    const store = createAccountStore({
+      read: () => accounts,
+      write: (next) => {
+        accounts = next;
+      },
+      log: () => {},
+      crypto: { ...fakeCrypto(true), getSelectedStorageBackend: () => 'basic_text' },
+    });
+    expect(store.canEncrypt).toBe(false);
+    expect(() => store.save('Main', creds('alice'))).toThrow();
+    expect(accounts).toEqual([]);
+  });
+
+  it('accepts a real Linux keyring', () => {
+    const store = createAccountStore({
+      read: () => [],
+      write: () => {},
+      log: () => {},
+      crypto: { ...fakeCrypto(true), getSelectedStorageBackend: () => 'gnome_libsecret' },
+    });
+    expect(store.canEncrypt).toBe(true);
+  });
 });

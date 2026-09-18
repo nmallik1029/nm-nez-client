@@ -1,5 +1,5 @@
 import { BRANDING } from '../../shared/branding';
-import { ANGLE_BACKENDS, type AppConfig, type HotkeyConfig, type HudCorner } from '../../shared/config';
+import { angleBackendsFor, type AngleBackend, type AppConfig, type HotkeyConfig, type HudCorner } from '../../shared/config';
 import type { Capabilities, OpenableFolder, ThemeFile } from '../../shared/ipc';
 import {
   MAP_FILTER_CHOICES,
@@ -274,6 +274,12 @@ const FOLDERS: { id: OpenableFolder; label: string }[] = [
   { id: 'scripts', label: 'Scripts' },
   { id: 'screenshots', label: 'Screenshots' },
 ];
+
+/** "Default" names what it actually is, which differs by OS. */
+function angleLabel(backend: AngleBackend, platform: string): string {
+  if (backend !== 'default') return backend;
+  return platform === 'linux' ? 'Default (OpenGL)' : 'Default (D3D11)';
+}
 
 export interface SettingsTab {
   /** Open Krunker's settings window on the Client tab. */
@@ -651,7 +657,10 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         selectRow({
           label: 'Graphics backend',
           value: deps.config.advanced.angleBackend,
-          options: ANGLE_BACKENDS.map((b) => [b, b === 'default' ? 'Default (D3D11)' : b]),
+          options: angleBackendsFor(deps.capabilities.platform).map((b) => [
+            b,
+            angleLabel(b, deps.capabilities.platform),
+          ]),
           tagKind: 'restart',
           hint: 'Which graphics API Chromium uses to reach your GPU. Only worth touching if you are getting visual glitches or the game will not start.',
           onChange: (v) => deps.onChange('advanced', 'angleBackend', v),

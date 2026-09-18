@@ -1,6 +1,6 @@
 # NM/NZ
 
-Krunker client FOR WINDOWS made by competitive players, there are tons of very good, capable clients (Glorp, Crankshaft, KCC, etc) but, for us atleast, they don't work 100% of the time and sometimes have weird bugs that take a little long to resolve. Like KCC (and maybe Glorp idk) NM/NZ uses a patched build of electron that eliminates mouse flicks and keeps FPS high and smooth. Older electron builds had weird frametime bugs, so many electron-based apps across games in general are using patched builds like this one. We are not professionals so keep that in mind when downloading the client or using any software :3
+Krunker client FOR WINDOWS AND LINUX made by competitive players, there are tons of very good, capable clients (Glorp, Crankshaft, KCC, etc) but, for us atleast, they don't work 100% of the time and sometimes have weird bugs that take a little long to resolve. Like KCC (and maybe Glorp idk) NM/NZ uses a patched build of electron that eliminates mouse flicks and keeps FPS high and smooth. Older electron builds had weird frametime bugs, so many electron-based apps across games in general are using patched builds like this one. We are not professionals so keep that in mind when downloading the client or using any software :3
 
 ## What's in it
 
@@ -73,6 +73,10 @@ switch. You don't need to be signed in to save an account.
 Passwords are encrypted with Windows DPAPI, keyed to your Windows user, so another account
 on the same machine can't read them even holding the file. If DPAPI isn't available the
 manager hides its save button rather than writing your password somewhere readable.
+
+On Linux the key lives in your desktop's keyring instead (GNOME Keyring or KWallet). Without
+one, Chromium's fallback is a key that's the same in every copy of Chromium, which protects
+nothing, so the save button hides there too.
 
 One thing to know: Krunker only allows one sign-in per page load. If you're already signed
 in, or you've signed in and out once this session, the manager will tell you up front
@@ -150,3 +154,52 @@ Custom loading backgrounds aren't implemented.)
 | `Ctrl+J` | Join from clipboard |
 
 All rebindable in the settings tab.
+
+## Linux
+
+There's an AppImage on the releases page, x86_64 only. It runs on any distro without
+installing anything, and it updates itself the same way the Windows installer does.
+
+```sh
+chmod +x NM-NZ-*-x86_64.AppImage
+./NM-NZ-*-x86_64.AppImage
+```
+
+A few things that are different from Windows:
+
+- **FUSE.** AppImages need `libfuse2` to mount themselves. Ubuntu 22.04 and later don't ship it
+  by default: `sudo apt install libfuse2` (it's `libfuse2t64` on 24.04). If you'd rather not,
+  `./NM-NZ-*.AppImage --appimage-extract-and-run` works without it, just slower to start.
+- **X11, even on Wayland.** The client runs under XWayland on a Wayland desktop. Native
+  Wayland is where Linux Krunker clients break: pointer lock lets the cursor escape on
+  multi-monitor setups, and NVIDIA's driver crashes the GPU process. If you want to try native
+  Wayland anyway, start it with `--ozone-platform=wayland`.
+- **The sandbox on Ubuntu 24.04 and later.** Chromium's renderer sandbox needs unprivileged user
+  namespaces, and Ubuntu now blocks them for anything without an AppArmor profile, which an
+  AppImage can't have. The client checks at launch, and when they're blocked it starts without
+  the sandbox and says so in the terminal. Userscripts run in that renderer, so if you use
+  them, turning namespaces back on is worth it:
+  `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` (put it in
+  `/etc/sysctl.d/` to keep it across reboots). That relaxes an Ubuntu hardening for every
+  program on the machine, which is the trade you're making. Fedora, Arch, Debian and SteamOS
+  allow namespaces out of the box.
+- **Menu entry and `nmnez://` links.** An AppImage doesn't add itself to your app menu. Use
+  [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or
+  [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) to integrate it. The desktop
+  entry that puts in place is also what registers the `nmnez://` scheme, so tournament links
+  open the client only once it's integrated.
+- **Settings and your swap folder** are in `~/.config/nmnez/` rather than `%APPDATA%`, and
+  screenshots go to `~/Pictures/Krunker/`.
+
+### Building on Linux
+
+Node 22 or later, plus `unzip` for the patched Electron:
+
+```sh
+npm install        # fetches the patched Electron for linux-x64
+npm start          # build and run (under X11, same as the AppImage)
+npm run dist:linux # verify, build, and package the AppImage into out/
+```
+
+Each OS's package has to be built on that OS. `npm install` fetches the patched Electron for
+the machine it runs on, and that's the binary that gets packaged.

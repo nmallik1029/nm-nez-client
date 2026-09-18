@@ -3,7 +3,8 @@ name: Release
 # Push a version tag and this builds the installer and publishes it, along
 # with the latest.yml manifest the in-client updater reads. Without that yml
 # on a published (not draft) release, installed clients have no way to
-# discover the new version.
+# discover the new version. The Linux AppImage and its latest-linux.yml are
+# added to the same release afterwards.
 #
 #   1. add the entry to src/shared/changelog.ts
 #   2. git commit
@@ -73,5 +74,48 @@ jobs:
           gh release edit "$GITHUB_REF_NAME" \
             --title "NM/NZ ${GITHUB_REF_NAME#v}" \
             --notes-file release-notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-linux:
+    name: Build and publish Linux
+    # After the Windows job rather than beside it. That job creates the release,
+    # and electron-builder here finds it and adds the AppImage and
+    # latest-linux.yml; side by side, both would try to create it. No verify
+    # step: the Windows job ran it on this same commit.
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      # Installs the patched Linux Electron, as the Windows job does its own.
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Publish
+        run: npx electron-builder --linux --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # electron-builder won't add to a release published more than two
+          # hours ago, and says so only as a warning. Without this a re-run of
+          # this job on an older tag would pass having uploaded nothing.
+          EP_GH_IGNORE_TIME: 'true'
+
+      # Installed AppImages find new versions through latest-linux.yml. If it
+      # didn't land, they never hear about this release, and nothing else
+      # would say so.
+      - name: Check the Linux manifest is on the release
+        shell: bash
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name' > assets.txt
+          cat assets.txt
+          grep -qx 'latest-linux.yml' assets.txt
+          grep -q '\.AppImage$' assets.txt
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

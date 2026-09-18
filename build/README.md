@@ -33,7 +33,25 @@ to differ:
 The two bitmaps have to be genuine `.bmp` at exactly those dimensions. NSIS will not
 scale them and will not tell you why it looks wrong.
 
+## Linux icons
+
+The Linux build can't use the .ico. electron-builder only takes PNGs there, and if it finds
+nothing else it tries to convert `icon.ico` and fails the build. So `icons/` holds one PNG per
+size, named `WIDTHxHEIGHT.png`: the layers of `icon.ico`, taken out one by one rather than
+scaled, so the hand-made small sizes survive. `icons/256x256.png` is also the window icon at
+runtime on Linux.
+
+Change `icon.ico` and these need redoing. Any tool that can export an .ico's layers as PNGs
+will do; for example, with Python and Pillow:
+
+```python
+from PIL import Image
+ico = Image.open('build/icon.ico')
+for size in ico.info['sizes']:
+    ico.ico.getimage(size).save(f'build/icons/{size[0]}x{size[1]}.png')
+```
+
 ## A note on the name
 
 The icon is the one bit of branding that doesn't come from `src/shared/branding.ts`, since
-it's a binary. If you rename the client, this file doesn't follow.
+it's a binary. If you rename the client, these files don't follow.

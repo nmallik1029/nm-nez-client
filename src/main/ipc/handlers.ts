@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { app, shell, type BrowserWindow } from 'electron';
@@ -12,6 +13,7 @@ import {
   type UserscriptSaveResult,
 } from '../../shared/ipc';
 import { clampFrameCap } from '../platform/flags';
+import { appImageRestart, installKind } from '../platform/install-kind';
 import { createAccountStore } from '../accounts';
 import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
@@ -107,6 +109,7 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     canUpdate: canUpdate(),
     version: app.getVersion(),
     lastSeenVersion: config.get('updates').lastSeenVersion,
+    platform: process.platform,
   }));
 
   registry.handle(IPC.updateCurrent, () => currentUpdateState());
@@ -303,7 +306,14 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     // Chromium reads its switches once at process start, so anything that
     // changes them needs a restart to land.
     config.flush();
-    app.relaunch();
+    const kind = installKind({ isPackaged: app.isPackaged, platform: process.platform, env: process.env });
+    const restart = appImageRestart(kind, process.env, process.argv, process.pid);
+    if (restart === null) {
+      app.relaunch();
+    } else {
+      // See appImageRestart for why an AppImage can't use app.relaunch().
+      spawn(restart.command, restart.args, { detached: true, stdio: 'ignore' }).unref();
+    }
     app.exit(0);
   });
 

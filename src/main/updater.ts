@@ -4,6 +4,7 @@ import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import type { UpdateState } from '../shared/ipc';
 import { applyLite, cleanupLite, hasStagedLite, prepareLite } from './lite-update';
+import { installKind, selfUpdateBlocker, type InstallKind } from './platform/install-kind';
 
 /**
  * Self-update, against GitHub Releases.
@@ -21,12 +22,15 @@ import { applyLite, cleanupLite, hasStagedLite, prepareLite } from './lite-updat
  *    the client after declining an update doesn't quietly apply it next
  *    launch. Nothing happens until the Update button is pressed.
  *
- * Only a packaged NSIS install can do any of this. See `canUpdate`.
+ * On Linux the manifest is `latest-linux.yml` instead, and what gets fetched
+ * is the new AppImage.
  *
- * And the installer is the fallback, not the first choice. Windows Smart App
- * Control will not run an unsigned exe, so on machines that have it on the
- * installer never starts. An update that only changes the app is fetched as
- * the app's own files instead and swapped in on restart; see
+ * Only the NSIS install and the AppImage can do any of this. See `canUpdate`.
+ *
+ * And on Windows the installer is the fallback, not the first choice. Windows
+ * Smart App Control will not run an unsigned exe, so on machines that have it
+ * on the installer never starts. An update that only changes the app is
+ * fetched as the app's own files instead and swapped in on restart; see
  * `lite-update.ts`. electron-updater still does the checking either way.
  */
 
@@ -35,17 +39,19 @@ export interface UpdaterDeps {
   readonly log: (...args: unknown[]) => void;
 }
 
+function runningInstallKind(): InstallKind {
+  return installKind({ isPackaged: app.isPackaged, platform: process.platform, env: process.env });
+}
+
 /**
  * Whether this build can update itself.
  *
- * Unpackaged is `npm start`, where there's no installer to replace and
- * electron-updater throws rather than no-ops. Portable builds set
- * PORTABLE_EXECUTABLE_DIR: they run from a single exe with no install
- * directory, so there's nothing for an installer to update. Offering the
- * button in either case would only produce an error.
+ * `npm start`, the portable exe and an unpacked Linux build have nothing for
+ * electron-updater to replace, and it throws rather than no-ops. Offering the
+ * button there would only produce an error. See platform/install-kind.ts.
  */
 export function canUpdate(): boolean {
-  return app.isPackaged && process.env['PORTABLE_EXECUTABLE_DIR'] === undefined;
+  return selfUpdateBlocker(runningInstallKind()) === null;
 }
 
 /**
@@ -133,15 +139,9 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
 
   return {
     check(manual) {
-      if (!canUpdate()) {
-        if (manual) {
-          set({
-            status: 'error',
-            message: app.isPackaged
-              ? 'The portable build cannot update itself. Use the installer.'
-              : 'Updates only work in an installed build.',
-          });
-        }
+      const blocker = selfUpdateBlocker(runningInstallKind());
+      if (blocker !== null) {
+        if (manual) set({ status: 'error', message: blocker });
         return;
       }
       void autoUpdater.checkForUpdates()?.catch(() => {
@@ -161,6 +161,15 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
           // Reported through the error event.
         });
       };
+
+      // An AppImage is one read-only file, so there is no app.asar in it to
+      // swap; the whole file is the update. prepareLite would find that out
+      // too, but only after fetching the manifest, and it would put it down
+      // as a runtime change, since the manifest pins the Windows build.
+      if (runningInstallKind() === 'appimage') {
+        viaInstaller('the AppImage is replaced whole');
+        return;
+      }
 
       preparing = true;
       void prepareLite(
@@ -211,6 +220,17 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
        * safe because the app installs per-user under LOCALAPPDATA, so
        * there is no elevation prompt to answer and nothing for NSIS to
        * ask about. A per-machine build could not do this.
+       *
+       * The AppImage has no installer at all: electron-updater deletes the
+       * old file and puts the new one in the same folder (renamed to the new
+       * version if the old name had a version in it), so what it needs is
+       * write access to that folder. The silent flag means nothing to it.
+       * Measured end to end: the new version comes up by itself. The old
+       * one's FUSE mount stays up until that new client exits, because the
+       * spawn that starts it passes the old AppImage runtime's keep-alive
+       * pipe along. That costs nothing but a mount, and is the library's own
+       * restart; app.relaunch() is the one that needed replacing, see
+       * appImageRestart in platform/install-kind.ts.
        *
        * isForceRunAfter brings the client back up by itself.
        */

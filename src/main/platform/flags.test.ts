@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  angleBackendsFor,
+  angleSwitchValue,
   applySwitches,
   clampFrameCap,
   computeSwitches,
   FRAME_CAP_MAX,
   FRAME_CAP_MIN,
   type AdvancedConfig,
+  type AngleBackend,
   type PerformanceConfig,
 } from './flags';
 
@@ -52,52 +55,100 @@ describe('computeSwitches', () => {
   // discards the first. If this test fails, features are being lost at runtime
   // with no error anywhere.
   it('emits at most one enable-features and one disable-features switch', () => {
-    const switches = computeSwitches(perf({ frameCap: 240 }), adv());
+    const switches = computeSwitches(perf({ frameCap: 240 }), adv(), 'win32');
     expect(named(switches, 'enable-features')).toHaveLength(1);
     expect(named(switches, 'disable-features')).toHaveLength(1);
   });
 
   it('never emits a duplicate switch name', () => {
-    const switches = computeSwitches(perf({ frameCap: 144 }), adv());
+    const switches = computeSwitches(perf({ frameCap: 144 }), adv(), 'win32');
     const names = switches.map((s) => s.name);
     expect(names).toHaveLength(new Set(names).size);
   });
 
   it('passes the clamped cap to the CustomFrameCap feature', () => {
-    const switches = computeSwitches(perf({ frameCap: 144 }), adv());
+    const switches = computeSwitches(perf({ frameCap: 144 }), adv(), 'win32');
     expect(named(switches, 'enable-features')[0]?.value).toContain('CustomFrameCap:fps/144');
   });
 
   it('suppresses the deeper frame queue when a cap is set', () => {
     // At queue depth >= 2 the renderer decouples from the paced draw loop and
     // the cap stops being enforced, so these two must never both be on.
-    const capped = computeSwitches(perf({ frameCap: 240, higherMaxFps: true }), adv());
+    const capped = computeSwitches(perf({ frameCap: 240, higherMaxFps: true }), adv(), 'win32');
     expect(named(capped, 'enable-features')[0]?.value).not.toContain('CustomMaxPendingFrames');
 
-    const uncapped = computeSwitches(perf({ frameCap: 0, higherMaxFps: true }), adv());
+    const uncapped = computeSwitches(perf({ frameCap: 0, higherMaxFps: true }), adv(), 'win32');
     expect(named(uncapped, 'enable-features')[0]?.value).toContain('CustomMaxPendingFrames:count/2');
   });
 
   it('omits every uncap switch when fpsUnlocked is off', () => {
-    const switches = computeSwitches(perf({ fpsUnlocked: false, frameCap: 240 }), adv());
+    const switches = computeSwitches(perf({ fpsUnlocked: false, frameCap: 240 }), adv(), 'win32');
     expect(named(switches, 'disable-frame-rate-limit')).toHaveLength(0);
     expect(named(switches, 'disable-gpu-vsync')).toHaveLength(0);
     expect(named(switches, 'enable-features')).toHaveLength(0);
   });
 
   it('maps the default ANGLE backend to d3d11 on Windows', () => {
-    expect(named(computeSwitches(perf(), adv({ angleBackend: 'default' })), 'use-angle')[0]?.value)
+    expect(named(computeSwitches(perf(), adv({ angleBackend: 'default' }), 'win32'), 'use-angle')[0]?.value)
       .toBe('d3d11');
-    expect(named(computeSwitches(perf(), adv({ angleBackend: 'gl' })), 'use-angle')[0]?.value)
+    expect(named(computeSwitches(perf(), adv({ angleBackend: 'gl' }), 'win32'), 'use-angle')[0]?.value)
       .toBe('gl');
   });
 
   it('gates the optional switch groups', () => {
-    const bare = computeSwitches(perf(), adv({ removeUselessFeatures: false, perfTweaks: false }));
+    const bare = computeSwitches(perf(), adv({ removeUselessFeatures: false, perfTweaks: false }), 'win32');
     expect(named(bare, 'disable-breakpad')).toHaveLength(0);
     expect(named(bare, 'no-proxy-server')).toHaveLength(0);
     // Always-on switches survive regardless.
     expect(named(bare, 'ignore-gpu-blocklist')).toHaveLength(1);
+  });
+
+  it('keeps the Windows-only switches and features to Windows', () => {
+    const win = computeSwitches(perf(), adv(), 'win32');
+    expect(named(win, 'raise-timer-frequency')).toHaveLength(1);
+    expect(named(win, 'disable-features')[0]?.value).toContain('CalculateNativeWinOcclusion');
+
+    const linux = computeSwitches(perf(), adv(), 'linux');
+    expect(named(linux, 'raise-timer-frequency')).toHaveLength(0);
+    expect(named(linux, 'disable-features')[0]?.value).not.toContain('CalculateNativeWinOcclusion');
+    expect(named(linux, 'disable-gpu-sandbox')).toHaveLength(1);
+    expect(named(win, 'disable-gpu-sandbox')).toHaveLength(0);
+  });
+
+  it('keeps the uncap and the frame cap on Linux, which is what the patched build is for', () => {
+    const switches = computeSwitches(perf({ frameCap: 240 }), adv(), 'linux');
+    expect(named(switches, 'disable-frame-rate-limit')).toHaveLength(1);
+    expect(named(switches, 'enable-features')[0]?.value).toContain('CustomFrameCap:fps/240');
+    // Same single-emission rule as Windows. Linux adds switches of its own,
+    // so this is where a duplicate would sneak in.
+    const names = switches.map((s) => s.name);
+    expect(names).toHaveLength(new Set(names).size);
+  });
+
+  it('leaves ANGLE to Chromium on Linux unless asked for a backend Linux has', () => {
+    const angle = (backend: AngleBackend) =>
+      named(computeSwitches(perf(), adv({ angleBackend: backend }), 'linux'), 'use-angle')[0]?.value;
+    expect(angle('default')).toBeUndefined();
+    expect(angle('gl')).toBe('gl');
+    expect(angle('vulkan')).toBe('vulkan');
+    // A config carried over from Windows must not reach a Linux GPU process.
+    expect(angle('d3d11')).toBeUndefined();
+    expect(angle('d3d11on12')).toBeUndefined();
+  });
+});
+
+describe('angleBackendsFor', () => {
+  it('offers only backends the OS has, and every one maps to a switch or the default', () => {
+    for (const platform of ['win32', 'linux'] as const) {
+      const offered = angleBackendsFor(platform);
+      expect(offered[0]).toBe('default');
+      for (const backend of offered) {
+        if (backend === 'default') continue;
+        expect(angleSwitchValue(backend, platform)).toBe(backend);
+      }
+    }
+    expect(angleBackendsFor('linux')).not.toContain('d3d11');
+    expect(angleBackendsFor('win32')).toContain('d3d11');
   });
 });
 
