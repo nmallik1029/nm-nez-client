@@ -20,15 +20,15 @@ import { loadKillPacks, resolveKillPackFile } from './killsounds';
 let root: string;
 /** The user's folder. */
 let dir: string;
-/** The packs the client ships. */
-let shipped: string;
+/** The packs installed from the catalog. */
+let installed: string;
 
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'killsounds-'));
   dir = join(root, 'user');
-  shipped = join(root, 'shipped');
+  installed = join(root, 'installed');
   mkdirSync(dir);
-  mkdirSync(shipped);
+  mkdirSync(installed);
 });
 
 afterEach(() => {
@@ -99,33 +99,33 @@ describe('loadKillPacks', () => {
     expect(loadKillPacks([dir]).map((p) => p.name)).toEqual(['Alpha', 'Zulu']);
   });
 
-  it('lists the shipped packs alongside the user\'s own, sorted together', () => {
-    pack('reaver', [1, 2], [1], { name: 'Reaver' }, shipped);
+  it('lists the installed packs alongside the user\'s own, sorted together', () => {
+    pack('reaver', [1, 2], [1], { name: 'Reaver' }, installed);
     pack('mine', [1], [], { name: 'Mine' });
-    expect(loadKillPacks([dir, shipped]).map((p) => p.id)).toEqual(['mine', 'reaver']);
+    expect(loadKillPacks([dir, installed]).map((p) => p.id)).toEqual(['mine', 'reaver']);
   });
 
-  it('lets a user pack replace a shipped one of the same id, whole', () => {
+  it('lets a user pack replace an installed one of the same id, whole', () => {
     // Theirs has fewer sounds and no banners. Merging would ask for tiers
     // theirs does not have and show pictures from a pack they replaced.
-    pack('prime', [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], { name: 'Prime' }, shipped);
+    pack('prime', [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], { name: 'Prime' }, installed);
     pack('prime', [1, 2], [], { name: 'My Prime' });
-    expect(loadKillPacks([dir, shipped])).toEqual([
+    expect(loadKillPacks([dir, installed])).toEqual([
       { id: 'prime', name: 'My Prime', sounds: 2, banners: 0 },
     ]);
   });
 
-  it('keeps the shipped pack when the user folder of that name is not a pack', () => {
-    pack('prime', [1, 2, 3], [1], { name: 'Prime' }, shipped);
+  it('keeps the installed pack when the user folder of that name is not a pack', () => {
+    pack('prime', [1, 2, 3], [1], { name: 'Prime' }, installed);
     pack('prime', [], [1, 2]);
-    expect(loadKillPacks([dir, shipped])).toEqual([
+    expect(loadKillPacks([dir, installed])).toEqual([
       { id: 'prime', name: 'Prime', sounds: 3, banners: 1 },
     ]);
   });
 
-  it('lists the shipped packs when the user has no folder at all', () => {
-    pack('ion', [1], [], undefined, shipped);
-    expect(loadKillPacks([join(root, 'nobody'), shipped]).map((p) => p.id)).toEqual(['ion']);
+  it('lists the installed packs when the user has no folder at all', () => {
+    pack('ion', [1], [], undefined, installed);
+    expect(loadKillPacks([join(root, 'nobody'), installed]).map((p) => p.id)).toEqual(['ion']);
   });
 });
 
@@ -133,36 +133,36 @@ describe('resolveKillPackFile', () => {
   const url = (id: string, tier: number, kind: 'sound' | 'banner'): string =>
     packFileUrl(id, tier, kind);
 
-  it('finds a shipped pack file from the URL the page builds', () => {
-    pack('vct-2025', [1, 2], [1], undefined, shipped);
-    expect(resolveKillPackFile(url('vct-2025', 2, 'sound'), [dir, shipped]))
-      .toBe(join(shipped, 'vct-2025', 'vct-2025_2.mp3'));
-    expect(resolveKillPackFile(url('vct-2025', 1, 'banner'), [dir, shipped]))
-      .toBe(join(shipped, 'vct-2025', 'vct-2025_1.png'));
+  it('finds an installed pack file from the URL the page builds', () => {
+    pack('vct-2025', [1, 2], [1], undefined, installed);
+    expect(resolveKillPackFile(url('vct-2025', 2, 'sound'), [dir, installed]))
+      .toBe(join(installed, 'vct-2025', 'vct-2025_2.mp3'));
+    expect(resolveKillPackFile(url('vct-2025', 1, 'banner'), [dir, installed]))
+      .toBe(join(installed, 'vct-2025', 'vct-2025_1.png'));
   });
 
   it('serves every file from the copy the list said was in use', () => {
-    // The user's prime has no banner. Its streak must not borrow the shipped
+    // The user's prime has no banner. Its streak must not borrow the installed
     // one's, even though that file exists.
-    pack('prime', [1, 2], [1], undefined, shipped);
+    pack('prime', [1, 2], [1], undefined, installed);
     pack('prime', [1, 2]);
-    expect(resolveKillPackFile(url('prime', 1, 'sound'), [dir, shipped]))
+    expect(resolveKillPackFile(url('prime', 1, 'sound'), [dir, installed]))
       .toBe(join(dir, 'prime', 'prime_1.mp3'));
-    expect(resolveKillPackFile(url('prime', 1, 'banner'), [dir, shipped])).toBeNull();
+    expect(resolveKillPackFile(url('prime', 1, 'banner'), [dir, installed])).toBeNull();
   });
 
   it('answers nothing for a file that is not there', () => {
-    pack('ion', [1], [], undefined, shipped);
-    expect(resolveKillPackFile(url('ion', 2, 'sound'), [dir, shipped])).toBeNull();
-    expect(resolveKillPackFile(url('gone', 1, 'sound'), [dir, shipped])).toBeNull();
+    pack('ion', [1], [], undefined, installed);
+    expect(resolveKillPackFile(url('ion', 2, 'sound'), [dir, installed])).toBeNull();
+    expect(resolveKillPackFile(url('gone', 1, 'sound'), [dir, installed])).toBeNull();
   });
 
   it('answers only pack files at the pack address', () => {
-    pack('ion', [1], [], { name: 'Ion' }, shipped);
-    writeFileSync(join(shipped, 'ion', 'ion_1.txt'), 'x');
+    pack('ion', [1], [], { name: 'Ion' }, installed);
+    writeFileSync(join(installed, 'ion', 'ion_1.txt'), 'x');
     // There on disk, but past anything the list would ever offer.
-    writeFileSync(join(shipped, 'ion', 'ion_13.mp3'), 'x');
-    const dirs = [dir, shipped];
+    writeFileSync(join(installed, 'ion', 'ion_13.mp3'), 'x');
+    const dirs = [dir, installed];
     for (const bad of [
       // Another file in the folder, or the right name under the wrong pack.
       'https://assets.krunker.io/sounds/killstreak/ion/pack.json',

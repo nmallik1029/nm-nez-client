@@ -22,14 +22,14 @@ export interface AppPaths {
   readonly backgrounds: string;
   /** Sounds the client plays. `match-found.mp3` is the only one so far. */
   readonly sounds: string;
-  /** Kill streak packs of the user's own, one folder each. They win over the shipped ones. */
+  /** Kill streak packs of the user's own, one folder each. They win over installed ones. */
   readonly killPacks: string;
   /**
-   * The kill streak packs the client ships. Beside the asar in a package,
-   * not in it, because audio is served in ranges, and a file inside an asar
-   * cannot be opened for that without first being copied out to a temp file.
+   * The kill streak packs installed from the catalog, one folder each. The
+   * client's to write and delete, which is why it is not the folder above:
+   * removing a pack must never be able to reach one the user made.
    */
-  readonly bundledKillPacks: string;
+  readonly installedKillPacks: string;
   readonly screenshots: string;
 }
 
@@ -50,11 +50,7 @@ export function appPaths(): AppPaths {
     backgrounds: join(swap, 'backgrounds'),
     sounds: join(swap, 'sounds'),
     killPacks: join(swap, 'sounds', 'killstreak'),
-    // electron-builder's extraResources copies the repo's assets/killstreak
-    // here. In development there is no package, so it is read in place.
-    bundledKillPacks: app.isPackaged
-      ? join(process.resourcesPath, 'killstreak')
-      : join(app.getAppPath(), 'assets', 'killstreak'),
+    installedKillPacks: join(userData, 'killstreak'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
   };
   return cached;
@@ -62,7 +58,7 @@ export function appPaths(): AppPaths {
 
 /** Where kill streak packs are read from, the user's first so theirs win. */
 export function killPackDirs(paths: AppPaths): readonly string[] {
-  return [paths.killPacks, paths.bundledKillPacks];
+  return [paths.killPacks, paths.installedKillPacks];
 }
 
 /** Create the folders up front so they're there to find before first use. */

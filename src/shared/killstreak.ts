@@ -3,10 +3,11 @@
  *
  * A pack is a folder named by its id, holding `<id>_1.mp3` for the first kill
  * of a streak, `<id>_2.mp3` for the second, and so on, with an optional
- * `<id>_N.png` banner beside each. The client ships a set of them in
- * `assets/killstreak`, and anyone can add their own to `swap/sounds/killstreak`;
- * one of theirs with the same id as a shipped pack replaces it. Main lists
- * what is there; the page plays it.
+ * `<id>_N.png` banner beside each. The client knows a set of them by name and
+ * downloads one when somebody installs it (main/killpack-install.ts), and
+ * anyone can add their own to `swap/sounds/killstreak`; one of theirs with the
+ * same id as an installed pack replaces it. Main lists what is there; the page
+ * plays it.
  *
  * The files are fetched from a krunker.io address that does not exist, and
  * main answers it from disk the same way the resource swapper answers a
@@ -26,6 +27,25 @@ export interface KillPack {
   readonly sounds: number;
   /** Contiguous from 1, and 0 for a pack that is sound only. */
   readonly banners: number;
+}
+
+/** A pack the client can download, and has not. */
+export interface AvailablePack extends KillPack {
+  /** The whole download, for the tile to say what pressing Install costs. */
+  readonly bytes: number;
+}
+
+/** What the editor draws: every pack there is, each either on disk or not. */
+export interface KillPackListing {
+  /** On disk and playable: the ones installed and the user's own. */
+  readonly installed: readonly KillPack[];
+  /**
+   * The installed ones the client downloaded, which it can take off the disk
+   * again. Not the user's own: those are theirs to delete, from their folder.
+   */
+  readonly removable: readonly string[];
+  /** The rest of the catalog, each one an Install button. */
+  readonly available: readonly AvailablePack[];
 }
 
 /**

@@ -59,19 +59,13 @@ files:
   # app.getAppPath() so the same path works from the repo and from inside
   # the package.
   - assets/**/*
-  # Except the kill streak packs, which go beside the asar instead. See below.
+  # Except the kill streak packs, which do not ship at all. The client lists
+  # them by name and downloads one from this repo when somebody installs it;
+  # see src/main/killpack-install.ts. Up to 0.1.58 they went to
+  # resources/killstreak as extraResources, 34 MB on every install.
   - '!assets/killstreak{,/**/*}'
 
 asar: true
-
-# The kill streak packs, as plain files at resources/killstreak. Not in the
-# asar: the page loads their audio in byte ranges, and opening a file inside
-# an asar for that means Electron first copying it out to a temp file. main
-# finds them through process.resourcesPath; see bundledKillPacks in
-# src/main/paths.ts.
-extraResources:
-  - from: assets/killstreak
-    to: killstreak
 
 # Deep links. This is what makes Windows send a "nmnez://game?action=host-comp"
 # link to the client: the NSIS installer writes the registry keys for the
@@ -145,8 +139,9 @@ linux:
   # explicitly because electron-builder's Linux fallback finds icon.ico, can't
   # convert it, and fails the build. See build/README.md.
   icon: icons
-  # The window icon at runtime; see src/main/app-icon.ts. Added to the
-  # top-level extraResources, not instead of them.
+  # The window icon at runtime; see src/main/app-icon.ts. Would be added to
+  # any top-level extraResources rather than replace them; there are none
+  # since the kill streak packs stopped shipping.
   extraResources:
     - from: build/icons/256x256.png
       to: icon.png

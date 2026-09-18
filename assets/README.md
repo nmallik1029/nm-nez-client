@@ -7,12 +7,11 @@ read by electron-builder while making the installer and never ends up in it.
 packed into the asar. Main resolves it with `app.getAppPath()`, which is the
 repo root in development and the asar in a build, so the same path works
 either way and there is nothing to special-case. The one exception is
-`killstreak/`, below.
+`killstreak/`, below, which is in the repo and not in the package at all.
 
 Keep it small. Every byte here is a byte on the installer that already weighs
 109 MB, and anything large enough to notice belongs somewhere it can be
-downloaded instead. `killstreak/` is the deliberate exception, and why is
-written down with it.
+downloaded instead, which is exactly what `killstreak/` turned into.
 
 ## match-found.mp3
 
@@ -30,30 +29,43 @@ one is the fallback. With neither, the queue is silent and nothing breaks.
 
 ## killstreak/
 
-The kill streak packs everyone gets: 29 Valorant packs, one folder each,
-picked from in QoL Features under Built-in.
+The kill streak packs anyone can install: 29 Valorant packs, one folder each,
+listed in QoL Features under Built-in, Kill streak sounds, Edit.
 
 A pack is a folder named by its id (lowercase letters, digits and hyphens,
 nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
 second and so on, an optional `<id>_N.png` banner beside each, and an optional
 `pack.json` of `{"name": "Shown Name"}`. Numbering stops at the first gap. The
-rules are in `src/shared/killstreak.ts` and `src/main/killsounds.ts`. Adding
-one to the client is dropping a folder in here.
+rules are in `src/shared/killstreak.ts` and `src/main/killsounds.ts`.
 
-**This folder is not in the asar.** `electron-builder.yml` leaves it out of
-`files` and copies it to `resources/killstreak` with `extraResources`, and
-main finds it through `process.resourcesPath` (`bundledKillPacks` in
-`src/main/paths.ts`). The page loads the audio in byte ranges, and Electron can
-only open a file inside an asar for that by copying it out to a temp file
-first.
+**This folder does not ship.** `electron-builder.yml` leaves it out of the
+package, and it is not in the no-installer update either. The client knows the
+packs by name from `src/main/killstreak-catalog.json`, and when somebody
+presses Install on one it downloads that pack from this folder on GitHub,
+checks every file against the catalog's size and SHA-512, and puts it in
+`%APPDATA%\nmnez\killstreak`. It plays straight away, and the x on its tile
+deletes it again. `src/main/killpack-install.ts` is all of that.
 
-**Why it ships at all, at about 34 MB.** The same reason as the match sound:
-until this, kill streak sounds only played for someone who had found the packs
-somewhere and knew which folder to put them in. They are 320 kbps mp3 and PNG,
-which do not compress, so the installer grows by about what the folder weighs.
+0.1.53 to 0.1.58 did ship the folder, 34 MB on every install whether anyone
+used a pack or not. Updating from one of those clears it out, and anyone who
+had kill streaks on gets the pack they were using fetched back on its own.
+
+**Adding or changing a pack** is two commits:
+
+1. Change the folder here and commit it.
+2. Run `npm run packs:catalog`, which rewrites the catalog, and commit that.
+
+The catalog points at the commit that last touched this folder, not at `main`,
+so clients already out there keep finding exactly the files they were built to
+expect however this folder changes later. That is also why the script refuses
+while the folder has uncommitted changes: the commit it would point at would
+not have them. Forget step 2 and `src/main/killstreak-catalog.test.ts` fails,
+because the catalog no longer matches the folder byte for byte. The pack
+commit has to reach GitHub before anyone can install from it, which a merged
+PR takes care of, since branches here are merged rather than squashed.
 
 Anyone can still add their own in `%APPDATA%\nmnez\swap\sounds\killstreak`. One
-there with the same id as a pack here replaces it whole: its own sounds,
+there with the same id as an installed pack replaces it whole: its own sounds,
 banners and name, never a mix of the two.
 
 These are Riot Games' sounds and art from Valorant, not ours, and the

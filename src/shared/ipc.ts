@@ -111,8 +111,15 @@ export const IPC = {
 
   /** Renderer -> main. Userscript sources from the scripts folder. */
   userscriptsGet: 'userscripts:get',
-  /** Renderer -> main. Kill streak packs in swap/sounds/killstreak, with their tier counts. */
+  /**
+   * Renderer -> main. Every kill streak pack: the ones on disk with their
+   * tier counts, and the rest of the catalog. A `KillPackListing`.
+   */
   killPacksGet: 'killpacks:get',
+  /** Renderer -> main. Download one catalog pack by id. True once it is on disk and checked. */
+  killPacksInstall: 'killpacks:install',
+  /** Renderer -> main. Delete one downloaded pack by id. Never the user's own. */
+  killPacksRemove: 'killpacks:remove',
   /**
    * Game page -> main. Whether an Escape press should be taken by main and
    * turned into a release: true while the mouse is locked and nothing is

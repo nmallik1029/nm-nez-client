@@ -11,9 +11,10 @@ import {
 /**
  * List the kill streak packs across `dirs`, most preferred folder first.
  *
- * That is the user's `swap/sounds/killstreak` and then the packs the client
- * ships, so a folder of their own with a shipped pack's id replaces it
- * outright -- sounds, banners and name -- rather than being merged with it.
+ * That is the user's `swap/sounds/killstreak` and then the packs installed
+ * from the catalog, so a folder of their own with an installed pack's id
+ * replaces it outright -- sounds, banners and name -- rather than being merged
+ * with it.
  * `packFolder` is the rule, and serving a file goes through the same one, so
  * the list and what actually plays can never disagree about which copy it is.
  *
@@ -94,10 +95,10 @@ const PACK_FILE = /^([^/]+)\/([^/]+)_([1-9][0-9]?)\.([a-z0-9]+)$/;
 
 /**
  * Which copy of a pack is the one in use: the first folder holding its first
- * sound. A folder without one is not a pack, so it does not hide a shipped
+ * sound. A folder without one is not a pack, so it does not hide an installed
  * pack of the same name behind a silent one.
  */
-function packFolder(dirs: readonly string[], id: string): string | null {
+export function packFolder(dirs: readonly string[], id: string): string | null {
   for (const dir of dirs) {
     const folder = join(dir, id);
     if (existsSync(join(folder, `${id}_1.mp3`))) return folder;
