@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.58',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'changed', text: 'Live accuracy is twice the size it was, box and numbers together, so the match and life figures are easy to read while you play. It stays the same distance from the edge of the screen, and top centre the round and flag messages still show just under it.' },
+    ],
+  },
+  {
     version: '0.1.57',
     date: '2026-09-18',
     changes: [
