@@ -320,6 +320,9 @@ const qolPanel = `
 #${UI_IDS.qolPanel}{width:min(620px,94vw);max-height:86vh;display:flex;flex-direction:column;
   background:var(--nm-game-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
   color:var(--nm-game-text);font-family:var(--nm-font-display)}
+/* An editor that asked for room (see PanelView.wide): Soundpacks, whose
+   Fortnite picks fit on one screen at this width and not at the one above. */
+#${UI_IDS.qolPanel}.wide{width:min(1300px,96vw);max-height:92vh}
 #${UI_IDS.qolPanel} .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
@@ -468,8 +471,22 @@ const qolPanel = `
   border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none;cursor:pointer}
 #${UI_IDS.qolPanel} .ctl .sel:focus{border-color:var(--nm-game-input-focus)}
 #${UI_IDS.qolPanel} .ctl .play{flex:0 0 auto;padding:3px 6px;font-size:var(--nm-fs-xl);line-height:1}
-/* Gun names run longer than the usual labels: Rocket Launcher, Akimbo Pistol. */
-#${UI_IDS.qolPanel} .sp-guns .ctl .lbl{flex-basis:120px}
+/*
+ * Soundpacks' Fortnite picks: 24 dropdowns, laid across the wide panel
+ * rather than down it, so the tab fits on one screen. Each column is a label,
+ * the dropdown and its play button; auto-fill drops to two columns, then one,
+ * as the screen narrows, instead of squeezing the dropdowns unreadable.
+ */
+#${UI_IDS.qolPanel} .sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+  column-gap:18px}
+#${UI_IDS.qolPanel} .sp-grid .ctl{gap:8px;padding:3px 2px}
+/* Gun names run longer than the usual labels, and GameFont is wide: at the
+   usual 88px, Submachine Gun and Rocket Launcher wrapped onto two lines. */
+#${UI_IDS.qolPanel} .sp-grid .ctl .lbl{flex-basis:150px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+#${UI_IDS.qolPanel} .sp-foot{display:flex;align-items:center;gap:16px;margin-top:12px}
+#${UI_IDS.qolPanel} .sp-foot .note{flex:1;margin-top:0}
+#${UI_IDS.qolPanel} .sp-foot .actions{margin-top:0}
 #${UI_IDS.qolPanel} .seg{flex:1;display:flex;gap:6px}
 #${UI_IDS.qolPanel} .seg button{flex:1;padding:6px 4px;font-size:var(--nm-fs-xs);
   letter-spacing:var(--nm-track-sm)}

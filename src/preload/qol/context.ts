@@ -43,6 +43,12 @@ export interface QolDeps {
 export interface PanelView {
   /** Shown in the panel header, in place of QOL FEATURES. */
   readonly title: string;
+  /**
+   * Widen the panel while this is open. For an editor that is a long list
+   * of small controls: laid out across a wide panel it fits on one screen,
+   * where the usual width stacks it into a column you have to scroll.
+   */
+  readonly wide?: boolean;
   readonly render: (body: HTMLElement, ctx: TabContext) => void;
 }
 

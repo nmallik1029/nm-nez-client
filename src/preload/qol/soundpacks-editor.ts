@@ -43,8 +43,13 @@ const GAMES: readonly { readonly id: Game; readonly label: string }[] = [
 /** The tab last open, so coming back to the editor lands where you left it. */
 let game: Game = 'valorant';
 
+/**
+ * Wide, so Fortnite's 24 picks sit three to a row and the whole tab fits on
+ * one screen. At the usual width they were one long column, and changing the
+ * headshot meant scrolling past every gun to reach it.
+ */
 export function soundpacksEditor(): PanelView {
-  return { title: 'SOUNDPACKS', render };
+  return { title: 'SOUNDPACKS', wide: true, render };
 }
 
 /**
@@ -150,9 +155,14 @@ function renderPicks(slot: HTMLElement, ctx: TabContext): void {
     if (id !== '') previewFortniteSound(id);
   };
   const start = current();
+  // Three to a row across the wide panel, fewer on a narrow screen.
+  const grid = (): HTMLElement => {
+    const el = document.createElement('div');
+    el.className = 'sp-grid';
+    return el;
+  };
 
-  const guns = document.createElement('div');
-  guns.className = 'sp-guns';
+  const guns = grid();
   for (const gun of KRUNKER_GUNS) {
     const key = String(gun.weapon);
     guns.append(
@@ -169,8 +179,7 @@ function renderPicks(slot: HTMLElement, ctx: TabContext): void {
     );
   }
 
-  const hits = document.createElement('div');
-  hits.className = 'sp-guns';
+  const hits = grid();
   hits.append(
     picker({
       label: 'Hit marker',
@@ -209,6 +218,17 @@ function renderPicks(slot: HTMLElement, ctx: TabContext): void {
     },
   ]);
 
+  // The note beside Remove rather than over it: one line fewer, on a tab
+  // whose whole point now is fitting on the screen.
+  const foot = document.createElement('div');
+  foot.className = 'sp-foot';
+  foot.append(
+    note(
+      "From the Fortnite wiki's ripped game audio: one close shot of each gun, levelled to sit beside Krunker's own. Krunker's own keeps the game's sound for that one. The hit marker and headshot are Fortnite's older set, from before Chapter 7.",
+    ),
+    remove,
+  );
+
   slot.append(
     featureRow({
       icon: 'sports_esports',
@@ -217,13 +237,11 @@ function renderPicks(slot: HTMLElement, ctx: TabContext): void {
       on: start.on,
       onToggle: () => commit({ on: !current().on }, true),
     }),
-    heading('Guns'),
-    guns,
+    // Hits first: two picks people change, above twenty-two they mostly set once.
     heading('Hits'),
     hits,
-    note(
-      "From the Fortnite wiki's ripped game audio: one close shot of each gun, levelled to sit beside Krunker's own. Krunker's own keeps the game's sound for that one. The hit marker and headshot are Fortnite's older set, from before Chapter 7.",
-    ),
-    remove,
+    heading('Guns'),
+    guns,
+    foot,
   );
 }
