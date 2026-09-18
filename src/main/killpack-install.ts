@@ -15,7 +15,7 @@ import { loadKillPacks, packFolder } from './killsounds';
  * Kill streak packs as something you install, rather than something every
  * install carries.
  *
- * WHY. 0.1.53 to 0.1.58 put all 29 Valorant packs on every machine, 34 MB of
+ * WHY. 0.1.53 to 0.1.59 put all 29 Valorant packs on every machine, 34 MB of
  * sound and art whether anyone ever switched kill streaks on or not. Now the
  * client knows them by name only. The catalog baked in at build time lists
  * each pack's files with their sizes and hashes; Install downloads that one

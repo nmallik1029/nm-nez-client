@@ -46,7 +46,7 @@ checks every file against the catalog's size and SHA-512, and puts it in
 `%APPDATA%\nmnez\killstreak`. It plays straight away, and the x on its tile
 deletes it again. `src/main/killpack-install.ts` is all of that.
 
-0.1.53 to 0.1.58 did ship the folder, 34 MB on every install whether anyone
+0.1.53 to 0.1.59 did ship the folder, 34 MB on every install whether anyone
 used a pack or not. Updating from one of those clears it out, and anyone who
 had kill streaks on gets the pack they were using fetched back on its own.
 

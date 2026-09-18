@@ -58,7 +58,7 @@ const scratch = (): string => join(app.getPath('userData'), 'update');
  * The installer clears the old install out before it writes the new one, but
  * this update only ever replaces the folders the new release has, so one a
  * release dropped would sit there for good. `killstreak` is the Valorant
- * packs 0.1.53 to 0.1.58 carried, 34 MB, which are now downloaded one at a
+ * packs 0.1.53 to 0.1.59 carried, 34 MB, which are now downloaded one at a
  * time instead; see main/killpack-install.ts. Nothing may ever ship under one
  * of these names again, or this deletes it on every launch.
  */

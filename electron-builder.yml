@@ -61,7 +61,7 @@ files:
   - assets/**/*
   # Except the kill streak packs, which do not ship at all. The client lists
   # them by name and downloads one from this repo when somebody installs it;
-  # see src/main/killpack-install.ts. Up to 0.1.58 they went to
+  # see src/main/killpack-install.ts. Up to 0.1.59 they went to
   # resources/killstreak as extraResources, 34 MB on every install.
   - '!assets/killstreak{,/**/*}'
 

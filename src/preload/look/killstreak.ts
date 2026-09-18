@@ -172,7 +172,7 @@ function apply(next: KillStreakConfig): void {
  *
  * That is someone switching this on for the first time, who expects to hear
  * something rather than to be sent to an editor first. It is also anyone
- * updating from 0.1.53 to 0.1.58, which shipped every pack: the update takes
+ * updating from 0.1.53 to 0.1.59, which shipped every pack: the update takes
  * those away, and this puts back the one they were using.
  *
  * Once a session per pack, so a download that failed is not retried on every
