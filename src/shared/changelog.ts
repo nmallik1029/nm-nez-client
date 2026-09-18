@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.65',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'changed', text: 'Kill streak packs that are one Valorant line are now one card with a theme for each: Bubblegum Deathwish (Pink, Orange, Red, Green), ORA by OneTap (Watch, Renegade, Raja, Lawyer, Ignition), Radiant Entertainment System (Bazooka Badger, K.nock O.ut!!, Dance Fever), Reaver with its V26 colours, Prime with Prime//2.0, and Prelude to Chaos with its V25 colours. Press a swatch under the pack to use that theme and hear it. If you were using one of the old cards, you keep it as its theme, and the old download is cleared out.' },
+      { kind: 'added', text: 'Forsaken's Gold theme, which in Valorant has its own banner and plays Sovereign's kill sounds. ORA by OneTap and Radiant Entertainment System themes each play their own sounds too, the way they do in Valorant.' },
+    ],
+  },
+  {
     version: '0.1.64',
     date: '2026-09-18',
     changes: [
