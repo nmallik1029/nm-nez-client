@@ -50,12 +50,17 @@ export function loadKillPacks(dirs: readonly string[]): KillPack[] {
     if (folder === null) continue;
 
     const banners = countTiers(folder, id, 'png');
+    const variants = banners > 0 ? countVariants(folder, id, banners) : 1;
+    const meta = readMeta(folder);
     packs.push({
       id,
-      name: readName(folder) ?? nameFromId(id),
+      name: meta.name ?? nameFromId(id),
       sounds: countTiers(folder, id, 'mp3'),
       banners,
-      variants: banners > 0 ? countVariants(folder, id, banners) : 1,
+      variants,
+      // A theme's own sounds, if it has them: counted the same way as the first theme's.
+      variantSounds: Array.from({ length: variants - 1 }, (_, i) => countTiers(folder, `${id}_v${i + 2}`, 'mp3')),
+      variantNames: meta.variants?.length === variants ? meta.variants : [],
     });
   }
 
@@ -65,8 +70,8 @@ export function loadKillPacks(dirs: readonly string[]): KillPack[] {
 /**
  * The file on disk a pack URL asks for, or null.
  *
- * Only `<id>/<id>_<n>.mp3` and `.png`, and a banner's other colours
- * `<id>_v<k>_<n>.png`, under the kill pack address, in the folder
+ * Only `<id>/<id>_<n>.mp3` and `.png`, and a theme's `<id>_v<k>_<n>.png`
+ * and `.mp3`, under the kill pack address, in the folder
  * `packFolder` picks: the page never asks for anything else, so nothing else
  * is answered, and the id rule keeps a crafted URL from reaching outside the
  * pack folders.
@@ -85,8 +90,7 @@ export function resolveKillPackFile(url: string, dirs: readonly string[]): strin
   const [, id, fileId, variant, tier, ext] = match;
   if (id === undefined || !isPackId(id) || fileId !== id) return null;
   if (Number(tier) > MAX_TIERS || (ext !== 'mp3' && ext !== 'png')) return null;
-  // A colour is a banner's; there is one set of sounds.
-  if (variant !== undefined && (ext !== 'png' || Number(variant) > MAX_VARIANTS)) return null;
+  if (variant !== undefined && Number(variant) > MAX_VARIANTS) return null;
 
   const folder = packFolder(dirs, id);
   if (folder === null) return null;
@@ -140,22 +144,26 @@ function countTiers(folder: string, id: string, ext: 'mp3' | 'png'): number {
 }
 
 /**
- * The display name from `pack.json`, if there is one worth using.
+ * The display name from `pack.json`, if there is one worth using, and its
+ * themes' names, `"variants": ["Watch", "Renegade", ...]`, if every one is.
  *
  * Optional because a folder id is readable enough on its own, and a pack
  * that somebody made by hand should not need a JSON file to show up.
  */
-function readName(folder: string): string | null {
+function readMeta(folder: string): { name: string | null; variants: string[] | null } {
+  const text = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    return trimmed !== '' && trimmed.length <= 60 ? trimmed : null;
+  };
   try {
     const parsed = JSON.parse(readFileSync(join(folder, 'pack.json'), 'utf8')) as unknown;
-    const name =
-      parsed !== null && typeof parsed === 'object' && 'name' in parsed
-        ? parsed.name
-        : null;
-    if (typeof name !== 'string') return null;
-    const trimmed = name.trim();
-    return trimmed !== '' && trimmed.length <= 60 ? trimmed : null;
+    if (parsed === null || typeof parsed !== 'object') return { name: null, variants: null };
+    const raw = parsed as { name?: unknown; variants?: unknown };
+    const names = Array.isArray(raw.variants) ? raw.variants.map(text) : [];
+    const variants = names.length > 0 && names.every((n) => n !== null) ? names : null;
+    return { name: text(raw.name), variants };
   } catch {
-    return null;
+    return { name: null, variants: null };
   }
 }

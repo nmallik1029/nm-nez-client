@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { isPackId, nameFromId, packFileUrl, pickPack, tierFor, variantFor, type KillPack } from './killstreak';
+import {
+  isPackId,
+  nameFromId,
+  packFileUrl,
+  pickPack,
+  RETIRED_PACKS,
+  retiredPack,
+  soundCount,
+  soundVariant,
+  tierFor,
+  variantFor,
+  type KillPack,
+} from './killstreak';
 
 /**
  * The pack id is the part worth being strict about. It is written to config
@@ -48,7 +60,7 @@ describe('tierFor', () => {
 });
 
 describe('pickPack', () => {
-  const p = (id: string): KillPack => ({ id, name: id, sounds: 1, banners: 0, variants: 1 });
+  const p = (id: string): KillPack => ({ id, name: id, sounds: 1, banners: 0, variants: 1, variantSounds: [], variantNames: [] });
   // Sorted by name, as main sends them, so the stock pack is not first.
   const list = [p('aemondir'), p('default'), p('prime')];
 
@@ -78,11 +90,49 @@ describe('packFileUrl', () => {
     );
   });
 
-  it("names a banner's other colours, and never a sound's", () => {
+  it("names a theme's banners and sounds", () => {
     expect(packFileUrl('aeris', 4, 'banner', 3)).toBe('https://assets.krunker.io/sounds/killstreak/aeris/aeris_v3_4.png');
-    // The first colour is the plain file, so a pack without colours is untouched.
+    expect(packFileUrl('ora', 2, 'sound', 3)).toBe('https://assets.krunker.io/sounds/killstreak/ora/ora_v3_2.mp3');
+    // The first theme is the plain file, so a pack without themes is untouched.
     expect(packFileUrl('aeris', 4, 'banner', 1)).toBe(packFileUrl('aeris', 4, 'banner'));
-    expect(packFileUrl('aeris', 4, 'sound', 3)).toBe('https://assets.krunker.io/sounds/killstreak/aeris/aeris_4.mp3');
+    expect(packFileUrl('aeris', 4, 'sound', 1)).toBe('https://assets.krunker.io/sounds/killstreak/aeris/aeris_4.mp3');
+  });
+});
+
+describe('soundVariant and soundCount', () => {
+  // Theme 2 sounds like itself, theme 3 like theme 1.
+  const pack = { sounds: 6, variantSounds: [5, 0] };
+
+  it("plays a theme's own sounds where it has them, the first theme's where not", () => {
+    expect([1, 2, 3].map((v) => soundVariant(pack, v))).toEqual([1, 2, 1]);
+    expect([1, 2, 3].map((v) => soundCount(pack, v))).toEqual([6, 5, 6]);
+  });
+
+  it('plays the first theme for a theme it does not have', () => {
+    expect(soundVariant(pack, 9)).toBe(1);
+    expect(soundCount(pack, 9)).toBe(6);
+  });
+});
+
+describe('retiredPack', () => {
+  it('moves a pack that became a theme to that theme, colour for colour', () => {
+    expect(retiredPack('bubblegum-deathwish-green')).toEqual({ id: 'bubblegum-deathwish', variant: 4 });
+    expect(retiredPack('reaver-v26', 3)).toEqual({ id: 'reaver', variant: 4 });
+    expect(retiredPack('reaver-ep-5')).toEqual({ id: 'reaver', variant: 1 });
+    expect(retiredPack('ora-by-onetap-ignition')).toEqual({ id: 'ora-by-onetap', variant: 5 });
+  });
+
+  it('leaves every other pack, and the names an object has anyway', () => {
+    expect(retiredPack('reaver')).toBeNull();
+    expect(retiredPack('constructor')).toBeNull();
+    expect(retiredPack('__proto__')).toBeNull();
+  });
+
+  it('moves every one to a real pack id and theme', () => {
+    for (const { id, variants } of Object.values(RETIRED_PACKS)) {
+      expect(isPackId(id)).toBe(true);
+      expect(variants.every((v) => Number.isInteger(v) && v >= 1)).toBe(true);
+    }
   });
 });
 

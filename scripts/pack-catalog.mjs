@@ -58,15 +58,15 @@ function describe(folder, file) {
 /**
  * A kill streak pack: only what the client would ever ask for, which is also
  * what it counts, `<id>_<n>.mp3` and `.png` numbered from 1 with no gaps, and
- * the banner's other colours `<id>_v<k>_<n>.png`, numbered from 2 with no
- * gaps and each with every banner the first colour has.
+ * its other themes `<id>_v<k>_<n>.png`, numbered from 2 with no gaps and each
+ * with every banner the first theme has, and a theme's own sounds
+ * `<id>_v<k>_<n>.mp3` where it has them.
  */
 function killStreakFiles(id, folder) {
   const tier = new RegExp(`^${id}(?:_v([2-8]))?_([1-9][0-9]?)\\.(mp3|png)$`);
   const files = readdirSync(folder)
     .map((file) => ({ file, match: tier.exec(file) }))
-    // A colour is a banner's; there is one set of sounds.
-    .filter(({ match }) => match !== null && (match[1] === undefined || match[3] === 'png'))
+    .filter(({ match }) => match !== null)
     .sort(
       (a, b) =>
         Number(a.match[1] ?? 1) - Number(b.match[1] ?? 1) ||
@@ -87,8 +87,10 @@ function killStreakFiles(id, folder) {
     if (variant !== i + 1) fail(`${id} skips a colour: there is no v${i + 1}`);
     const have = numbers('png', variant);
     if (variant > 1 && (have.length !== banners || have.some((n, j) => n !== j + 1))) {
-      fail(`${id} colour v${variant} does not have the same ${banners} banners as its first colour`);
+      fail(`${id} theme v${variant} does not have the same ${banners} banners as its first theme`);
     }
+    // A theme's own sounds, if it has any, from 1 with no gaps like the first theme's.
+    if (numbers('mp3', variant).some((n, j) => n !== j + 1)) fail(`${id} theme v${variant} skips a sound`);
   });
   return files;
 }

@@ -105,11 +105,20 @@ let holdRemove: boolean;
 let heldRemove: Map<string, () => void>;
 /** Every channel main was sent, in order, and the kill streak config it was last told to save. */
 let calls: string[];
+/** Every sound the page played, by address. */
+const played: string[] = [];
 let saved: KillStreakConfig | null;
 
-/** Reaver comes in three colours, the way Valorant sells some lines; the rest in one. */
-const shape = (id: string): { sounds: number; banners: number; variants: number } =>
-  id === 'reaver' ? { sounds: 1, banners: 1, variants: 3 } : { sounds: 1, banners: 0, variants: 1 };
+/**
+ * Reaver comes in three themes, the way Valorant sells some lines, and its
+ * third sounds different; the rest in one.
+ */
+const shape = (
+  id: string,
+): { sounds: number; banners: number; variants: number; variantSounds: number[]; variantNames: string[] } =>
+  id === 'reaver'
+    ? { sounds: 1, banners: 1, variants: 3, variantSounds: [0, 2], variantNames: ['Reaver', 'V26', 'Gold'] }
+    : { sounds: 1, banners: 0, variants: 1, variantSounds: [], variantNames: [] };
 
 function listing(): unknown {
   const onDisk = [...installed].map((id) => ({ id, name: CATALOG[id] ?? id, ...shape(id) }));
@@ -259,13 +268,16 @@ beforeEach(() => {
     documentElement: new FakeEl('html'),
     addEventListener: () => {},
   });
+  played.length = 0;
   vi.stubGlobal(
     'Audio',
     class {
       volume = 1;
       preload = '';
       currentTime = 0;
+      constructor(public src = '') {}
       play(): Promise<void> {
+        played.push(this.src);
         return Promise.resolve();
       }
     },
@@ -534,6 +546,21 @@ describe('colours', () => {
   it('says how many colours a pack not yet installed comes in', async () => {
     const editor = await open({ on: false, pack: '' });
     expect(editor.swatches('Reaver')).toHaveLength(0);
-    expect(editor.metas('Reaver')).toContain('3 variants');
+    expect(editor.metas('Reaver')).toContain('3 themes');
+  });
+});
+
+describe('themes', () => {
+  it('names each theme on its swatch, and plays the sounds of the one pressed', async () => {
+    installed.add('reaver');
+    const editor = await open({ on: true, pack: 'reaver' });
+    expect(editor.swatches('Reaver').map((el) => el.title)).toEqual(['Reaver: Reaver', 'Reaver: V26', 'Reaver: Gold']);
+
+    // Gold has sounds of its own; V26 plays Reaver's.
+    editor.swatches('Reaver')[2]?.click();
+    expect(played.at(-1)).toMatch(/\/reaver\/reaver_v3_1\.mp3$/);
+    editor.swatches('Reaver')[1]?.click();
+    expect(played.at(-1)).toMatch(/\/reaver\/reaver_1\.mp3$/);
+    expect(editor.config()).toMatchObject({ pack: 'reaver', variants: { reaver: 2 } });
   });
 });

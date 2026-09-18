@@ -28,13 +28,21 @@ export interface KillPack {
   /** Contiguous from 1, and 0 for a pack that is sound only. */
   readonly banners: number;
   /**
-   * How many colours its banners come in, 1 for most. Valorant sells some
-   * skin lines in several colours, each with its own banner and the same
-   * sounds: the first colour is `<id>_<n>.png`, and colour k is
-   * `<id>_v<k>_<n>.png` beside it, numbered from 2 with no gaps and each with
-   * as many banners as the first.
+   * How many themes it comes in, 1 for most. Valorant sells some skin lines
+   * in several colours or themes, each with its own banner: the first is
+   * `<id>_<n>.png`, and theme k is `<id>_v<k>_<n>.png` beside it, numbered
+   * from 2 with no gaps and each with as many banners as the first.
    */
   readonly variants: number;
+  /**
+   * For each theme past the first, how many sounds of its own it has, or 0
+   * for one that plays the first theme's. Most share them; a few lines sound
+   * different per theme (ORA by OneTap, Forsaken's Gold), and those have
+   * `<id>_v<k>_<n>.mp3` beside their banners.
+   */
+  readonly variantSounds: readonly number[];
+  /** What each theme is called, from `pack.json`, or none: every theme or no theme. */
+  readonly variantNames: readonly string[];
 }
 
 /** A pack the client can download, and has not. */
@@ -116,10 +124,56 @@ export function tierFor(streak: number, count: number): number {
   return Math.min(Math.floor(streak), count);
 }
 
-/** A pack file's address. `variant` is the banner's colour; sounds have one. */
+/**
+ * A pack file's address, in theme `variant`. For a sound, pass the theme only
+ * if it has sounds of its own: see `soundVariant`.
+ */
 export function packFileUrl(id: string, tier: number, kind: 'sound' | 'banner', variant = 1): string {
-  if (kind === 'sound') return `${KILL_PACK_BASE}${id}/${id}_${tier}.mp3`;
-  return `${KILL_PACK_BASE}${id}/${id}${variant > 1 ? `_v${variant}` : ''}_${tier}.png`;
+  return `${KILL_PACK_BASE}${id}/${id}${variant > 1 ? `_v${variant}` : ''}_${tier}.${kind === 'sound' ? 'mp3' : 'png'}`;
+}
+
+/** The theme whose sounds theme `variant` plays: its own, or the first's. */
+export function soundVariant(pack: Pick<KillPack, 'variantSounds'>, variant: number): number {
+  return variant > 1 && (pack.variantSounds[variant - 2] ?? 0) > 0 ? variant : 1;
+}
+
+/** How many sounds theme `variant` plays. */
+export function soundCount(pack: Pick<KillPack, 'sounds' | 'variantSounds'>, variant: number): number {
+  const own = soundVariant(pack, variant);
+  return own > 1 ? (pack.variantSounds[own - 2] ?? 0) : pack.sounds;
+}
+
+/**
+ * Packs that became a theme of another. Each was its own card until it turned
+ * out to be the same line: the same sounds with another banner, or a theme
+ * Valorant shows on the same gun. Its old id, and colour k of it, are theme
+ * `variants[k - 1]` of `id` now. A pick of one moves across (see visuals.ts)
+ * and an installed copy is deleted (see killpack-install.ts), since the
+ * catalog no longer has it to keep up to date.
+ */
+export const RETIRED_PACKS: Readonly<Record<string, { readonly id: string; readonly variants: readonly number[] }>> = {
+  'bubblegum-deathwish-pink': { id: 'bubblegum-deathwish', variants: [1] },
+  'bubblegum-deathwish-orange': { id: 'bubblegum-deathwish', variants: [2] },
+  'bubblegum-deathwish-red': { id: 'bubblegum-deathwish', variants: [3] },
+  'bubblegum-deathwish-green': { id: 'bubblegum-deathwish', variants: [4] },
+  'prime-2-0': { id: 'prime', variants: [2] },
+  // Reaver Ep 5 was Reaver, byte for byte; V25's first colour is Prelude to Chaos's.
+  'reaver-ep-5': { id: 'reaver', variants: [1] },
+  'reaver-v26': { id: 'reaver', variants: [2, 3, 4, 5] },
+  'prelude-to-chaos-v25': { id: 'prelude-to-chaos', variants: [1, 2, 3, 4] },
+  'ora-by-onetap-renegade': { id: 'ora-by-onetap', variants: [2] },
+  'ora-by-onetap-raja': { id: 'ora-by-onetap', variants: [3] },
+  'ora-by-onetap-lawyer': { id: 'ora-by-onetap', variants: [4] },
+  'ora-by-onetap-ignition': { id: 'ora-by-onetap', variants: [5] },
+  'radiant-entertainment-system-knockout': { id: 'radiant-entertainment-system', variants: [2] },
+  'radiant-entertainment-system-dance-fever': { id: 'radiant-entertainment-system', variants: [3] },
+};
+
+/** Where a retired pack's theme `variant` lives now, or null for a pack that is not retired. */
+export function retiredPack(id: string, variant = 1): { id: string; variant: number } | null {
+  const to = Object.prototype.hasOwnProperty.call(RETIRED_PACKS, id) ? RETIRED_PACKS[id] : undefined;
+  if (!to) return null;
+  return { id: to.id, variant: to.variants[variant - 1] ?? to.variants[0] ?? 1 };
 }
 
 /**

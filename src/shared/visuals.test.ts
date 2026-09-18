@@ -276,6 +276,28 @@ describe('normaliseVisuals: killStreak colours', () => {
     }
   });
 
+  it('moves a pick of a pack that is now a theme of another to that theme', () => {
+    expect(normaliseVisuals({ killStreak: { on: true, pack: 'bubblegum-deathwish-red' } }).killStreak).toMatchObject({
+      on: true,
+      pack: 'bubblegum-deathwish',
+      variants: { 'bubblegum-deathwish': 3 },
+    });
+    // Its colour comes along: Reaver V26 in its third colour is Reaver's fourth theme.
+    expect(
+      normaliseVisuals({ killStreak: { pack: 'reaver-v26', variants: { 'reaver-v26': 3, aeris: 2 } } }).killStreak,
+    ).toMatchObject({ pack: 'reaver', variants: { reaver: 4, aeris: 2 } });
+    // A duplicate that became the first theme leaves no entry behind.
+    expect(normaliseVisuals({ killStreak: { pack: 'reaver-ep-5', variants: { reaver: 3 } } }).killStreak).toMatchObject({
+      pack: 'reaver',
+      variants: {},
+    });
+  });
+
+  it('drops a colour remembered for a retired pack that is not the pick', () => {
+    const k = normaliseVisuals({ killStreak: { pack: 'aeris', variants: { 'reaver-v26': 2, aeris: 3 } } }).killStreak;
+    expect(k).toMatchObject({ pack: 'aeris', variants: { aeris: 3 } });
+  });
+
   it('keeps no more picks than there could be packs for', () => {
     const many = Object.fromEntries(Array.from({ length: 400 }, (_, i) => [`pack-${i}`, 2]));
     expect(Object.keys(normaliseVisuals({ killStreak: { variants: many } }).killStreak.variants)).toHaveLength(256);
