@@ -463,6 +463,13 @@ const qolPanel = `
    from side to side as you drag it. */
 #${UI_IDS.qolPanel} .ctl .val{flex:0 0 42px;text-align:right;font-size:var(--nm-fs-md);
   color:var(--nm-game-text-dim);font-variant-numeric:tabular-nums}
+#${UI_IDS.qolPanel} .ctl .sel{flex:1;min-width:0;padding:5px 7px;font-family:inherit;
+  font-size:var(--nm-fs-md);background:var(--nm-game-input-bg);color:var(--nm-game-text);
+  border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none;cursor:pointer}
+#${UI_IDS.qolPanel} .ctl .sel:focus{border-color:var(--nm-game-input-focus)}
+#${UI_IDS.qolPanel} .ctl .play{flex:0 0 auto;padding:3px 6px;font-size:var(--nm-fs-xl);line-height:1}
+/* Gun names run longer than the usual labels: Rocket Launcher, Akimbo Pistol. */
+#${UI_IDS.qolPanel} .sp-guns .ctl .lbl{flex-basis:120px}
 #${UI_IDS.qolPanel} .seg{flex:1;display:flex;gap:6px}
 #${UI_IDS.qolPanel} .seg button{flex:1;padding:6px 4px;font-size:var(--nm-fs-xs);
   letter-spacing:var(--nm-track-sm)}

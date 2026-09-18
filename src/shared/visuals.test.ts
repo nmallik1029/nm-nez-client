@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_FORTNITE } from './soundpacks';
 import {
   colorToInt,
   DEFAULT_VISUALS,
@@ -248,5 +249,32 @@ describe('normaliseVisuals: killStreak', () => {
     const before = normaliseVisuals({ sky: { on: true, color: '#112233' } });
     expect(before.sky).toEqual({ on: true, color: '#112233' });
     expect(before.killStreak).toEqual(DEFAULT_VISUALS.killStreak);
+  });
+});
+
+describe('normaliseVisuals: soundpacks', () => {
+  it('starts off, with Fortnite off and on its defaults', () => {
+    const v = normaliseVisuals({});
+    expect(v.soundpacks).toEqual({ on: false });
+    expect(v.fortnite).toEqual(DEFAULT_FORTNITE);
+  });
+
+  it('keeps kill streaks playing for a config saved before there was a Soundpacks switch', () => {
+    // The row used to be kill streaks alone, with kill streak's own switch.
+    // Off by default here would silence everyone who had it on.
+    expect(normaliseVisuals({ killStreak: { on: true } }).soundpacks.on).toBe(true);
+    expect(normaliseVisuals({ killStreak: { on: false } }).soundpacks.on).toBe(false);
+  });
+
+  it('keeps the switch once it has been set, whatever kill streaks are', () => {
+    expect(normaliseVisuals({ soundpacks: { on: false }, killStreak: { on: true } }).soundpacks.on).toBe(false);
+    expect(normaliseVisuals({ soundpacks: { on: true }, killStreak: { on: false } }).soundpacks.on).toBe(true);
+  });
+
+  it('holds the Fortnite picks to what each gun offers', () => {
+    const f = normaliseVisuals({ fortnite: { on: true, guns: { '2': 'assault-rifle', '1': '../x' } } }).fortnite;
+    expect(f.on).toBe(true);
+    expect(f.guns['2']).toBe('assault-rifle');
+    expect(f.guns['1']).toBe(DEFAULT_FORTNITE.guns['1']);
   });
 });

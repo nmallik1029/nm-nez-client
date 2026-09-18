@@ -15,6 +15,7 @@ import { installEscapeLockRelease } from './escape-lock';
 import { setCrosshair } from './look/crosshair';
 import { setHitmarker } from './look/hitmarker';
 import { setKillStreak } from './look/killstreak';
+import { applyFortnite, initFortnite } from './look/soundpacks';
 import { installSkyHook, setSky } from './look/sky';
 import { debounced } from './schedule';
 import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
@@ -152,7 +153,8 @@ async function bootstrap(): Promise<void> {
     // no reason to be a frame late into a match that is already running.
     setCrosshair(cfg.visuals.crosshair);
     setHitmarker(cfg.visuals.hitmarker);
-    setKillStreak(cfg.visuals.killStreak);
+    setKillStreak(effectiveKillStreak(cfg.visuals));
+    initFortnite(cfg.visuals);
 
     hud = createPerfHud({ corner: cfg.ui.perfHudCorner, detail: cfg.ui.perfHudDetail });
     if (cfg.ui.perfHud) hud.show();
@@ -328,6 +330,11 @@ const saveVisuals = debounced(() => {
   if (Object.keys(changed).length > 0) void ipcRenderer.invoke(IPC.configPatch, 'visuals', changed);
 }, VISUALS_SAVE_MS);
 
+/** Kill streaks play only while the Soundpacks switch is on as well as their own. */
+function effectiveKillStreak(visuals: VisualsConfig): VisualsConfig['killStreak'] {
+  return { ...visuals.killStreak, on: visuals.soundpacks.on && visuals.killStreak.on };
+}
+
 /**
  * Take a change from the QoL editors: apply it now, save it shortly.
  *
@@ -351,9 +358,16 @@ function patchVisuals(cfg: AppConfig, partial: Partial<VisualsConfig>): void {
     setHitmarker(next.hitmarker);
     dirtyVisuals.hitmarker = next.hitmarker;
   }
-  if (partial.killStreak) {
-    setKillStreak(next.killStreak);
-    dirtyVisuals.killStreak = next.killStreak;
+  if (partial.killStreak || partial.soundpacks) {
+    setKillStreak(effectiveKillStreak(next));
+    if (partial.killStreak) dirtyVisuals.killStreak = next.killStreak;
+  }
+  // Saved at once rather than with the rest: see applyFortnite. Kept in the
+  // batch as well, so the delayed save never writes an older copy over it.
+  if (partial.soundpacks || partial.fortnite) {
+    dirtyVisuals.soundpacks = next.soundpacks;
+    dirtyVisuals.fortnite = next.fortnite;
+    void applyFortnite(next);
   }
 
   saveVisuals();

@@ -12,6 +12,8 @@ const ctx = (over: Partial<RequestContext> = {}): RequestContext => ({
 });
 
 const KILL_PACK_PATTERN = '*://assets.krunker.io/sounds/killstreak/*';
+const SOUNDPACK_PATTERN = '*://assets.krunker.io/sounds/soundpacks/*';
+const KRUNKER_SOUND_PATTERN = '*://assets.krunker.io/sound/*';
 
 describe('isAdHost', () => {
   it('matches known ad and analytics hosts', () => {
@@ -109,6 +111,18 @@ describe('decideRequest', () => {
     expect(decideRequest(url, ctx({ resolveSwap: () => 'swap://f/2' })))
       .toEqual({ kind: 'redirect', url: 'swap://f/2' });
   });
+
+  it("answers one of Krunker's sounds with the soundpack's, ahead of a swap", () => {
+    // A sound the user swapped by hand and also picked a Fortnite gun for:
+    // the pick is the newer, more specific choice, and it can be undone in
+    // the editor without touching the swap folder.
+    const url = 'https://assets.krunker.io/sound/weapon_2.mp3?build=abc';
+    const both = ctx({ resolveSoundpack: () => 'swap://f/3', resolveSwap: () => 'swap://f/2' });
+    expect(decideRequest(url, both)).toEqual({ kind: 'redirect', url: 'swap://f/3' });
+    expect(decideRequest(url, ctx({ resolveSoundpack: () => null, resolveSwap: () => 'swap://f/2' })))
+      .toEqual({ kind: 'redirect', url: 'swap://f/2' });
+    expect(decideRequest(url, ctx({ resolveSoundpack: () => null }))).toEqual({ kind: 'allow' });
+  });
 });
 
 describe('requestPatterns', () => {
@@ -159,7 +173,21 @@ describe('requestPatterns', () => {
   });
 
   it('leaves the ad hosts out when ad blocking is off', () => {
-    expect(requestPatterns(NEEDS)).toEqual(['wss://*.krunker.io/*', KILL_PACK_PATTERN]);
+    expect(requestPatterns(NEEDS)).toEqual(['wss://*.krunker.io/*', KILL_PACK_PATTERN, SOUNDPACK_PATTERN]);
+  });
+
+  it("covers Krunker's own sounds only while a soundpack is replacing them", () => {
+    expect(requestPatterns(NEEDS)).not.toContain(KRUNKER_SOUND_PATTERN);
+    expect(requestPatterns({ ...NEEDS, soundpacks: false })).not.toContain(KRUNKER_SOUND_PATTERN);
+    const patterns = requestPatterns({ ...NEEDS, soundpacks: true });
+    expect(patterns).toContain(KRUNKER_SOUND_PATTERN);
+    expect(patterns).not.toContain('*://assets.krunker.io/*');
+  });
+
+  it('leaves the soundpack addresses to the broad pattern when swapping', () => {
+    const patterns = requestPatterns({ ...NEEDS, swapping: true, soundpacks: true });
+    expect(patterns).not.toContain(SOUNDPACK_PATTERN);
+    expect(patterns).not.toContain(KRUNKER_SOUND_PATTERN);
   });
 
   it('never hands Electron an empty list, which would match everything', () => {

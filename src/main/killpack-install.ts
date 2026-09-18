@@ -24,7 +24,7 @@ import { loadKillPacks, packFolder } from './killsounds';
  * because pack files are looked up as they are asked for. Remove takes it off
  * the disk again.
  *
- * The catalog is written by scripts/killstreak-catalog.mjs, which says why
+ * The catalog is written by scripts/pack-catalog.mjs, which says why
  * the files come from a fixed commit rather than from main.
  */
 

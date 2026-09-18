@@ -93,6 +93,52 @@ export function chooser<T extends string>(spec: ChoiceSpec<T>): HTMLElement {
   return row;
 }
 
+export interface PickerSpec {
+  readonly label: string;
+  readonly options: readonly { readonly id: string; readonly label: string }[];
+  readonly value: string;
+  readonly onPick: (id: string) => void;
+  /** Plays the picked option, for a list of sounds. Leave out for no button. */
+  readonly onPreview?: (id: string) => void;
+}
+
+/**
+ * A dropdown, for a choice with too many options to lay out as buttons: one
+ * gun's worth of Fortnite guns is fourteen. With a play button beside it when
+ * the options are sounds, since the name of one tells you little.
+ */
+export function picker(spec: PickerSpec): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'ctl';
+
+  const label = document.createElement('span');
+  label.className = 'lbl';
+  label.textContent = spec.label;
+
+  const select = document.createElement('select');
+  select.className = 'sel';
+  for (const option of spec.options) {
+    const el = document.createElement('option');
+    el.value = option.id;
+    el.textContent = option.label;
+    if (option.id === spec.value) el.selected = true;
+    select.appendChild(el);
+  }
+  select.addEventListener('change', () => spec.onPick(select.value));
+  row.append(label, select);
+
+  const preview = spec.onPreview;
+  if (preview) {
+    const play = document.createElement('button');
+    play.className = 'play material-icons';
+    play.textContent = 'play_arrow';
+    play.title = 'Play it';
+    play.addEventListener('click', () => preview(select.value));
+    row.appendChild(play);
+  }
+  return row;
+}
+
 export interface ColorSpec {
   readonly label: string;
   readonly value: string;

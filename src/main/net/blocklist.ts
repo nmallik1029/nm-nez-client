@@ -1,5 +1,6 @@
 import { BLOCKABLE_ASSETS } from '../../krunker/constants';
 import { KILL_PACK_BASE } from '../../shared/killstreak';
+import { KRUNKER_SOUND_BASE, SOUNDPACK_BASE } from '../../shared/soundpacks';
 import { EMPTY_SWAP_URL } from '../swapper/protocol';
 
 /**
@@ -75,6 +76,16 @@ const PROP_PATTERN = '*://user-assets.krunker.io/*';
  */
 const KILL_PACK_PATTERN = `${KILL_PACK_BASE.replace(/^https:/, '*:')}*`;
 
+/** A soundpack sound the editor previews: an address the game never asks for either. */
+const SOUNDPACK_PATTERN = `${SOUNDPACK_BASE.replace(/^https:/, '*:')}*`;
+
+/**
+ * Krunker's own sounds, which the Fortnite soundpack answers with its own.
+ * Only while that is on: the game loads a few hundred of these at startup, and
+ * on any other profile none of them has any reason to wake the main process.
+ */
+const KRUNKER_SOUND_PATTERN = `${KRUNKER_SOUND_BASE.replace(/^https:/, '*:')}*`;
+
 /** What the filter has to cover, given what is switched on right now. */
 export interface FilterNeeds {
   readonly blockAds: boolean;
@@ -82,6 +93,8 @@ export interface FilterNeeds {
   readonly swapping: boolean;
   /** Bunnies or turf banners are being culled. */
   readonly blockingProps: boolean;
+  /** A soundpack is replacing Krunker's own sounds. */
+  readonly soundpacks?: boolean;
 }
 
 /**
@@ -108,13 +121,14 @@ export function requestPatterns(needs: FilterNeeds): string[] {
   const patterns = [GAME_SOCKET_PATTERN];
   if (needs.blockAds) patterns.push(...AD_HOST_PATTERNS);
 
-  // The broad pattern already covers user-assets and the kill packs, so it
-  // is exclusive with both.
+  // The broad pattern already covers user-assets, the kill packs and the
+  // game's sounds, so it is exclusive with all of them.
   if (needs.swapping) {
     patterns.push(GAME_ASSET_PATTERN);
   } else {
     if (needs.blockingProps) patterns.push(PROP_PATTERN);
-    patterns.push(KILL_PACK_PATTERN);
+    patterns.push(KILL_PACK_PATTERN, SOUNDPACK_PATTERN);
+    if (needs.soundpacks === true) patterns.push(KRUNKER_SOUND_PATTERN);
   }
 
   return patterns;
@@ -130,6 +144,12 @@ export interface RequestContext {
    * client, not something the user swapped in.
    */
   readonly resolveKillPack: (url: string) => string | null;
+  /**
+   * Returns a replacement URL for a soundpack sound, or null: a preview, or
+   * one of Krunker's sounds a soundpack replaces. Asked before the swapper,
+   * since a sound picked in the editor is the newer thing asked for.
+   */
+  readonly resolveSoundpack?: (url: string) => string | null;
   /** Returns a replacement URL for a swapped asset, or null. */
   readonly resolveSwap: (url: string) => string | null;
 }
@@ -174,6 +194,9 @@ export function decideRequest(url: string, ctx: RequestContext): RequestDecision
 
   const pack = ctx.resolveKillPack(url);
   if (pack !== null) return { kind: 'redirect', url: pack };
+
+  const sound = ctx.resolveSoundpack?.(url) ?? null;
+  if (sound !== null) return { kind: 'redirect', url: sound };
 
   const swapped = ctx.resolveSwap(url);
   if (swapped !== null) return { kind: 'redirect', url: swapped };

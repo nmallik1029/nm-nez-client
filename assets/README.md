@@ -6,12 +6,14 @@ read by electron-builder while making the installer and never ends up in it.
 `electron-builder.yml` lists this folder under `files`, so everything here is
 packed into the asar. Main resolves it with `app.getAppPath()`, which is the
 repo root in development and the asar in a build, so the same path works
-either way and there is nothing to special-case. The one exception is
-`killstreak/`, below, which is in the repo and not in the package at all.
+either way and there is nothing to special-case. The exceptions are
+`killstreak/` and `soundpacks/`, below, which are in the repo and not in the
+package at all.
 
 Keep it small. Every byte here is a byte on the installer that already weighs
 109 MB, and anything large enough to notice belongs somewhere it can be
-downloaded instead, which is exactly what `killstreak/` turned into.
+downloaded instead, which is exactly what `killstreak/` turned into, and
+`soundpacks/` started as.
 
 ## match-found.mp3
 
@@ -30,7 +32,7 @@ one is the fallback. With neither, the queue is silent and nothing breaks.
 ## killstreak/
 
 The kill streak packs anyone can install: 76 Valorant packs, one folder each,
-listed in QoL Features under Built-in, Kill streak sounds, Edit.
+listed in QoL Features under Built-in, Soundpacks, Edit, on the Valorant tab.
 
 **Where they come from.** [Kingdom Archives](https://kingdomarchives.com/killbanners),
 which has every skin line's kill banner at 1 to 6 kills and its kill sounds.
@@ -103,6 +105,63 @@ banners and name, never a mix of the two.
 These are Riot Games' sounds and art from Valorant, not ours, and the
 project's licence does not cover them. They are here the way they are in the
 community scripts they came from, as a fan-made extra for a free game.
+
+## soundpacks/
+
+Other games' sounds, played in place of Krunker's own. One folder per game,
+each a pack installed the way a kill streak pack is: listed in QoL Features
+under Built-in, Soundpacks, Edit, with a tab each. There is one so far,
+`fortnite/`.
+
+**What the Fortnite pack is.** A shot sound for each of 77 Fortnite guns, the
+hit marker and the headshot, each named by what it is (`heavy-sniper-rifle.ogg`,
+`hit-critical.ogg`). The editor lists every Krunker gun that has a Fortnite
+gun that fits, and the player picks one for each: the SCAR or the Heavy AR or
+another for the Assault Rifle, the Bolt-Action or the Heavy Sniper for the
+Sniper Rifle. Which Fortnite guns each Krunker gun offers, best fit first, is
+`KRUNKER_GUNS` in `src/shared/soundpacks.ts`, and the best fit is the default.
+
+**How it plays.** Krunker loads every sound from
+`assets.krunker.io/sound/<key>.mp3`, and main answers that request with the
+picked file instead, as the resource swapper does: so it plays where Krunker's
+would have, placed in 3D for other people's shots, at Krunker's volume. A gun
+is `weapon_<n>` and every skin's `weapon_<n>_<m>`, so the pick holds whatever
+skin is on it. The hit marker is `hit_0` and the headshot `headshot_0`.
+
+**Where they come from.** The [Fortnite wiki](https://fortnite.fandom.com/)'s
+ripped game audio, which has each gun's firing sounds as separate files, named
+like `Nemesis AR (Shooting - 01) - Weapon - Fortnite.ogg`. Each file here is
+one close-range, first person shot of that gun, processed:
+
+- the lead-in cut to 3 ms before the shot starts;
+- automatic guns cut at the next shot inside the file, no shorter than 200 ms
+  and no longer than 1.2 s, and single-shot guns at 2.5 s, each with a fade;
+- levelled to the loudness of Krunker's own Assault Rifle over its first
+  quarter second, the hit sounds by peak instead, so nothing is much louder
+  or quieter than the game around it;
+- encoded as Ogg Vorbis, and re-encoded quieter until it decodes without
+  clipping.
+
+The hit marker and headshot are Fortnite's older set, from before Chapter 7;
+the wiki does not have the newer ones.
+
+**Adding or changing a sound** is the same two commits as a kill streak pack:
+change the folder and commit it, then `npm run packs:catalog` and commit what
+it writes, which is `src/main/soundpack-catalog.json`. A new sound also needs
+a name in `FORTNITE_SOUNDS` and a place in some gun's options, or
+`src/main/soundpack-catalog.test.ts` fails: the pack and the editor have to
+agree, so nothing is offered that is not there and nothing is downloaded that
+nobody can pick. A pack in a folder of its own for another game needs its own
+tab in `src/preload/qol/soundpacks-editor.ts`.
+
+Like `killstreak/`, **this folder does not ship**: `electron-builder.yml`
+leaves it out, and Install downloads it from here on GitHub into
+`%APPDATA%\nmnez\soundpacks`, checked against the catalog. A change reaches
+people who already installed it at their next launch, through the same
+`refreshKillPacks`.
+
+These are Epic Games' sounds, not ours, and the project's licence does not
+cover them, the same as the Valorant packs.
 
 ## sky-*.png
 

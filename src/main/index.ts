@@ -16,6 +16,7 @@ import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
 import { installRequestFilter, type RequestFilter } from './net/request-filter';
 import { refreshKillPacks } from './killpack-install';
+import { resolveSoundpackRequest, SOUNDPACK_CATALOG, soundSwapActive } from './soundpacks';
 import { resolveKillPackFile } from './killsounds';
 import { appPaths, ensureUserDirs, killPackDirs, migrateUserData } from './paths';
 import { createProtocolInbox, registerProtocolClient } from './protocol';
@@ -232,6 +233,13 @@ function start(): void {
       const file = resolveKillPackFile(url, packDirs);
       return file === null ? null : swapServer.urlFor(file);
     },
+    // Also over the swapper's scheme, for the same reason: Howler loads the
+    // game's sounds in ranges too.
+    resolveSoundpack: (url) => {
+      const file = resolveSoundpackRequest(url, () => config.get('visuals'), paths.soundpacks);
+      return file === null ? null : swapServer.urlFor(file);
+    },
+    soundpacksActive: () => soundSwapActive(config.get('visuals'), paths.soundpacks),
     resolveSwap: (url) => resolveSwapUrl(url, swapIndex, (abs) => swapServer.urlFor(abs)),
     swapFileCount: () => swapIndex.size,
     onGameSocket: (host, port) => {
@@ -243,6 +251,8 @@ function start(): void {
   // Downloaded kill streak packs a release has since fixed, fetched again in
   // the background. Nothing waits on it: the old files play until it is done.
   void refreshKillPacks(paths.installedKillPacks, log);
+  // And soundpacks, which update the same way.
+  void refreshKillPacks(paths.soundpacks, log, undefined, SOUNDPACK_CATALOG);
 
   mainWindow = createMainWindow({ config });
 
