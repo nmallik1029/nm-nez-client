@@ -2036,16 +2036,26 @@ const hitmarker = `
  * Live accuracy, in the top-right HUD strip beside Krunker's kills and deaths.
  *
  * Built from the game's own statIcon and greyInner classes, like the
- * hardpoint counter, so size, colour and spacing all come from the game.
- * Unlike that counter, nothing here enlarges or recolours the number: the
- * whole point is that it reads as one of Krunker's own stats.
+ * hardpoint counter, so colour and spacing come from the game. Unlike that
+ * counter, nothing here recolours the numbers: the whole point is that they
+ * read as Krunker's own stats.
+ *
+ * Two lines, match and life, so the box is the one thing in that strip with
+ * two lines in it. Krunker's statIcon is inline-block on the baseline, and a
+ * taller box on the baseline pushes every box beside it down, so this one
+ * hangs from the top instead. The lines are set tight to keep it close to
+ * the height of the one-line boxes it sits among.
  */
 const accuracyCounter = `
-#${UI_IDS.accuracyCounter} .greyInner{display:flex;align-items:center;gap:6px}
-#${UI_IDS.accuracyCounter} .lbl{font-size:var(--nm-fs-xs);letter-spacing:var(--nm-track-md);
+#${UI_IDS.accuracyCounter}{vertical-align:top}
+#${UI_IDS.accuracyCounter} .greyInner{display:flex;flex-direction:column;gap:2px}
+#${UI_IDS.accuracyCounter} .line{display:flex;align-items:baseline;justify-content:space-between;
+  gap:6px;line-height:1}
+#${UI_IDS.accuracyCounter} .lbl{font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);
   text-transform:uppercase}
 /* Tabular and a fixed width, so the strip does not shuffle as 9% becomes 10%. */
-#${UI_IDS.accuracyCounter} .val{min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+#${UI_IDS.accuracyCounter} .val{min-width:38px;text-align:right;font-size:var(--nm-fs-xl);
+  font-variant-numeric:tabular-nums}
 `;
 
 const deathStats = `

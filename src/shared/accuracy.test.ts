@@ -2,13 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   accuracyLabel,
   EMPTY_ACCURACY,
+  EMPTY_TALLY,
   HIT_MERGE_MS,
   HIT_WINDOW_MS,
+  lifeShown,
   readAmmo,
   shotsBetween,
+  tallyHit,
+  tallyNewLife,
+  tallyShots,
   withHit,
   withShots,
   type AccuracyState,
+  type AccuracyTally,
 } from './accuracy';
 
 /**
@@ -146,4 +152,71 @@ describe('accuracyLabel', () => {
   function fire3(): AccuracyState {
     return withShots(EMPTY_ACCURACY, 3, 0);
   }
+});
+
+describe('tally: match and life', () => {
+  const counts = (s: AccuracyState) => [s.shots, s.landed];
+
+  /** Two shots, the first of them landing. */
+  function halfALife(t: AccuracyTally, at: number): AccuracyTally {
+    return tallyShots(tallyHit(tallyShots(t, 1, at), at + 10), 1, at + 200);
+  }
+
+  it('counts a shot and a hit into both', () => {
+    const t = tallyHit(tallyShots(EMPTY_TALLY, 1, 0), 10);
+    expect(counts(t.match)).toEqual([1, 1]);
+    expect(counts(t.life)).toEqual([1, 1]);
+  });
+
+  it('keeps the match through a death and starts the life over', () => {
+    let t = halfALife(EMPTY_TALLY, 0);
+    t = tallyNewLife(t);
+    t = tallyShots(t, 1, 5_000);
+    expect(counts(t.match)).toEqual([3, 1]);
+    expect(counts(t.life)).toEqual([1, 0]);
+    expect(accuracyLabel(t.match)).toBe('33%');
+    expect(accuracyLabel(lifeShown(t))).toBe('0%');
+  });
+
+  it('shows the finished life until the next one fires', () => {
+    const t = tallyNewLife(halfALife(EMPTY_TALLY, 0));
+    expect(accuracyLabel(lifeShown(t))).toBe('50%');
+  });
+
+  it('keeps that figure through a hit sound that belongs to no shot', () => {
+    // Nothing waiting in the new life, so this credits nothing, and the life
+    // line must not drop to a dash because something was heard.
+    const t = tallyHit(tallyNewLife(halfALife(EMPTY_TALLY, 0)), 3_000);
+    expect(accuracyLabel(lifeShown(t))).toBe('50%');
+  });
+
+  it('takes one death reported twice as one death', () => {
+    // #deathCount and #deathsVal are both watched, and both move.
+    const once = tallyNewLife(halfALife(EMPTY_TALLY, 0));
+    expect(tallyNewLife(once)).toEqual(once);
+  });
+
+  it('keeps the last life that fired through a life that did not', () => {
+    const t = tallyNewLife(tallyNewLife(halfALife(EMPTY_TALLY, 0)));
+    expect(accuracyLabel(lifeShown(t))).toBe('50%');
+  });
+
+  it('credits the match with a shot that lands after the shooter died', () => {
+    // A rocket in flight when you die. The life it came from is gone; the
+    // match it came from is not.
+    let t = tallyShots(EMPTY_TALLY, 1, 0);
+    t = tallyNewLife(t);
+    t = tallyHit(t, 600);
+    expect(counts(t.match)).toEqual([1, 1]);
+    expect(counts(t.life)).toEqual([0, 0]);
+  });
+
+  it('shows a dash on both lines before the first shot of a match', () => {
+    expect(accuracyLabel(EMPTY_TALLY.match)).toBe('-');
+    expect(accuracyLabel(lifeShown(EMPTY_TALLY))).toBe('-');
+  });
+
+  it('adding no shots changes nothing', () => {
+    expect(tallyShots(EMPTY_TALLY, 0, 50)).toBe(EMPTY_TALLY);
+  });
 });

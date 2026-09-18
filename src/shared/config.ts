@@ -60,6 +60,8 @@ export type HotkeyAction =
 
 export type HotkeyConfig = Record<HotkeyAction, Keybind>;
 
+export type AccuracyPlacement = 'top' | 'bottom';
+
 export interface FeatureConfig {
   blockAds: boolean;
   hideBunnies: boolean;
@@ -97,11 +99,13 @@ export interface FeatureConfig {
    */
   hideDeathStats: boolean;
   /**
-   * A live accuracy readout for the current life, in the HUD beside kills
-   * and deaths. Counted from the ammo counter and the game's hit sound; see
-   * shared/accuracy.ts.
+   * A live accuracy readout in the HUD beside kills and deaths: the match so
+   * far and the current life, one line each. Counted from the ammo counter
+   * and the game's hit sound; see shared/accuracy.ts.
    */
   accuracyCounter: boolean;
+  /** Whether the match line of that readout sits above the life line or below it. */
+  accuracyMatchPlacement: AccuracyPlacement;
   /**
    * Restyle Krunker's menu and the windows it opens: one accent instead of
    * five button colours, a gradient backdrop instead of a text shadow on
@@ -309,6 +313,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     hideMenuPromos: true,
     hideDeathStats: false,
     accuracyCounter: false,
+    accuracyMatchPlacement: 'top',
     menuSkin: false,
     enabledScripts: [],
     chatHistoryLimit: 200,

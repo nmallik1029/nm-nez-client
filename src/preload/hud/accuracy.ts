@@ -1,21 +1,25 @@
 import { KRUNKER_TEAM_SCORES } from '../../krunker/constants';
 import {
   accuracyLabel,
-  EMPTY_ACCURACY,
+  EMPTY_TALLY,
+  lifeShown,
   readAmmo,
   shotsBetween,
-  withHit,
-  withShots,
-  type AccuracyState,
+  tallyHit,
+  tallyNewLife,
+  tallyShots,
+  type AccuracyTally,
   type AmmoReading,
 } from '../../shared/accuracy';
+import type { AccuracyPlacement } from '../../shared/config';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import { HIT_SOUNDS, onGameSound } from '../look/game-sound';
 import { watchCounter } from '../look/hud-counter';
 import { defineStyle, removeStyle } from '../style';
 
 /**
- * Live accuracy for the current life, in the HUD beside kills and deaths.
+ * Live accuracy, in the HUD beside kills and deaths: one line for the match
+ * so far and one for the current life, the match line above or below as set.
  *
  * The counting is in shared/accuracy.ts; this is the page end of it. Shots
  * are read off the ammo counter, hits off the game's hit sound, and the
@@ -23,19 +27,20 @@ import { defineStyle, removeStyle } from '../style';
  * in the top-right strip looking like one of the game's own stats.
  *
  * When you die, the finished life's figure stays on screen until your first
- * shot of the next one. Resetting it to a dash the instant you die would take
- * the number away at the one moment you are likely to look at it.
+ * shot of the next one; the match line carries straight on.
  */
 
 const AMMO_VALUE_ID = 'ammoVal';
 const AMMO_MAX_ID = 'ammoMax';
 const REATTACH_MS = 2_000;
 
-let state: AccuracyState = EMPTY_ACCURACY;
+let tally: AccuracyTally = EMPTY_TALLY;
 let lastAmmo: AmmoReading | null = null;
+let placement: AccuracyPlacement = 'top';
 
 let element: HTMLElement | null = null;
-let readout: HTMLElement | null = null;
+let matchLine: Line | null = null;
+let lifeLine: Line | null = null;
 let ammoParent: HTMLElement | null = null;
 let ammoObserver: MutationObserver | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -50,13 +55,19 @@ export function setAccuracyCounter(on: boolean): void {
   if (unsubscribe === null) {
     unsubscribe = onGameSound((name) => {
       if (!HIT_SOUNDS.has(name)) return;
-      state = withHit(state, performance.now());
+      tally = tallyHit(tally, performance.now());
       render();
     });
   }
 
   tick();
   if (timer === null) timer = setInterval(tick, REATTACH_MS);
+}
+
+/** Put the match line above the life line, or below it. Applies on screen now. */
+export function setAccuracyPlacement(next: AccuracyPlacement): void {
+  placement = next;
+  arrange();
 }
 
 /** Put anything Krunker has rebuilt back. Does nothing when nothing moved. */
@@ -67,17 +78,18 @@ function tick(): void {
 }
 
 function render(): void {
-  if (readout) readout.textContent = accuracyLabel(state);
+  if (matchLine) matchLine.value.textContent = accuracyLabel(tally.match);
+  if (lifeLine) lifeLine.value.textContent = accuracyLabel(lifeShown(tally));
 }
 
 /** A new life: a fresh count, with the last figure left up for now. */
 function newLife(): void {
-  state = EMPTY_ACCURACY;
+  tally = tallyNewLife(tally);
 }
 
 /** A new match: nothing from the last one carries over, on screen or off. */
 function newMatch(): void {
-  state = EMPTY_ACCURACY;
+  tally = EMPTY_TALLY;
   lastAmmo = null;
   render();
 }
@@ -120,7 +132,7 @@ function readAmmoNow(): void {
   const shots = shotsBetween(lastAmmo, next);
   lastAmmo = next;
   if (shots === 0) return;
-  state = withShots(state, shots, performance.now());
+  tally = tallyShots(tally, shots, performance.now());
   render();
 }
 
@@ -143,16 +155,42 @@ function mount(): void {
 
   const inner = document.createElement('div');
   inner.className = KRUNKER_TEAM_SCORES.counterInnerClass;
-  const label = document.createElement('span');
-  label.className = 'lbl';
-  label.textContent = 'ACC';
-  readout = document.createElement('span');
-  readout.className = 'val';
+  matchLine = line('Match');
+  lifeLine = line('Life');
 
-  inner.append(label, readout);
   element.append(inner);
+  arrange();
   strip.append(element);
   render();
+}
+
+interface Line {
+  readonly row: HTMLElement;
+  readonly value: HTMLElement;
+}
+
+function line(name: string): Line {
+  const row = document.createElement('div');
+  row.className = 'line';
+  const label = document.createElement('span');
+  label.className = 'lbl';
+  label.textContent = name;
+  const value = document.createElement('span');
+  value.className = 'val';
+  row.append(label, value);
+  return { row, value };
+}
+
+/**
+ * Put the two lines in the configured order. Appending a node that is
+ * already there moves it, so this is also how a change of setting reorders
+ * a readout that is on screen.
+ */
+function arrange(): void {
+  const inner = element?.firstElementChild;
+  if (!inner || !matchLine || !lifeLine) return;
+  if (placement === 'bottom') inner.append(lifeLine.row, matchLine.row);
+  else inner.append(matchLine.row, lifeLine.row);
 }
 
 function teardown(): void {
@@ -168,8 +206,9 @@ function teardown(): void {
   for (const counter of counters) counter.stop();
   element?.remove();
   element = null;
-  readout = null;
+  matchLine = null;
+  lifeLine = null;
   removeStyle(STYLE_IDS.accuracyCounter);
-  state = EMPTY_ACCURACY;
+  tally = EMPTY_TALLY;
   lastAmmo = null;
 }
