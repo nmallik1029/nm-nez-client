@@ -35,7 +35,7 @@ export const UI_IDS = {
   altManagerButton: 'kc-alt-manager-button',
   /** Enemies standing on the hardpoint, in the top-right HUD counters. */
   hardpointCounter: 'kc-hp-counter',
-  /** Live accuracy, in the same HUD strip. */
+  /** Live accuracy, top or bottom centre of the HUD. */
   accuracyCounter: 'nm-accuracy',
   /** The ranked queue, in the page rather than its own window. */
   rankedPanel: 'kc-ranked-panel',

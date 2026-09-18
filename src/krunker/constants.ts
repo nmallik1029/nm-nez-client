@@ -189,6 +189,18 @@ export const KRUNKER_DOM_IDS = {
    * on the first time a window opens and stays. The display is the signal.
    */
   windowHolder: 'windowHolder',
+  /**
+   * The HUD's top-centre column: the rounds score, and the flag and round
+   * messages. Nothing else lives there and the game never rebuilds it, so
+   * something put first in it sits at the top of the screen and pushes those
+   * down rather than covering them. Krunker scales the column to 0.8.
+   */
+  hudTopCentre: 'topMidHold',
+  /**
+   * The empty-magazine prompt, bottom centre from 35px up. Shown only while
+   * the magazine is empty.
+   */
+  reloadPrompt: 'reloadMsg',
 } as const;
 
 /**

@@ -2072,27 +2072,36 @@ const hitmarker = `
  * images for it -- which is where the weapon and class icons come from.
  */
 /**
- * Live accuracy, in the top-right HUD strip beside Krunker's kills and deaths.
+ * Live accuracy, top centre or bottom centre of the screen, with the match
+ * and life figures side by side in one box.
  *
  * Built from the game's own statIcon and greyInner classes, like the
  * hardpoint counter, so colour and spacing come from the game. Unlike that
  * counter, nothing here recolours the numbers: the whole point is that they
  * read as Krunker's own stats.
  *
- * Two lines, match and life, so the box is the one thing in that strip with
- * two lines in it. Krunker's statIcon is inline-block on the baseline, and a
- * taller box on the baseline pushes every box beside it down, so this one
- * hangs from the top instead. The lines are set tight to keep it close to
- * the height of the one-line boxes it sits among.
+ * Top centre is first in Krunker's #topMidHold. That column is text-align
+ * centre, so statIcon's inline-block centres itself, and statIcon's own
+ * bottom margin spaces it from the game's messages underneath. The column
+ * is pulled 5px above the screen and scaled to 0.8, so the top margin is
+ * what keeps the box off the edge, and the box is at 0.8 there like
+ * everything else the game shows top centre.
+ *
+ * Bottom centre is positioned, 15px up like Krunker's health box in the
+ * corner, with its margins zeroed: an absolute box is placed by its margin
+ * edge, and statIcon's 10px bottom margin would lift it off that line.
  */
 const accuracyCounter = `
 #${UI_IDS.accuracyCounter}{vertical-align:top}
-#${UI_IDS.accuracyCounter} .greyInner{display:flex;flex-direction:column;gap:2px}
-#${UI_IDS.accuracyCounter} .line{display:flex;align-items:baseline;justify-content:space-between;
-  gap:6px;line-height:1}
+#${UI_IDS.accuracyCounter}[data-place=top]{margin-top:15px}
+#${UI_IDS.accuracyCounter}[data-place=bottom]{position:absolute;left:50%;bottom:15px;margin:0;
+  transform:translateX(-50%)}
+#${UI_IDS.accuracyCounter} .greyInner{display:flex;align-items:baseline;gap:var(--nm-gap-lg)}
+#${UI_IDS.accuracyCounter} .line{display:flex;align-items:baseline;gap:6px;line-height:1}
 #${UI_IDS.accuracyCounter} .lbl{font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-md);
   text-transform:uppercase}
-/* Tabular and a fixed width, so the strip does not shuffle as 9% becomes 10%. */
+/* Tabular and a fixed width, so the box keeps its width as 9% becomes 10%.
+   It is centred, so a box that grew would also shift sideways. */
 #${UI_IDS.accuracyCounter} .val{min-width:38px;text-align:right;font-size:var(--nm-fs-xl);
   font-variant-numeric:tabular-nums}
 `;

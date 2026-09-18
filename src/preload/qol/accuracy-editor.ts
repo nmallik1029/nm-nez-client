@@ -4,7 +4,7 @@ import { chooser } from './controls';
 import { featureRow } from './row';
 
 /**
- * Live accuracy: on or off, and which of its two lines goes on top.
+ * Live accuracy: on or off, and whether it sits top centre or bottom centre.
  *
  * Both apply as you touch them, readout on screen included, so there is
  * nothing to wait for and nothing to reload.
@@ -15,8 +15,8 @@ export function accuracyEditor(): PanelView {
 }
 
 const PLACEMENTS: readonly { readonly id: AccuracyPlacement; readonly label: string }[] = [
-  { id: 'top', label: 'Top' },
-  { id: 'bottom', label: 'Bottom' },
+  { id: 'top', label: 'Top centre' },
+  { id: 'bottom', label: 'Bottom centre' },
 ];
 
 function render(body: HTMLElement, ctx: TabContext): void {
@@ -25,7 +25,7 @@ function render(body: HTMLElement, ctx: TabContext): void {
     featureRow({
       icon: 'track_changes',
       name: 'Show live accuracy',
-      sub: 'How many of your shots have landed, in the top right beside kills and deaths. One line for the match so far, which starts over with a new match, and one for this life, which starts over when you die.',
+      sub: 'How many of your shots have landed, side by side for the match so far, which starts over with a new match, and for this life, which starts over when you die.',
       on: features.accuracyCounter,
       onToggle: () => {
         ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter });
@@ -33,11 +33,11 @@ function render(body: HTMLElement, ctx: TabContext): void {
       },
     }),
     chooser({
-      label: 'Match accuracy',
+      label: 'Position',
       options: PLACEMENTS,
-      value: features.accuracyMatchPlacement,
+      value: features.accuracyPlacement,
       onPick: (id) => {
-        ctx.deps.patchFeatures({ accuracyMatchPlacement: id });
+        ctx.deps.patchFeatures({ accuracyPlacement: id });
         ctx.refresh();
       },
     }),
