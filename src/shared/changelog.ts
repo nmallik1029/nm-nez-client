@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.59',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: 'A Linux version, for 64-bit Linux on any distro. It is the AppImage on the releases page: download it, make it executable and run it, with nothing to install. Same client and the same patched Electron, so the FPS cap works there too, and it updates itself the same way the Windows one does. The Linux section of the README covers the few things that differ, like needing libfuse2 on newer Ubuntu.' },
+    ],
+  },
+  {
     version: '0.1.58',
     date: '2026-09-18',
     changes: [
