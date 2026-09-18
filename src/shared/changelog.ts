@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.62',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'changed', text: 'Every kill streak pack now has its own banner for each kill, the way they look in Valorant, including the 30 added in the last update, which showed the same picture on every kill.' },
+      { kind: 'added', text: '17 more kill streak packs, 76 in all: Aeris, Blackspyre, Rogue, Solarstride, Reaver V26, Prelude to Chaos V25, Prime//2.0, and the Bubblegum Deathwish, ORA by OneTap and Radiant Entertainment System variants.' },
+      { kind: 'fixed', text: 'Bolt, EX.O, Neptune, VCT 2025, Default and Champions 2025 showed the wrong banner on some kills. Packs you already installed update themselves the next time you start the client.' },
+    ],
+  },
+  {
     version: '0.1.61',
     date: '2026-09-18',
     changes: [
