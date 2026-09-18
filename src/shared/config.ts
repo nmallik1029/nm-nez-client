@@ -1,5 +1,6 @@
 import type { StoredAccount } from './accounts';
 import { DEFAULT_FILTER, type MatchmakerFilter } from './matchmaker';
+import type { SettingPreset } from './presets';
 import { RANKED_MAPS, RANKED_REGIONS } from './ranked';
 import { DEFAULT_VISUALS, type VisualsConfig } from './visuals';
 
@@ -219,6 +220,17 @@ export interface UpdateConfig {
   lastSeenVersion: string;
 }
 
+export interface PresetsConfig {
+  /**
+   * Every saved preset, all scopes in one list, oldest first.
+   *
+   * Kept by the client rather than in the game's storage beside the settings
+   * they hold, so Krunker's own "Reset Settings" cannot take them with it.
+   * Untrusted on the way in; see normalisePresets.
+   */
+  saved: readonly SettingPreset[];
+}
+
 export interface WindowConfig {
   width: number;
   height: number;
@@ -245,6 +257,8 @@ export interface AppConfig {
    * of measurements, and the editors patch the whole object at a time.
    */
   visuals: VisualsConfig;
+  /** Named snapshots of the game's own sensitivity and FOV, from the Presets tab. */
+  presets: PresetsConfig;
   updates: UpdateConfig;
   window: WindowConfig;
   /**
@@ -269,6 +283,7 @@ export const CONFIG_SECTIONS: readonly (keyof AppConfig)[] = [
   'matchmaker',
   'ranked',
   'visuals',
+  'presets',
   'updates',
   'window',
 ];
@@ -355,6 +370,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   // Every one of these is off until someone turns it on in the QoL panel, so
   // a fresh client draws Krunker's own crosshair, hitmarker and sky.
   visuals: DEFAULT_VISUALS,
+  presets: {
+    saved: [],
+  },
   updates: {
     autoCheck: true,
     lastSeenVersion: '',

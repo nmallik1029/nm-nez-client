@@ -551,6 +551,82 @@ export const KRUNKER_LOOK = {
   ],
 } as const;
 
+/**
+ * Krunker's own settings, as far as presets need them.
+ *
+ * Read out of the game's settings manager in a deobfuscated game.js
+ * (github.com/IrregularPersona/Krunker-Reverse, pushed 2026-08-31): the
+ * settings list, its `init`, its `set`, and `window.selectSettingPre`. That
+ * repo also ships a settings.json extracted from the same code, and it is
+ * wrong about sensitivity, so use the source rather than the JSON: the default
+ * is `isMobile ? 1.4 : 1`, the extractor's stub made `isMobile` truthy, and
+ * `isMobile` is `window._isMobile`, which a Windows client never sets. On
+ * desktop sensitivity starts at 1.
+ *
+ * WRITING. `window.setSetting(key, value, keepPreset, validate, noSave)` is
+ * the manager's `set`: it ignores a key it does not know, clamps a slider to
+ * its min and max, calls the setting's own setter (which is what moves the
+ * camera or the mouse there and then) and saves to `kro_setngss_<key>`.
+ * Unless `keepPreset` is truthy it also calls `selectSettingPre(2, true)`,
+ * which, for anyone not already on Custom, runs `showWindow(1, true)` and
+ * rebuilds the whole settings window. That rebuild is what the settings tab
+ * reads as the window being opened fresh, so a write from one of our tabs
+ * would drop you off it. Hence `keepPreset`, and one explicit switch to
+ * Custom afterwards with the flag that skips the rebuild.
+ *
+ * PER WEAPON. Every setting here is `perWep` (the viewmodel ones) or `perWepG`
+ * (the gameplay ones). `init` copies each of those once per weapon as
+ * `<key>_<weaponIndex>`, each a setting in its own right with its own
+ * storage key and the same default as the original. Which copy is in force
+ * depends on the "All / Per Weapon" pickers, `gpSetts` and `vmSetts`: on
+ * "All" the plain key is used and the copies sit unused. So a preset that
+ * only knew the plain keys would switch nothing at all for someone playing
+ * per weapon. See shared/presets.ts.
+ */
+export const KRUNKER_SETTINGS = {
+  /**
+   * The game's own preset picker: Default 0, Pro 1, Custom 2, Performance 3.
+   *
+   * `selectSettingPre(index, skipLoad, quiet)`. Custom with `skipLoad` just
+   * records that the settings are now your own, and `quiet` skips the window
+   * rebuild. Its dropdown carries `onchange="selectSettingPre(this.value)"`,
+   * so the name is exactly as stable as `setSetting`'s.
+   */
+  presetPicker: 'selectSettingPre',
+  customPreset: 2,
+  /**
+   * The "All / Per Weapon" pickers, gameplay (sensitivity) and viewmodel
+   * (FOV). Stored as '1' for Per Weapon; missing or anything else is All.
+   *
+   * These decide which value is in force, and for FOV that decides write
+   * order too. The FOV setters move the camera as they run: the plain key
+   * sets it outright, and a copy sets it whenever you are holding that
+   * weapon, whatever the mode. On a weapon swap the game picks by the mode
+   * (`getPlayerWeaponId` is -1 on All), so the write that should land last is
+   * the one the mode says is in force, or the camera shows the wrong FOV
+   * until you next swap.
+   */
+  sensitivityMode: 'gpSetts',
+  fovMode: 'vmSetts',
+  perWeaponMode: '1',
+  /** Mouse sensitivity, hip fire and aiming down sights. All four are perWepG. */
+  sensitivity: [
+    { key: 'sensitivityX', def: '1' },
+    { key: 'sensitivityY', def: '1' },
+    { key: 'aimSensitivityX', def: '1' },
+    { key: 'aimSensitivityY', def: '1' },
+  ],
+  /**
+   * Field of view, weapon field of view, and the ADS multiplier (0 to 1,
+   * advanced settings only). All three are perWep.
+   */
+  fov: [
+    { key: 'fov', def: '100' },
+    { key: 'fpsFOV', def: '95' },
+    { key: 'adsFovMlt', def: '1' },
+  ],
+} as const;
+
 /*
  * ---------------------------------------------------------------------------
  * Restyling Krunker: what its CSS does, and what that costs you

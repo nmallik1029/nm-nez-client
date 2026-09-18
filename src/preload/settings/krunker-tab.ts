@@ -11,12 +11,14 @@ import {
 import { SHEETS, STYLE_IDS } from '../../shared/ui';
 import { defineStyle } from '../style';
 import { createKeybindRows, type KeybindRows } from './keybind-rows';
+import { buildPresetBlocks } from './presets-tab';
 import { createSectionNav, type SectionNav } from './section-nav';
 import { attachTooltip, hideTooltip } from './tooltip';
 
 /**
  * Client settings, rendered inside Krunker's own settings window under a
- * "Client" tab.
+ * "Client" tab. Beside it goes "Presets", which presets-tab.ts draws and
+ * everything below treats the same way.
  *
  * That tab is ours. The game used to add one itself when OffCliV was set, but
  * the settings redesign builds the tab strip from
@@ -258,6 +260,14 @@ const TAB_BAR_ID = 'settingsTabLayout';
 const ACTIVE_TAB_CLASS = 'tabANew';
 const CLIENT_TAB_ID = 'kc-client-tab';
 
+type OwnTab = 'client' | 'presets';
+
+/** Our tabs, in the order they go on the end of Krunker's strip. */
+const OWN_TABS: readonly { id: OwnTab; elementId: string; label: string }[] = [
+  { id: 'client', elementId: CLIENT_TAB_ID, label: 'Client' },
+  { id: 'presets', elementId: 'kc-presets-tab', label: 'Presets' },
+];
+
 const FOLDERS: { id: OpenableFolder; label: string }[] = [
   { id: 'swap', label: 'Swap' },
   { id: 'themes', label: 'Themes' },
@@ -292,73 +302,71 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
 
   const globals = window as unknown as KrunkerGlobals;
 
-  /** True while our tab is the one showing. Owned by us; see isClientTab. */
-  let clientTabActive = false;
-
   /**
-   * Whether our tab is the one showing.
+   * Which of our tabs is showing, or null for one of Krunker's.
    *
-   * We track it rather than reading it off Krunker, because the tab is ours.
+   * We track it rather than reading it off Krunker, because the tabs are ours.
    * This used to be `tabIndex === tabs.length - 1` back when the game appended
    * its own "Client" tab for OffCliV. The redesign builds the bar from
    * windows[0].tabs.{basic,advanced} and ignores the flag, so there's no
    * game-owned tab left to detect.
    */
-  function isClientTab(): boolean {
-    return clientTabActive;
-  }
+  let activeTab: OwnTab | null = null;
 
   /**
-   * Put our tab button in Krunker's tab bar and keep it there.
+   * Put our tab buttons in Krunker's tab bar and keep them there.
    *
    * The bar gets rebuilt when the window opens, when a tab changes and when
    * the basic/advanced toggle flips, so this runs on every render and bails
-   * straight away if the button is already up.
+   * straight away if the buttons are already up.
    */
-  function ensureClientTab(): void {
+  function ensureOwnTabs(): void {
     const bar = document.getElementById(TAB_BAR_ID);
     if (!bar) return;
-    if (bar.querySelector(`#${CLIENT_TAB_ID}`)) {
-      syncTabHighlight();
-      return;
+
+    for (const spec of OWN_TABS) {
+      if (bar.querySelector(`#${spec.elementId}`)) continue;
+
+      const tab = document.createElement('div');
+      tab.id = spec.elementId;
+      // Krunker's own tab classes, so we get the game's type and hover free.
+      tab.className = 'settingTab';
+      tab.textContent = spec.label;
+      tab.addEventListener('mouseenter', () => {
+        const tick = (window as unknown as { playTick?: () => void }).playTick;
+        if (typeof tick === 'function') tick();
+      });
+      tab.addEventListener('click', () => {
+        const select = (window as unknown as { playSelect?: (v: number) => void }).playSelect;
+        if (typeof select === 'function') select(0.1);
+        activeTab = spec.id;
+        render();
+      });
+
+      bar.appendChild(tab);
     }
-
-    const tab = document.createElement('div');
-    tab.id = CLIENT_TAB_ID;
-    // Krunker's own tab classes, so we get the game's type and hover free.
-    tab.className = 'settingTab';
-    tab.textContent = 'Client';
-    tab.addEventListener('mouseenter', () => {
-      const tick = (window as unknown as { playTick?: () => void }).playTick;
-      if (typeof tick === 'function') tick();
-    });
-    tab.addEventListener('click', () => {
-      const select = (window as unknown as { playSelect?: (v: number) => void }).playSelect;
-      if (typeof select === 'function') select(0.1);
-      clientTabActive = true;
-      render();
-    });
-
-    bar.appendChild(tab);
     syncTabHighlight();
   }
 
   /**
-   * Mark our tab selected, or unmark it.
+   * Mark the right one of our tabs selected, and the others not.
    *
-   * Only ever touches our tab. Krunker sets and clears the class on its own
-   * as part of rendering the strip, and racing it there just left a bar with
-   * nothing highlighted at all.
+   * Krunker's own tabs are only touched to take the mark off them while one
+   * of ours is up. The game sets and clears the class itself as part of
+   * rendering the strip, and racing it there just left a bar with nothing
+   * highlighted at all.
    */
   function syncTabHighlight(): void {
-    const tab = document.getElementById(CLIENT_TAB_ID);
-    if (!tab) return;
-    tab.classList.toggle(ACTIVE_TAB_CLASS, clientTabActive);
-    if (!clientTabActive) return;
+    const ours = new Set<string>();
+    for (const spec of OWN_TABS) {
+      ours.add(spec.elementId);
+      document.getElementById(spec.elementId)?.classList.toggle(ACTIVE_TAB_CLASS, activeTab === spec.id);
+    }
+    if (activeTab === null) return;
     // Ours is up, so no game tab should still look selected.
     const bar = document.getElementById(TAB_BAR_ID);
     for (const el of bar?.querySelectorAll('.settingTab') ?? []) {
-      if (el.id !== CLIENT_TAB_ID) el.classList.remove(ACTIVE_TAB_CLASS);
+      if (!ours.has(el.id)) el.classList.remove(ACTIVE_TAB_CLASS);
     }
   }
 
@@ -382,9 +390,9 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     const holder = document.getElementById('settHolder');
     if (!holder) return;
 
-    // The bar is rebuilt on every tab change, so re-add the button before
-    // anything else goes looking for it.
-    ensureClientTab();
+    // The bar is rebuilt on every tab change, so re-add the buttons before
+    // anything else goes looking for them.
+    ensureOwnTabs();
 
     keybindRows.cancel();
     // The tooltip points at a row that's about to go. Leaving it up strands
@@ -395,16 +403,19 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     const filter = currentSearch();
     // While searching, show client settings from any tab. Krunker's search is
     // global and hiding ours behind a tab switch makes them unfindable.
-    if (!isClientTab() && filter === '') return;
+    if (activeTab === null && filter === '') return;
 
-    // Ours isn't one of Krunker's tabs, so the game leaves the previous tab's
-    // rows sitting there. Safe to clear them; changeTab rebuilds the holder
-    // from scratch whenever you go back to a real tab.
-    if (isClientTab() && filter === '') {
+    // Ours aren't Krunker's tabs, so the game leaves the previous tab's rows
+    // sitting there. Safe to clear them; changeTab rebuilds the holder from
+    // scratch whenever you go back to a real tab.
+    if (activeTab !== null && filter === '') {
       holder.querySelectorAll(':scope > *:not(.kc-block)').forEach((el) => el.remove());
     }
 
-    const built = build(filter);
+    // Presets stay out of search. A search is for finding a setting, and a
+    // preset is not one, so searching from this tab turns up the Client rows
+    // the same as searching from any other.
+    const built = activeTab === 'presets' && filter === '' ? buildPresets() : build(filter);
     if (built.length === 0) return;
 
     // Krunker puts up a "No settings found" placeholder for a tab with no
@@ -443,6 +454,19 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     }
 
     return blocks;
+  }
+
+  function buildPresets(): HTMLElement[] {
+    return buildPresetBlocks(
+      { category, actionRow, gameButton, staticNote },
+      {
+        getPresets: () => deps.config.presets.saved,
+        savePresets: (next) => deps.onChange('presets', 'saved', next),
+        // A microtask, like the Menu style row: the button that asked for
+        // this is inside what gets replaced.
+        refresh: () => queueMicrotask(rerender),
+      },
+    );
   }
 
   function matches(row: HTMLElement, filter: string): boolean {
@@ -1139,7 +1163,7 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
         // Opening lands on whichever tab Krunker picks, not a stale selection
         // of ours. open() re-selects ours right after if that's what was
         // actually asked for.
-        clientTabActive = false;
+        activeTab = null;
         queueMicrotask(rerender);
       }
       return result;
@@ -1148,8 +1172,8 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
     if (typeof win.changeTab === 'function') {
       const originalChangeTab = win.changeTab.bind(win);
       win.changeTab = (...args: unknown[]) => {
-        // One of Krunker's tabs got picked, so ours isn't showing any more.
-        clientTabActive = false;
+        // One of Krunker's tabs got picked, so none of ours is showing any more.
+        activeTab = null;
         const result = originalChangeTab(...args);
         queueMicrotask(rerender);
         return result;
@@ -1201,9 +1225,9 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
       globals.showWindow(1);
 
       queueMicrotask(() => {
-        // On a cold open the bar might not exist yet. render() creates our tab
+        // On a cold open the bar might not exist yet. render() creates our tabs
         // as a side effect, so run it once and then click.
-        ensureClientTab();
+        ensureOwnTabs();
         const tab = document.getElementById(CLIENT_TAB_ID);
         if (tab instanceof HTMLElement) tab.click();
         else rerender();
