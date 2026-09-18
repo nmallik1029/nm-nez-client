@@ -128,20 +128,27 @@ export async function installKillPack(id: string): Promise<boolean> {
 /**
  * Take a downloaded pack off the disk. The user's own are never touched.
  *
- * The config has to be off this pack before this is called, or `fetchWanted`
- * fetches it straight back; the editor sees to that.
+ * `keep` is the kill streak config with the pick already moved off this pack
+ * (the editor works out where to), or `fetchWanted` would fetch it straight
+ * back. It is saved before main deletes anything, not on the usual short
+ * delay: closing the client inside that delay would otherwise leave a config
+ * naming a pack that is gone, and the next launch would download it again.
  */
-export async function removeKillPack(id: string): Promise<boolean> {
+export async function removeKillPack(id: string, keep: KillStreakConfig): Promise<boolean> {
   if (removing.has(id)) return false;
   removing.add(id);
   changed();
   let ok = false;
   try {
+    await ipcRenderer.invoke(IPC.configPatch, 'visuals', { killStreak: keep });
     ok = (await ipcRenderer.invoke(IPC.killPacksRemove, id)) === true;
   } catch {
     // Reported as not removed.
   }
   removing.delete(id);
+  // Gone by hand, so switching on with it named is asking for it again, and
+  // gets it. Only the config naming it can bring it back, never a retry.
+  if (ok) tried.delete(id);
   await listKillPacks();
   changed();
   return ok;

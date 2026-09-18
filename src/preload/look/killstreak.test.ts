@@ -15,9 +15,9 @@ import type { KillStreakConfig } from '../../shared/visuals';
  * not retried on every volume nudge.
  */
 
-const invoke = vi.fn<(channel: string, id?: string) => unknown>();
+const invoke = vi.fn<(channel: string, id?: unknown) => unknown>();
 vi.mock('electron', () => ({
-  ipcRenderer: { invoke: (channel: string, id?: string) => invoke(channel, id) },
+  ipcRenderer: { invoke: (channel: string, id?: unknown) => invoke(channel, id) },
 }));
 const showToast = vi.fn<(message: string, durationMs?: number) => void>();
 vi.mock('../toast', () => ({
@@ -49,8 +49,10 @@ function listing(): KillPackListing {
   };
 }
 
-function main(channel: string, id?: string): unknown {
+function main(channel: string, arg?: unknown): unknown {
+  const id = typeof arg === 'string' ? arg : undefined;
   if (channel === IPC.killPacksGet) return Promise.resolve(listing());
+  if (channel === IPC.configPatch) return Promise.resolve(true);
   if (channel === IPC.killPacksRemove && id !== undefined) {
     return Promise.resolve(installed.delete(id));
   }
@@ -92,7 +94,7 @@ beforeEach(async () => {
   answer = 'ok';
   held = new Map();
   invoke.mockReset();
-  invoke.mockImplementation((channel: string, id?: string) => main(channel, id));
+  invoke.mockImplementation((channel: string, arg?: unknown) => main(channel, arg));
   showToast.mockReset();
   // The player re-attaches to Krunker's HUD on an interval while it is on.
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
@@ -202,5 +204,37 @@ describe('when a download fails', () => {
     answer = 'ok';
     expect(await player.installKillPack('reaver')).toBe(true);
     expect(installs).toEqual(['reaver', 'reaver']);
+  });
+});
+
+describe('removing a pack', () => {
+  it('saves the config off it before main deletes anything', async () => {
+    installed.add('reaver');
+    installed.add('ion');
+    player.setKillStreak(config({ pack: 'reaver' }));
+    await settle();
+    // The editor moves the pick first; this is what it hands over.
+    const keep = config({ pack: 'ion' });
+    player.setKillStreak(keep);
+    expect(await player.removeKillPack('reaver', keep)).toBe(true);
+    const channels = invoke.mock.calls.map(([channel]) => channel);
+    const saved = channels.indexOf(IPC.configPatch);
+    expect(saved).toBeGreaterThanOrEqual(0);
+    expect(saved).toBeLessThan(channels.indexOf(IPC.killPacksRemove));
+    expect(invoke.mock.calls[saved]?.[1]).toBe('visuals');
+  });
+
+  it('fetches it again when switching on asks for it, even if it was fetched this session', async () => {
+    // Default came down on its own, was removed as the last pack (so off),
+    // and then the switch went back on: that is asking for Default again.
+    player.setKillStreak(config());
+    await settle();
+    expect(installs).toEqual(['default']);
+    const off = config({ on: false });
+    player.setKillStreak(off);
+    expect(await player.removeKillPack('default', off)).toBe(true);
+    player.setKillStreak(config());
+    await settle();
+    expect(installs).toEqual(['default', 'default']);
   });
 });

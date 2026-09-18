@@ -114,8 +114,8 @@ function render(body: HTMLElement, ctx: TabContext): void {
     commit({ pack: pack.id }, false);
     void done.then((ok) => {
       if (!ok) {
-        // Back to what was picked before, unless something else has been since.
-        if (current().pack === pack.id) commit({ pack: before }, false);
+        // Off this pick, unless something else has been picked since.
+        if (current().pack === pack.id) commit(fallback(before), false);
         showToast(`Could not download ${pack.name}. Check your connection and try again.`, 3600);
         return;
       }
@@ -123,6 +123,24 @@ function render(body: HTMLElement, ctx: TabContext): void {
       const got = listing?.installed.find((entry) => entry.id === pack.id);
       if (got) previewKillPack(got, current().volume);
     });
+  };
+
+  /**
+   * Where the pick goes when the pack it was on did not arrive: back to the
+   * one before if that is still on disk, else whatever plays now, else a
+   * download still running. With none of those there is nothing to play,
+   * which is off. Never a pack that is not there: the player fetches
+   * whatever the pick names, so that would download it unasked, even one
+   * removed while this was downloading.
+   */
+  const fallback = (before: string): Partial<KillStreakConfig> => {
+    const named = before === '' ? DEFAULT_PACK_ID : before;
+    if (resolvePack(before)?.id === named) return { pack: before };
+    const plays = resolvePack('');
+    if (plays) return { pack: plays.id };
+    const coming = listing?.available.find((p) => isInstalling(p.id));
+    if (coming) return { pack: coming.id };
+    return { on: false, pack: '' };
   };
 
   const remove = (pack: KillPack): void => {
@@ -133,15 +151,21 @@ function render(body: HTMLElement, ctx: TabContext): void {
     // (fetchWanted). Left naming it, the pack would be back on the next
     // launch, which is the opposite of what pressing x asked for.
     //
-    // With nothing left, off, and says so on the switch above. Otherwise the
-    // pick moves to whatever plays next. An empty pick means Default, so if
-    // Default is what goes, the pick moves too.
-    const left = listing.installed.filter((p) => p.id !== pack.id && !isRemoving(p.id));
+    // A pack still downloading counts as one left: it is about to be there,
+    // and the pick may already be on it, having been made when Install was
+    // pressed. With nothing left at all, off, and the switch above says so.
+    // Otherwise, if the pick is on this pack, it moves to one that is really
+    // there or coming: never to an empty pick, which means Default and would
+    // fetch it.
     const named = before.pack === '' ? DEFAULT_PACK_ID : before.pack;
-    const last = left.length === 0;
+    const left = listing.installed.filter((p) => p.id !== pack.id && !isRemoving(p.id));
+    const coming = listing.available.filter((p) => isInstalling(p.id));
+    const last = left.length === 0 && coming.length === 0;
     if (last) commit({ on: false, pack: '' }, false);
-    else if (named === pack.id) commit({ pack: resolvePack('', left)?.id ?? '' }, false);
-    void removeKillPack(pack.id).then((ok) => {
+    else if (named === pack.id) {
+      commit({ pack: resolvePack('', left)?.id ?? coming[0]?.id ?? '' }, false);
+    }
+    void removeKillPack(pack.id, current()).then((ok) => {
       if (!ok) {
         // Still on disk, so put back what was set.
         commit({ on: before.on, pack: before.pack }, false);

@@ -57,10 +57,10 @@ export type FetchFile = (url: string, size: number) => Promise<Uint8Array>;
 
 /**
  * How long a download may go without a single byte arriving before it is
- * given up. A stall, not a deadline: a pack's files all download at once and
- * share the line, so on a slow connection the biggest ones take a while, and
- * that is fine for as long as they are moving. One that has gone nowhere
- * gives the button back.
+ * given up. A stall, not a deadline: several of a pack's files download at
+ * once and share the line, so on a slow connection the biggest ones take a
+ * while, and that is fine for as long as they are moving. One that has gone
+ * nowhere gives the button back.
  *
  * This was a 30 second deadline on each file, which let a pack whose files
  * add up to 4 MB never install on anything under about 130 KB/s: every file
@@ -147,6 +147,15 @@ function describe(pack: CatalogPack): AvailablePack {
   };
 }
 
+/**
+ * Files of one pack downloaded at once. Under the six connections Chromium
+ * opens to a host over HTTP/1.1, which is what a proxy or antivirus that
+ * intercepts TLS turns GitHub's HTTP/2 into: past that, a file would sit
+ * waiting for a connection with its stall timer running and nothing able to
+ * reset it, and on a slow line give up before it had started.
+ */
+const PARALLEL = 4;
+
 /** One download per pack, however many times Install is pressed while it runs. */
 const running = new Map<string, Promise<void>>();
 
@@ -191,21 +200,28 @@ async function download(
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
 
-  // All at once: a pack is a dozen small files. Settled rather than raced, so
-  // no fetch is still writing into the folder after a failure has cleared it.
-  const results = await Promise.allSettled(
-    pack.files.map(async (file) => {
-      const data = await fetchFile(`${from}${file.name}`, file.size);
-      if (data.length !== file.size || sha512(data) !== file.sha512) {
-        throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+  // A few at a time, and every one finished before anything is cleared, so
+  // no fetch is still writing into the folder after a failure has emptied it.
+  // After a failure no new file is started: the pack is not going in anyway.
+  const queue = [...pack.files];
+  const failures: unknown[] = [];
+  const worker = async (): Promise<void> => {
+    for (let file = queue.shift(); file && failures.length === 0; file = queue.shift()) {
+      try {
+        const data = await fetchFile(`${from}${file.name}`, file.size);
+        if (data.length !== file.size || sha512(data) !== file.sha512) {
+          throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+        }
+        writeFileSync(join(staging, file.name), data);
+      } catch (reason) {
+        failures.push(reason);
       }
-      writeFileSync(join(staging, file.name), data);
-    }),
-  );
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(PARALLEL, pack.files.length) }, worker));
 
   try {
-    const failed = results.find((result) => result.status === 'rejected');
-    if (failed) throw failed.reason;
+    if (failures.length > 0) throw failures[0];
     // The name the catalog has, for loadKillPacks to read like any other
     // pack's. Written here rather than downloaded: it is not the repo's file
     // that matters, it is the name this client lists the pack under.

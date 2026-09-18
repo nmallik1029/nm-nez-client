@@ -89,10 +89,14 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
       name: 'Kill streak sounds',
       sub: 'Valorant-style: a sound and a banner for each kill in a row. Edit to install and pick a pack, or add your own to swap/sounds/killstreak.',
       on: visuals.killStreak.on,
-      toggle: () =>
-        ctx.deps.patchVisuals({
-          killStreak: { ...visuals.killStreak, on: !visuals.killStreak.on },
-        }),
+      // Read at the click, not when the tab was drawn. The kill streak editor
+      // can still be writing the config after you have come back here, a
+      // download it started finishing or failing, and a copy from before
+      // that would put its old pick back.
+      toggle: () => {
+        const killStreak = ctx.deps.getVisuals().killStreak;
+        ctx.deps.patchVisuals({ killStreak: { ...killStreak, on: !killStreak.on } });
+      },
       editor: killStreakEditor,
     }),
   );
