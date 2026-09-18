@@ -37,6 +37,7 @@ import { installMenuSkin, setMenuSkin } from './menu-skin';
 import { installSetup, toggleSetup } from './setup/wizard';
 import { toggleAltManager } from './accounts/modal';
 import { watchSessionEnd } from './accounts/login';
+import { installModsMenu } from './mods-menu';
 import { installRankedLaunchButton } from './ranked-button';
 import { installRealPing } from './ping';
 import { hookKrunkerSettings, type SettingsTab } from './settings/krunker-tab';
@@ -226,6 +227,10 @@ async function bootstrap(): Promise<void> {
 
     // Adds the launcher into Krunker's own ranked panel, beside FIND MATCH.
     installRankedLaunchButton();
+
+    // Mods on the lobby's icon row, and Reset Mods in the windows that load
+    // them, so mods can be changed without leaving a ranked or custom game.
+    installModsMenu();
 
     // And, on the card above it, how far the next rank is. Shares the
     // launcher's observer, so this is a registration rather than a second
