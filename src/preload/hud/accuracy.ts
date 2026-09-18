@@ -1,4 +1,4 @@
-import { KRUNKER_TEAM_SCORES } from '../../krunker/constants';
+import { KRUNKER_DOM_IDS, KRUNKER_TEAM_SCORES } from '../../krunker/constants';
 import {
   accuracyLabel,
   EMPTY_TALLY,
@@ -18,16 +18,16 @@ import { watchCounter } from '../look/hud-counter';
 import { defineStyle, removeStyle } from '../style';
 
 /**
- * Live accuracy, in the HUD beside kills and deaths: one line for the match
- * so far and one for the current life, the match line above or below as set.
+ * Live accuracy, top centre or bottom centre of the screen as set: the match
+ * so far and the current life, side by side.
  *
  * The counting is in shared/accuracy.ts; this is the page end of it. Shots
  * are read off the ammo counter, hits off the game's hit sound, and the
- * readout is built from Krunker's own statIcon / greyInner classes so it sits
- * in the top-right strip looking like one of the game's own stats.
+ * readout is built from Krunker's own statIcon / greyInner classes so it
+ * looks like one of the game's own stats.
  *
  * When you die, the finished life's figure stays on screen until your first
- * shot of the next one; the match line carries straight on.
+ * shot of the next one; the match figure carries straight on.
  */
 
 const AMMO_VALUE_ID = 'ammoVal';
@@ -64,10 +64,10 @@ export function setAccuracyCounter(on: boolean): void {
   if (timer === null) timer = setInterval(tick, REATTACH_MS);
 }
 
-/** Put the match line above the life line, or below it. Applies on screen now. */
+/** Top centre or bottom centre. A readout already on screen moves now. */
 export function setAccuracyPlacement(next: AccuracyPlacement): void {
   placement = next;
-  arrange();
+  if (element) mount();
 }
 
 /** Put anything Krunker has rebuilt back. Does nothing when nothing moved. */
@@ -137,14 +137,16 @@ function readAmmoNow(): void {
 }
 
 /**
- * Build the readout into Krunker's HUD strip.
+ * Build the readout into Krunker's HUD, top centre or bottom centre.
  *
- * Re-checked on the timer, because the strip is Krunker's and it rebuilds it;
- * a readout that has been dropped out of the page is put back.
+ * Re-checked on the timer, because the HUD is Krunker's and parts of it get
+ * rebuilt, and on a change of setting. A readout that is not where it should
+ * be, dropped out of the page or left at the other end, is built again in
+ * the right place.
  */
 function mount(): void {
-  const strip = document.querySelector(KRUNKER_TEAM_SCORES.counterStrip);
-  if (!strip || element?.parentElement === strip) return;
+  const spot = placement === 'bottom' ? bottomCentre() : topCentre();
+  if (!spot || element?.parentElement === spot.parent) return;
 
   defineStyle(STYLE_IDS.accuracyCounter, SHEETS.accuracyCounter);
   element?.remove();
@@ -152,16 +154,43 @@ function mount(): void {
   element = document.createElement('div');
   element.id = UI_IDS.accuracyCounter;
   element.className = KRUNKER_TEAM_SCORES.counterClass;
+  element.dataset.place = placement;
 
   const inner = document.createElement('div');
   inner.className = KRUNKER_TEAM_SCORES.counterInnerClass;
   matchLine = line('Match');
   lifeLine = line('Life');
+  inner.append(matchLine.row, lifeLine.row);
 
   element.append(inner);
-  arrange();
-  strip.append(element);
+  spot.parent.insertBefore(element, spot.before);
   render();
+}
+
+interface Spot {
+  readonly parent: Element;
+  /** The child the readout goes in front of, or null for the end. */
+  readonly before: Element | null;
+}
+
+/**
+ * First in Krunker's top-centre column, so the rounds score and the flag and
+ * round messages it also holds stack underneath instead of being covered.
+ */
+function topCentre(): Spot | null {
+  const column = document.getElementById(KRUNKER_DOM_IDS.hudTopCentre);
+  return column ? { parent: column, before: column.firstElementChild } : null;
+}
+
+/**
+ * Just ahead of the reload prompt, which shares the bottom centre. Neither
+ * has a z-index, so markup order decides, and this way round the prompt
+ * paints over the readout while the magazine is empty.
+ */
+function bottomCentre(): Spot | null {
+  const reload = document.getElementById(KRUNKER_DOM_IDS.reloadPrompt);
+  const parent = reload?.parentElement;
+  return reload && parent ? { parent, before: reload } : null;
 }
 
 interface Line {
@@ -179,18 +208,6 @@ function line(name: string): Line {
   value.className = 'val';
   row.append(label, value);
   return { row, value };
-}
-
-/**
- * Put the two lines in the configured order. Appending a node that is
- * already there moves it, so this is also how a change of setting reorders
- * a readout that is on screen.
- */
-function arrange(): void {
-  const inner = element?.firstElementChild;
-  if (!inner || !matchLine || !lifeLine) return;
-  if (placement === 'bottom') inner.append(lifeLine.row, matchLine.row);
-  else inner.append(matchLine.row, lifeLine.row);
 }
 
 function teardown(): void {

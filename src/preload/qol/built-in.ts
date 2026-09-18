@@ -112,7 +112,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     openable({
       icon: 'track_changes',
       name: 'Live accuracy',
-      sub: 'How many of your shots have landed this match and this life, in the top right beside kills and deaths. Edit puts the match line on top or underneath.',
+      sub: 'How many of your shots have landed this match and this life, side by side. Edit puts it top centre or bottom centre of the screen.',
       on: features.accuracyCounter,
       toggle: () =>
         ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter }),

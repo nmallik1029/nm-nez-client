@@ -156,7 +156,7 @@ async function bootstrap(): Promise<void> {
     if (cfg.ui.perfHud) hud.show();
 
     setHardpointCounter(cfg.ui.hardpointCounter);
-    setAccuracyPlacement(cfg.features.accuracyMatchPlacement);
+    setAccuracyPlacement(cfg.features.accuracyPlacement);
     setAccuracyCounter(cfg.features.accuracyCounter);
 
     installNameHighlights();
@@ -400,7 +400,7 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
       });
     } else if (key === 'accuracyCounter') {
       setAccuracyCounter(value === true);
-    } else if (key === 'accuracyMatchPlacement' && (value === 'top' || value === 'bottom')) {
+    } else if (key === 'accuracyPlacement' && (value === 'top' || value === 'bottom')) {
       setAccuracyPlacement(value);
     } else if (key === 'boardRankIcons') {
       setBoardRankIcons(value === true);
