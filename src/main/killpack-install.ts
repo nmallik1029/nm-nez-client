@@ -11,6 +11,7 @@ import {
   type KillPackListing,
 } from '../shared/killstreak';
 import catalogJson from './killstreak-catalog.json';
+import historyJson from './killstreak-history.json';
 import { loadKillPacks, packFolder } from './killsounds';
 
 /**
@@ -392,6 +393,73 @@ export function retireKillPacks(dir: string, log: (...args: unknown[]) => void):
     }
   }
   return gone;
+}
+
+/**
+ * Every sound and banner any catalog pack has ever had, by the first 16 hex of
+ * its git blob id: every version of assets/killstreak in the repo's history.
+ * Written by scripts/pack-catalog.mjs.
+ */
+const SHIPPED: ReadonlySet<string> = new Set(historyJson.blobs);
+
+/** A file's git blob id, the way `git hash-object` makes it, cut to 16 hex. */
+export function gitBlobId(data: Uint8Array): string {
+  return createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex').slice(0, 16);
+}
+
+/**
+ * Move out of the user's own pack folder every pack that is only a copy of one
+ * of ours, so the current one plays instead.
+ *
+ * From 0.1.46 to 0.1.52 the client shipped no packs and said to put them in
+ * swap/sounds/killstreak, and people did, with the packs this repo has. A pack
+ * there replaces the downloaded one of the same id whole, as it should for a
+ * pack of their own; but these are not theirs. They are ours as they were
+ * then, and they hid every fix, colour and theme since: Forsaken without its
+ * Gold, Bolt with its kills out of order. Updating could never reach them.
+ *
+ * So a folder there is set aside if its id is one of ours (in the catalog, or
+ * retired into a theme) and every sound and banner in it is byte for byte a
+ * file some version of that repo folder had. One file of their own, a sound
+ * swapped or a banner redrawn, and it is theirs and stays. pack.json is not
+ * compared: a text file, line endings differ by checkout.
+ *
+ * Moved to `aside`, not deleted, so nothing is lost if somebody did want the
+ * old copy. Run at launch, before the window, so the page never lists a pack
+ * half moved; the player then downloads the current one if it is the pick.
+ */
+export function setAsideCopiedPacks(
+  own: string,
+  aside: string,
+  log: (...args: unknown[]) => void,
+  catalog: KillCatalog = KILL_CATALOG,
+  shipped: ReadonlySet<string> = SHIPPED,
+): string[] {
+  const ours = new Set([...catalog.packs.map((pack) => pack.id), ...Object.keys(RETIRED_PACKS)]);
+  let names: string[];
+  try {
+    names = readdirSync(own);
+  } catch {
+    return [];
+  }
+  const moved: string[] = [];
+  for (const id of names) {
+    if (!isPackId(id) || !ours.has(id)) continue;
+    const folder = join(own, id);
+    try {
+      const media = readdirSync(folder).filter((file) => /\.(mp3|png)$/i.test(file));
+      if (!media.includes(`${id}_1.mp3`)) continue;
+      if (!media.every((file) => shipped.has(gitBlobId(readFileSync(join(folder, file)))))) continue;
+      mkdirSync(aside, { recursive: true });
+      rmSync(join(aside, id), { recursive: true, force: true });
+      renameSync(folder, join(aside, id));
+      moved.push(id);
+      log(`kill streak pack ${id} in the user's folder is a copy of an old one of ours; moved to ${aside}`);
+    } catch (err) {
+      log(`kill streak pack ${id} in the user's folder not checked: ${(err as Error).message}`);
+    }
+  }
+  return moved;
 }
 
 function sha512(data: Uint8Array): string {

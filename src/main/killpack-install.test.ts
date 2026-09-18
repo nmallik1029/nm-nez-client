@@ -8,8 +8,10 @@ import {
   listKillPackEntries,
   outdatedKillPacks,
   refreshKillPacks,
+  gitBlobId,
   removeKillPack,
   retireKillPacks,
+  setAsideCopiedPacks,
   type FetchFile,
   type KillCatalog,
 } from './killpack-install';
@@ -157,6 +159,80 @@ describe('listKillPackEntries: colours', () => {
       packs: [{ id: 'ora', name: 'ORA', files: names.map((name) => ({ name, size: 1, sha512: '' })) }],
     };
     expect(listKillPackEntries(dirs, installed, catalog).available[0]).toMatchObject({ variants: 3, variantSounds: [2, 0] });
+  });
+});
+
+describe('gitBlobId', () => {
+  it('is the id git gives the same bytes', () => {
+    // `git hash-object` of an empty file, and of "hello\n".
+    expect(gitBlobId(new Uint8Array())).toBe('e69de29bb2d1d643');
+    expect(gitBlobId(new TextEncoder().encode('hello\n'))).toBe('ce013625030ba8db');
+  });
+});
+
+describe('setAsideCopiedPacks', () => {
+  /** The user's folder, and where copies of ours go. */
+  let mine: string;
+  let aside: string;
+  /** What "ours" is, for these tests: every file any pack of ours has had. */
+  const shipped = new Set(['old sound 1', 'old sound 2', 'old banner 1'].map((s) => gitBlobId(new TextEncoder().encode(s))));
+  const catalog: KillCatalog = {
+    source: SOURCE,
+    packs: ['forsaken', 'bolt', 'ion'].map((id) => ({ id, name: id, files: [] })),
+  };
+
+  beforeEach(() => {
+    mine = join(root, 'swap-killstreak');
+    aside = join(root, 'replaced');
+  });
+
+  function put(id: string, files: Record<string, string>): void {
+    mkdirSync(join(mine, id), { recursive: true });
+    for (const [name, text] of Object.entries(files)) writeFileSync(join(mine, id, name), text);
+  }
+
+  it('moves a pack that is only a copy of one of ours out of the way of the current one', () => {
+    put('forsaken', {
+      'forsaken_1.mp3': 'old sound 1',
+      'forsaken_2.mp3': 'old sound 2',
+      'forsaken_1.png': 'old banner 1',
+      // Not compared: a text file whose line endings depend on the checkout.
+      'pack.json': '{"name": "Forsaken"}\r\n',
+    });
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual(['forsaken']);
+    expect(existsSync(join(mine, 'forsaken'))).toBe(false);
+    // Moved, not deleted.
+    expect(readFileSync(join(aside, 'forsaken', 'forsaken_2.mp3'), 'utf8')).toBe('old sound 2');
+  });
+
+  it("keeps a pack with one file of the user's own", () => {
+    put('bolt', { 'bolt_1.mp3': 'old sound 1', 'bolt_2.mp3': 'my own sound' });
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual([]);
+    expect(existsSync(join(mine, 'bolt', 'bolt_2.mp3'))).toBe(true);
+  });
+
+  it('keeps a pack whose id is not one of ours, whatever is in it', () => {
+    put('my-pack', { 'my-pack_1.mp3': 'old sound 1' });
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual([]);
+  });
+
+  it('moves a copy of a pack that is now a theme of another', () => {
+    put('reaver-ep-5', { 'reaver-ep-5_1.mp3': 'old sound 1' });
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual(['reaver-ep-5']);
+  });
+
+  it('keeps a folder with no first sound, which was never a pack', () => {
+    put('ion', { 'ion_1.png': 'old banner 1' });
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual([]);
+  });
+
+  it('replaces a copy it set aside before, and does nothing with no folder at all', () => {
+    put('forsaken', { 'forsaken_1.mp3': 'old sound 1' });
+    mkdirSync(join(aside, 'forsaken'), { recursive: true });
+    writeFileSync(join(aside, 'forsaken', 'stale.mp3'), 'x');
+    expect(setAsideCopiedPacks(mine, aside, () => {}, catalog, shipped)).toEqual(['forsaken']);
+    expect(existsSync(join(aside, 'forsaken', 'stale.mp3'))).toBe(false);
+    expect(setAsideCopiedPacks(join(root, 'none'), aside, () => {}, catalog, shipped)).toEqual([]);
   });
 });
 

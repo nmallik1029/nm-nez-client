@@ -83,6 +83,7 @@ beforeEach(() => {
       sounds: join(dir, 'sounds'),
       killPacks: join(dir, 'sounds', 'killstreak'),
       installedKillPacks: join(dir, 'killstreak'),
+      replacedKillPacks: join(dir, 'killstreak-replaced'),
       soundpacks: join(dir, 'soundpacks'),
       screenshots: join(dir, 'shots'),
     },

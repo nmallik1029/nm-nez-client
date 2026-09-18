@@ -4,7 +4,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isPackId, MAX_TIERS } from '../shared/killstreak';
-import { KILL_CATALOG } from './killpack-install';
+import { gitBlobId, KILL_CATALOG } from './killpack-install';
+import historyJson from './killstreak-history.json';
 
 /**
  * The catalog the client installs packs from, held to the folder it was made
@@ -60,6 +61,21 @@ describe('the kill streak catalog', () => {
   // clone preflight runs in, not CI's single commit.
   it.skipIf(packCommit === null)('points at the commit that last changed the packs', () => {
     expect(KILL_CATALOG.source).toContain(`/${packCommit}/`);
+  });
+
+  // What a copy of one of our packs in the user's folder is recognised by
+  // (setAsideCopiedPacks). A pack changed without running the catalog
+  // script would have files the history does not know, and a copy of it
+  // would never be set aside.
+  it('has every file of every pack in the history the client ships', () => {
+    const history = new Set(historyJson.blobs);
+    const missing = folders.flatMap((id) =>
+      readdirSync(join(PACKS, id))
+        .filter((file) => /\.(mp3|png)$/.test(file))
+        .filter((file) => !history.has(gitBlobId(readFileSync(join(PACKS, id, file)))))
+        .map((file) => `${id}/${file}`),
+    );
+    expect(missing).toEqual([]);
   });
 
   it('has every pack folder in the repo, and nothing that is not one', () => {
