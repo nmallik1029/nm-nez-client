@@ -53,6 +53,18 @@ const CATALOG: KillCatalog = {
   ],
 };
 
+/** A pack with more files than go at once. Kept out of CATALOG so the listing tests stay as they are. */
+const BIG: KillCatalog = {
+  source: SOURCE,
+  packs: [
+    {
+      id: 'prime',
+      name: 'Prime',
+      files: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => file('prime', `prime_${n}.mp3`, `tier ${n}`)),
+    },
+  ],
+};
+
 const serve: FetchFile = (url) => {
   const data = SERVED.get(url);
   return data ? Promise.resolve(new Uint8Array(data)) : Promise.reject(new Error(`404 ${url}`));
@@ -139,8 +151,8 @@ describe('installKillPack', () => {
   });
 
   it('refuses a file that is not the one the catalog describes, and keeps nothing', async () => {
-    const tampered: FetchFile = (url) =>
-      url.endsWith('ion_2.mp3') ? Promise.resolve(new Uint8Array(Buffer.from('SECOND'))) : serve(url);
+    const tampered: FetchFile = (url, size) =>
+      url.endsWith('ion_2.mp3') ? Promise.resolve(new Uint8Array(Buffer.from('SECOND'))) : serve(url, size);
     await expect(installKillPack('ion', installed, tampered, CATALOG)).rejects.toThrow(
       /ion_2\.mp3 is not the file/,
     );
@@ -149,8 +161,8 @@ describe('installKillPack', () => {
   });
 
   it('keeps nothing when a download fails partway', async () => {
-    const flaky: FetchFile = (url) =>
-      url.endsWith('ion_1.png') ? Promise.reject(new Error('connection reset')) : serve(url);
+    const flaky: FetchFile = (url, size) =>
+      url.endsWith('ion_1.png') ? Promise.reject(new Error('connection reset')) : serve(url, size);
     await expect(installKillPack('ion', installed, flaky, CATALOG)).rejects.toThrow('connection reset');
     expect(readdirSync(installed)).toEqual([]);
   });
@@ -162,6 +174,51 @@ describe('installKillPack', () => {
       installKillPack('ion', installed, fetchFile, CATALOG),
     ]);
     expect(fetchFile).toHaveBeenCalledTimes(3);
+  });
+
+  it('downloads a few files at a time, not the whole pack at once', async () => {
+    // Behind a proxy that makes GitHub HTTP/1.1, past six a file waits for a
+    // connection with its stall timer running.
+    let now = 0;
+    let most = 0;
+    const counting: FetchFile = async (url, size) => {
+      most = Math.max(most, ++now);
+      await new Promise((resolve) => setImmediate(resolve));
+      now--;
+      return serve(url, size);
+    };
+    await installKillPack('prime', installed, counting, BIG);
+    expect(most).toBeGreaterThan(1);
+    expect(most).toBeLessThanOrEqual(4);
+    expect(readdirSync(join(installed, 'prime'))).toHaveLength(11);
+  });
+
+  it('shares the four between packs installed at the same time', async () => {
+    // Two Install presses are one host's connections all the same.
+    let now = 0;
+    let most = 0;
+    const counting: FetchFile = async (url, size) => {
+      most = Math.max(most, ++now);
+      await new Promise((resolve) => setImmediate(resolve));
+      now--;
+      return serve(url, size);
+    };
+    const both: KillCatalog = { source: SOURCE, packs: [...CATALOG.packs, ...BIG.packs] };
+    await Promise.all([
+      installKillPack('prime', installed, counting, both),
+      installKillPack('ion', installed, counting, both),
+    ]);
+    expect(most).toBeLessThanOrEqual(4);
+    expect(readdirSync(installed).sort()).toEqual(['ion', 'prime']);
+  });
+
+  it('starts no more files once one has failed', async () => {
+    const fetchFile = vi.fn<FetchFile>((url, size) =>
+      url.endsWith('prime_1.mp3') ? Promise.reject(new Error('gone')) : serve(url, size),
+    );
+    await expect(installKillPack('prime', installed, fetchFile, BIG)).rejects.toThrow('gone');
+    expect(fetchFile.mock.calls.length).toBeLessThan(10);
+    expect(readdirSync(installed)).toEqual([]);
   });
 
   it('replaces an earlier copy whole rather than merging into it', async () => {

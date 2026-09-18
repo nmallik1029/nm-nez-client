@@ -12,6 +12,7 @@ import {
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import type { KillStreakConfig } from '../../shared/visuals';
 import { defineStyle } from '../style';
+import { showToast } from '../toast';
 import { watchCounter } from './hud-counter';
 
 /**
@@ -46,11 +47,14 @@ let active: KillPack | null = null;
 
 /** Downloads under way, so a tile drawn mid-download says so. */
 const installing = new Set<string>();
+/** Removals under way, so an x cannot be pressed twice and the last pack is counted right. */
+const removing = new Set<string>();
 /**
- * Packs this session has already fetched on its own, or seen removed by
- * hand. Neither gets fetched again unasked: see `fetchWanted`.
+ * Packs this session has already tried to download, by hand or on its own.
+ * None is fetched again unasked, so a download that failed is not retried on
+ * every volume nudge: see `fetchWanted`. Pressing Install always tries.
  */
-const leaveAlone = new Set<string>();
+const tried = new Set<string>();
 const listeners = new Set<(listing: KillPackListing) => void>();
 let sounds: HTMLAudioElement[] = [];
 let streak = 0;
@@ -82,6 +86,15 @@ export function isInstalling(id: string): boolean {
   return installing.has(id);
 }
 
+export function isRemoving(id: string): boolean {
+  return removing.has(id);
+}
+
+/** The packs on disk, less any on their way off it. What a pick can safely land on. */
+export function staying(): readonly KillPack[] {
+  return packs.filter((pack) => !removing.has(pack.id));
+}
+
 /**
  * Called with the new listing whenever a pack is installed or removed, or a
  * download starts. The editor redraws from it; returns the unsubscribe.
@@ -103,6 +116,7 @@ function changed(): void {
 export async function installKillPack(id: string): Promise<boolean> {
   if (installing.has(id)) return false;
   installing.add(id);
+  tried.add(id);
   changed();
   let ok = false;
   try {
@@ -116,16 +130,30 @@ export async function installKillPack(id: string): Promise<boolean> {
   return ok;
 }
 
-/** Take a downloaded pack off the disk. The user's own are never touched. */
-export async function removeKillPack(id: string): Promise<boolean> {
-  // Taken off by hand is not something to quietly put back.
-  leaveAlone.add(id);
+/**
+ * Take a downloaded pack off the disk. The user's own are never touched.
+ *
+ * `keep` is the kill streak config with the pick already moved off this pack
+ * (the editor works out where to), or `fetchWanted` would fetch it straight
+ * back. It is saved before main deletes anything, not on the usual short
+ * delay: closing the client inside that delay would otherwise leave a config
+ * naming a pack that is gone, and the next launch would download it again.
+ */
+export async function removeKillPack(id: string, keep: KillStreakConfig): Promise<boolean> {
+  if (removing.has(id)) return false;
+  removing.add(id);
+  changed();
   let ok = false;
   try {
+    await ipcRenderer.invoke(IPC.configPatch, 'visuals', { killStreak: keep });
     ok = (await ipcRenderer.invoke(IPC.killPacksRemove, id)) === true;
   } catch {
     // Reported as not removed.
   }
+  removing.delete(id);
+  // Gone by hand, so switching on with it named is asking for it again, and
+  // gets it. Only the config naming it can bring it back, never a retry.
+  if (ok) tried.delete(id);
   await listKillPacks();
   changed();
   return ok;
@@ -162,33 +190,47 @@ function apply(next: KillStreakConfig): void {
   const pack = resolvePack(next.pack);
   // Every volume nudge comes through here; only a different pack reloads.
   if (pack?.id !== active?.id) load(pack);
-  if (pack === null) fetchWanted(next.pack);
+  fetchWanted(next.pack, pack === null);
   start();
 }
 
 /**
- * On, with nothing on disk it could play: download the pack it wants, the
- * one picked or else Default, without being asked.
+ * Switched on, and the pack the config names is in the catalog but not on
+ * disk: download it without being asked. Whatever is on disk plays in the
+ * meantime (see `pickPack`), and the listing that follows the download
+ * switches to it.
  *
- * That is someone switching this on for the first time, who expects to hear
- * something rather than to be sent to an editor first. It is also anyone
- * updating from 0.1.53 to 0.1.59, which shipped every pack: the update takes
- * those away, and this puts back the one they were using.
+ * The pack named is the one picked, or Default for nothing picked, which is
+ * what an empty pick has always played. With nothing on disk at all and a
+ * pick that is not in the catalog, a pack of the user's own since deleted,
+ * Default too, so there is something to hear.
  *
- * Once a session per pack, so a download that failed is not retried on every
- * volume nudge, and never one removed by hand. Removing the last pack turns
- * the feature off (the editor does that), which is what keeps this from
- * fetching it back on the next launch.
+ * That covers someone switching this on for the first time, who expects to
+ * hear something rather than be sent to an editor. And anyone updating from
+ * 0.1.53 to 0.1.59, which shipped every pack: the update takes them away, and
+ * this puts back the one they were using, including when a pack of their own
+ * would otherwise have stepped in and played instead without a word.
+ *
+ * It follows the config, so a pack being removed has to have the config moved
+ * off it first, or this fetches it straight back; the editor does that. Never
+ * while any download is running, because that one ends in a new listing and
+ * brings this round again with whatever the config says by then: pressing
+ * Install on one pack and then the switch must not fetch Default beside it.
+ * And once a session per pack, see `tried`.
  */
-function fetchWanted(picked: string): void {
-  if (listing === null) return;
+function fetchWanted(picked: string, nothingToPlay: boolean): void {
+  if (listing === null || installing.size > 0) return;
+  const named = picked === '' ? DEFAULT_PACK_ID : picked;
   const want =
-    listing.available.find((pack) => pack.id === picked) ??
-    listing.available.find((pack) => pack.id === DEFAULT_PACK_ID);
-  if (!want || leaveAlone.has(want.id) || installing.has(want.id)) return;
-  leaveAlone.add(want.id);
-  console.log(BRANDING.logPrefix, `kill streak: nothing installed to play, fetching ${want.name}`);
-  void installKillPack(want.id);
+    listing.available.find((pack) => pack.id === named) ??
+    (nothingToPlay ? listing.available.find((pack) => pack.id === DEFAULT_PACK_ID) : undefined);
+  if (!want || tried.has(want.id)) return;
+  console.log(BRANDING.logPrefix, `kill streak: ${want.name} is not installed, fetching it`);
+  void installKillPack(want.id).then((ok) => {
+    // The editor says so when its own Install fails. This one nobody pressed,
+    // so without a word it is just a switch that is on and silent.
+    if (!ok) showToast(`Could not download the ${want.name} kill streak pack. Press Edit on Kill streak sounds to try again.`, 4000);
+  });
 }
 
 function load(pack: KillPack | null): void {

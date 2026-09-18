@@ -49,19 +49,60 @@ export interface KillCatalog {
 
 export const KILL_CATALOG: KillCatalog = catalogJson;
 
-/** Downloads one file whole. Injected so tests never reach the network. */
-export type FetchFile = (url: string) => Promise<Uint8Array>;
+/**
+ * Downloads one file whole, given the size the catalog expects of it.
+ * Injected so tests never reach the network.
+ */
+export type FetchFile = (url: string, size: number) => Promise<Uint8Array>;
 
 /**
- * Long enough for the biggest file on a slow line, short enough that a
- * connection that has gone nowhere gives the button back.
+ * How long a download may go without a single byte arriving before it is
+ * given up. A stall, not a deadline: several of a pack's files download at
+ * once and share the line, so on a slow connection the biggest ones take a
+ * while, and that is fine for as long as they are moving. One that has gone
+ * nowhere gives the button back.
+ *
+ * This was a 30 second deadline on each file, which let a pack whose files
+ * add up to 4 MB never install on anything under about 130 KB/s: every file
+ * was still arriving when its time ran out.
  */
-const FETCH_TIMEOUT_MS = 30_000;
+const STALL_MS = 30_000;
 
-const fetchFromGitHub: FetchFile = async (url) => {
-  const res = await net.fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return new Uint8Array(await res.arrayBuffer());
+const fetchFromGitHub: FetchFile = async (url, size) => {
+  const abort = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const wait = (): void => {
+    clearTimeout(timer);
+    timer = setTimeout(
+      () => abort.abort(new Error(`nothing from ${url} for ${STALL_MS / 1000}s`)),
+      STALL_MS,
+    );
+  };
+  wait();
+  try {
+    const res = await net.fetch(url, { signal: abort.signal });
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status} for ${url}`);
+    const reader = res.body.getReader();
+    const out = new Uint8Array(size);
+    let got = 0;
+    for (;;) {
+      wait();
+      const { done, value } = await reader.read();
+      if (done) break;
+      // Past its size it is not the file the catalog means, so stop reading
+      // rather than hold however much a wrong answer would send.
+      if (got + value.length > size) {
+        void reader.cancel();
+        throw new Error(`${url} is bigger than the catalog says`);
+      }
+      out.set(value, got);
+      got += value.length;
+    }
+    // Short is caught by the caller's size check, with the rest of the checks.
+    return got === size ? out : out.subarray(0, got);
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 /**
@@ -104,6 +145,37 @@ function describe(pack: CatalogPack): AvailablePack {
     banners: count('png'),
     bytes: pack.files.reduce((sum, file) => sum + file.size, 0),
   };
+}
+
+/**
+ * Files downloaded at once, across every pack being installed. Under the six
+ * connections Chromium opens to a host over HTTP/1.1, which is what a proxy
+ * or antivirus that intercepts TLS turns GitHub's HTTP/2 into: past that, a
+ * file would sit waiting for a connection with its stall timer running and
+ * nothing able to reset it, and on a slow line give up before it had started.
+ * Across every pack, not per pack, because two Installs pressed together are
+ * one host's connections all the same.
+ */
+const PARALLEL = 4;
+
+let slotsTaken = 0;
+const waitingForSlot: (() => void)[] = [];
+
+/**
+ * Run `work` once one of the PARALLEL slots is free. A slot that frees up is
+ * handed straight to the next in line rather than released and retaken, so
+ * nothing arriving in between can take it and make five.
+ */
+async function inSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (slotsTaken < PARALLEL) slotsTaken++;
+  else await new Promise<void>((resolve) => waitingForSlot.push(resolve));
+  try {
+    return await work();
+  } finally {
+    const next = waitingForSlot.shift();
+    if (next) next();
+    else slotsTaken--;
+  }
 }
 
 /** One download per pack, however many times Install is pressed while it runs. */
@@ -150,21 +222,30 @@ async function download(
   rmSync(staging, { recursive: true, force: true });
   mkdirSync(staging, { recursive: true });
 
-  // All at once: a pack is a dozen small files. Settled rather than raced, so
-  // no fetch is still writing into the folder after a failure has cleared it.
-  const results = await Promise.allSettled(
-    pack.files.map(async (file) => {
-      const data = await fetchFile(`${from}${file.name}`);
-      if (data.length !== file.size || sha512(data) !== file.sha512) {
-        throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
-      }
-      writeFileSync(join(staging, file.name), data);
-    }),
+  // A few at a time (see PARALLEL), and every one finished before anything
+  // is cleared, so no fetch is still writing into the folder after a failure
+  // has emptied it. After a failure no new file is started: the pack is not
+  // going in anyway.
+  const failures: unknown[] = [];
+  await Promise.all(
+    pack.files.map((file) =>
+      inSlot(async () => {
+        if (failures.length > 0) return;
+        try {
+          const data = await fetchFile(`${from}${file.name}`, file.size);
+          if (data.length !== file.size || sha512(data) !== file.sha512) {
+            throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+          }
+          writeFileSync(join(staging, file.name), data);
+        } catch (reason) {
+          failures.push(reason);
+        }
+      }),
+    ),
   );
 
   try {
-    const failed = results.find((result) => result.status === 'rejected');
-    if (failed) throw failed.reason;
+    if (failures.length > 0) throw failures[0];
     // The name the catalog has, for loadKillPacks to read like any other
     // pack's. Written here rather than downloaded: it is not the repo's file
     // that matters, it is the name this client lists the pack under.

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,7 +17,25 @@ import { KILL_CATALOG } from './killpack-install';
  * failed. This is what makes forgetting fail the build instead.
  */
 
-const PACKS = join(import.meta.dirname, '..', '..', 'assets', 'killstreak');
+const ROOT = join(import.meta.dirname, '..', '..');
+const PACKS = join(ROOT, 'assets', 'killstreak');
+
+/**
+ * The last commit that touched the packs, or null where git cannot say: CI
+ * checks out one commit and nothing before it, so there it is always HEAD.
+ */
+function lastPackCommit(): string | null {
+  try {
+    const git = (...args: string[]): string =>
+      execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim();
+    if (git('rev-parse', '--is-shallow-repository') !== 'false') return null;
+    const commit = git('log', '-1', '--format=%H', '--', 'assets/killstreak');
+    return /^[0-9a-f]{40}$/.test(commit) ? commit : null;
+  } catch {
+    return null;
+  }
+}
+const packCommit = lastPackCommit();
 
 const sha512 = (data: Buffer): string => createHash('sha512').update(data).digest('base64');
 
@@ -32,6 +51,15 @@ describe('the kill streak catalog', () => {
     expect(KILL_CATALOG.source).toMatch(
       /^https:\/\/raw\.githubusercontent\.com\/nmallik1029\/nm-nez-client\/[0-9a-f]{40}\/assets\/killstreak\/$/,
     );
+  });
+
+  // The bytes matching is not enough on its own. Run the script, then amend
+  // or rebase the pack commit, and the catalog names a commit that never
+  // reaches GitHub while everything above still passes: every Install in
+  // that release would 404. Only checkable with the history, so the full
+  // clone preflight runs in, not CI's single commit.
+  it.skipIf(packCommit === null)('points at the commit that last changed the packs', () => {
+    expect(KILL_CATALOG.source).toContain(`/${packCommit}/`);
   });
 
   it('has every pack folder in the repo, and nothing that is not one', () => {

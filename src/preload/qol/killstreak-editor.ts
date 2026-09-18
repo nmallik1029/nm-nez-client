@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PACK_ID,
   packFileUrl,
   type AvailablePack,
   type KillPack,
@@ -9,11 +10,13 @@ import type { KillStreakConfig } from '../../shared/visuals';
 import {
   installKillPack,
   isInstalling,
+  isRemoving,
   listKillPacks,
   onKillPacksChanged,
   previewKillPack,
   removeKillPack,
   resolvePack,
+  staying,
 } from '../look/killstreak';
 import { showToast } from '../toast';
 import { defineStyle } from '../style';
@@ -30,9 +33,10 @@ import { empty, featureRow, note } from './row';
  *
  * Every pack is in the one grid, by name, whether it is on disk or not. One
  * that is not has an Install button under it and nothing else: pressing it
- * downloads that pack, then picks it and plays it, so the press is answered
- * with the thing you pressed it for. Nothing asks first or needs a restart,
- * and a tile keeps its place in the grid when it goes from one to the other.
+ * picks that pack and downloads it, and plays it once it lands, so the press
+ * is answered with the thing you pressed it for. Nothing asks first or needs
+ * a restart, and a tile keeps its place in the grid when it goes from one to
+ * the other.
  *
  * Everything applies as you touch it. Unlike the sky, nothing here waits on a
  * map load: the next kill uses whatever is set.
@@ -49,9 +53,15 @@ function render(body: HTMLElement, ctx: TabContext): void {
   // without redrawing, so a copy taken when this was drawn would let a volume
   // change put back the pack you picked a moment before, or the other way.
   const current = (): KillStreakConfig => ctx.deps.getVisuals().killStreak;
+  // A change to `on` always redraws, whatever the caller asked. The switch is
+  // drawn once, from the config at the time, so a config switched off under a
+  // switch still reading ON is one that pressing to turn off turns on, and
+  // on with nothing picked fetches Default. From a drawing that is no longer
+  // on screen as well: refresh paints whatever is, the Built-in list included.
   const commit = (change: Partial<KillStreakConfig>, redraw: boolean): void => {
+    const was = current().on;
     ctx.deps.patchVisuals({ killStreak: { ...current(), ...change } });
-    if (redraw) ctx.refresh();
+    if (redraw || current().on !== was) ctx.refresh();
   };
 
   const start = current();
@@ -95,33 +105,90 @@ function render(body: HTMLElement, ctx: TabContext): void {
   let listing: KillPackListing | null = null;
 
   const pick = (pack: KillPack): void => {
+    // On its way off the disk: picking it would have the player fetch it back.
+    if (isRemoving(pack.id)) return;
     previewKillPack(pack, current().volume);
     commit({ pack: pack.id }, false);
     draw();
   };
 
   const install = (pack: AvailablePack): void => {
-    void installKillPack(pack.id).then((ok) => {
+    const before = current().pack;
+    // Started before the pick, so the player sees this pack on its way and
+    // does not go and fetch Default to fill the gap. Picked straight away,
+    // not when it lands, so that is what plays however this editor has been
+    // redrawn or closed by then: flipping the switch mid-download used to
+    // lose the pick, and Default got fetched and played instead.
+    const done = installKillPack(pack.id);
+    commit({ pack: pack.id }, false);
+    void done.then((ok) => {
       if (!ok) {
+        // Off this pick, unless something else has been picked since.
+        if (current().pack === pack.id) commit(fallback(before), false);
         showToast(`Could not download ${pack.name}. Check your connection and try again.`, 3600);
         return;
       }
       if (!ctx.live()) return;
       const got = listing?.installed.find((entry) => entry.id === pack.id);
-      if (got) pick(got);
+      if (got) previewKillPack(got, current().volume);
     });
   };
 
+  /**
+   * Where the pick goes when the pack it was on did not arrive: back to the
+   * one before if that is on disk or still downloading, else whatever plays
+   * now, else any download still running. With none of those there is
+   * nothing to play, which is off. Never a pack that is not there or is on
+   * its way off: the player fetches whatever the pick names, so that would
+   * download it unasked, even one removed while this was downloading.
+   */
+  const fallback = (before: string): Partial<KillStreakConfig> => {
+    const named = before === '' ? DEFAULT_PACK_ID : before;
+    const there = staying();
+    if (there.some((p) => p.id === named) || isInstalling(named)) return { pack: before };
+    const plays = resolvePack('', there);
+    if (plays) return { pack: plays.id };
+    const coming = listing?.available.find((p) => isInstalling(p.id));
+    if (coming) return { pack: coming.id };
+    return { on: false, pack: '' };
+  };
+
   const remove = (pack: KillPack): void => {
-    // Nothing left to play is off, and says so on the switch above. Left on,
-    // it would fetch a pack straight back to have something to play (see
-    // fetchWanted), which is the opposite of what removing it asked for.
-    // Before the removal, so the player never sees on-with-nothing at all.
-    const last = listing !== null && listing.installed.length <= 1;
-    if (last && current().on) commit({ on: false }, false);
-    void removeKillPack(pack.id).then((ok) => {
-      if (!ok) showToast(`Could not remove ${pack.name}. It may be in use; try again.`, 3600);
-      if (last && ctx.live()) ctx.refresh();
+    if (listing === null) return;
+    const before = current();
+    // The config comes off this pack before it goes, because the player
+    // follows the config and fetches whatever it names that is not on disk
+    // (fetchWanted). Left naming it, the pack would be back on the next
+    // launch, which is the opposite of what pressing x asked for.
+    //
+    // A pack still downloading counts as one left: it is about to be there,
+    // and the pick may already be on it, having been made when Install was
+    // pressed. With nothing left at all, off, and the switch above says so.
+    // Otherwise, if the pick is on this pack, it moves to one that is really
+    // there or coming: never to an empty pick, which means Default and would
+    // fetch it.
+    const named = before.pack === '' ? DEFAULT_PACK_ID : before.pack;
+    const left = listing.installed.filter((p) => p.id !== pack.id && !isRemoving(p.id));
+    const coming = listing.available.filter((p) => isInstalling(p.id));
+    const last = left.length === 0 && coming.length === 0;
+    if (last) commit({ on: false, pack: '' }, false);
+    else if (named === pack.id) {
+      commit({ pack: resolvePack('', left)?.id ?? coming[0]?.id ?? '' }, false);
+    }
+    const keep = current();
+    void removeKillPack(pack.id, keep).then((ok) => {
+      if (ok) return;
+      // Already gone, deleted from the folder by hand, is gone all the same:
+      // the config is off it, which is where it should be.
+      if (!staying().some((p) => p.id === pack.id)) return;
+      showToast(`Could not remove ${pack.name}. It may be in use; try again.`, 3600);
+      // Put back what this removal changed, but only if that is still what is
+      // set. Anything since, another x or a pick, is newer than this, and
+      // restoring over it could name a pack that has gone in the meantime.
+      const now = current();
+      if (now.on === keep.on && now.pack === keep.pack) {
+        commit({ on: before.on, pack: before.pack }, false);
+      }
     });
   };
 
@@ -139,6 +206,7 @@ function render(body: HTMLElement, ctx: TabContext): void {
             on: pack.id === chosen,
             pick: () => pick(pack),
             remove: removable.has(pack.id) ? () => remove(pack) : null,
+            removing: isRemoving(pack.id),
           }),
       })),
       ...listing.available.map((pack) => ({
@@ -188,7 +256,7 @@ function render(body: HTMLElement, ctx: TabContext): void {
 
 function installedTile(
   pack: KillPack,
-  spec: { on: boolean; pick: () => void; remove: (() => void) | null },
+  spec: { on: boolean; pick: () => void; remove: (() => void) | null; removing: boolean },
 ): HTMLElement {
   const tile = document.createElement('div');
   tile.className = spec.on ? 'pack on' : 'pack';
@@ -201,16 +269,24 @@ function installedTile(
     text('nm', pack.name),
     text('meta', pack.banners > 0 ? `${pack.sounds} kills` : `${pack.sounds} kills, no banner`),
   );
+  // Not while its removal runs: see pick.
+  face.disabled = spec.removing;
   face.addEventListener('click', spec.pick);
   tile.append(face);
 
   if (spec.remove) {
-    const drop = document.createElement('button');
-    drop.className = 'drop material-icons';
-    drop.textContent = 'close';
-    drop.title = `Remove ${pack.name} from this PC`;
-    drop.addEventListener('click', spec.remove);
-    tile.append(drop);
+    const remove = spec.remove;
+    // Not .drop: the panel already has a drop target by that name.
+    const rm = document.createElement('button');
+    rm.className = 'rm material-icons';
+    rm.textContent = 'close';
+    rm.title = `Remove ${pack.name} from this PC`;
+    rm.disabled = spec.removing;
+    rm.addEventListener('click', () => {
+      rm.disabled = true;
+      remove();
+    });
+    tile.append(rm);
   }
   return tile;
 }

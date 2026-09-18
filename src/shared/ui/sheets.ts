@@ -2145,6 +2145,7 @@ const killStreak = `
 #${UI_IDS.qolPanel} .pack .face{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
   gap:4px;padding:8px 6px;text-align:center;background:none;border:0}
 #${UI_IDS.qolPanel} .pack button.face:hover{background:var(--nm-game-btn-bg-hover)}
+#${UI_IDS.qolPanel} .pack button.face:disabled{cursor:default;background:none}
 #${UI_IDS.qolPanel} .pack img{width:64px;height:64px;object-fit:contain}
 #${UI_IDS.qolPanel} .pack .face .material-icons{width:64px;height:64px;display:flex;
   align-items:center;justify-content:center;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}
@@ -2161,10 +2162,11 @@ const killStreak = `
   background:var(--nm-game-btn-bg)}
 /* Remove. Small and quiet in the corner until the tile is under the pointer:
    it is there when you want it and not something to press by accident. */
-#${UI_IDS.qolPanel} .pack .drop{position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;
+#${UI_IDS.qolPanel} .pack .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;
   font-size:var(--nm-fs-md);background:none;border:0;color:var(--nm-game-text-fainter);opacity:.5}
-#${UI_IDS.qolPanel} .pack:hover .drop{opacity:1}
-#${UI_IDS.qolPanel} .pack .drop:hover{background:none;color:var(--nm-bad-text)}
+#${UI_IDS.qolPanel} .pack:hover .rm{opacity:1}
+#${UI_IDS.qolPanel} .pack .rm:hover{background:none;color:var(--nm-bad-text)}
+#${UI_IDS.qolPanel} .pack .rm:disabled{cursor:default;opacity:.25}
 `;
 
 export const SHEETS = {
