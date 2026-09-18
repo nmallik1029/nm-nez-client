@@ -60,9 +60,13 @@ so clients already out there keep finding exactly the files they were built to
 expect however this folder changes later. That is also why the script refuses
 while the folder has uncommitted changes: the commit it would point at would
 not have them. Forget step 2 and `src/main/killstreak-catalog.test.ts` fails,
-because the catalog no longer matches the folder byte for byte. The pack
-commit has to reach GitHub before anyone can install from it, which a merged
-PR takes care of, since branches here are merged rather than squashed.
+because the catalog no longer matches the folder byte for byte. Amend or
+rebase the pack commit after step 2 and it fails too, because the catalog
+then names a commit that is not in the history; that one needs the full
+history, so it runs in preflight and is skipped on CI's single-commit
+checkout. The pack commit has to reach GitHub before anyone can install from
+it, which a merged PR takes care of, since branches here are merged rather
+than squashed.
 
 Anyone can still add their own in `%APPDATA%\nmnez\swap\sounds\killstreak`. One
 there with the same id as an installed pack replaces it whole: its own sounds,

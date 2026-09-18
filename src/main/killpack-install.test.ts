@@ -139,8 +139,8 @@ describe('installKillPack', () => {
   });
 
   it('refuses a file that is not the one the catalog describes, and keeps nothing', async () => {
-    const tampered: FetchFile = (url) =>
-      url.endsWith('ion_2.mp3') ? Promise.resolve(new Uint8Array(Buffer.from('SECOND'))) : serve(url);
+    const tampered: FetchFile = (url, size) =>
+      url.endsWith('ion_2.mp3') ? Promise.resolve(new Uint8Array(Buffer.from('SECOND'))) : serve(url, size);
     await expect(installKillPack('ion', installed, tampered, CATALOG)).rejects.toThrow(
       /ion_2\.mp3 is not the file/,
     );
@@ -149,8 +149,8 @@ describe('installKillPack', () => {
   });
 
   it('keeps nothing when a download fails partway', async () => {
-    const flaky: FetchFile = (url) =>
-      url.endsWith('ion_1.png') ? Promise.reject(new Error('connection reset')) : serve(url);
+    const flaky: FetchFile = (url, size) =>
+      url.endsWith('ion_1.png') ? Promise.reject(new Error('connection reset')) : serve(url, size);
     await expect(installKillPack('ion', installed, flaky, CATALOG)).rejects.toThrow('connection reset');
     expect(readdirSync(installed)).toEqual([]);
   });

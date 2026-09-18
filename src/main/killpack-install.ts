@@ -49,19 +49,60 @@ export interface KillCatalog {
 
 export const KILL_CATALOG: KillCatalog = catalogJson;
 
-/** Downloads one file whole. Injected so tests never reach the network. */
-export type FetchFile = (url: string) => Promise<Uint8Array>;
+/**
+ * Downloads one file whole, given the size the catalog expects of it.
+ * Injected so tests never reach the network.
+ */
+export type FetchFile = (url: string, size: number) => Promise<Uint8Array>;
 
 /**
- * Long enough for the biggest file on a slow line, short enough that a
- * connection that has gone nowhere gives the button back.
+ * How long a download may go without a single byte arriving before it is
+ * given up. A stall, not a deadline: a pack's files all download at once and
+ * share the line, so on a slow connection the biggest ones take a while, and
+ * that is fine for as long as they are moving. One that has gone nowhere
+ * gives the button back.
+ *
+ * This was a 30 second deadline on each file, which let a pack whose files
+ * add up to 4 MB never install on anything under about 130 KB/s: every file
+ * was still arriving when its time ran out.
  */
-const FETCH_TIMEOUT_MS = 30_000;
+const STALL_MS = 30_000;
 
-const fetchFromGitHub: FetchFile = async (url) => {
-  const res = await net.fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return new Uint8Array(await res.arrayBuffer());
+const fetchFromGitHub: FetchFile = async (url, size) => {
+  const abort = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const wait = (): void => {
+    clearTimeout(timer);
+    timer = setTimeout(
+      () => abort.abort(new Error(`nothing from ${url} for ${STALL_MS / 1000}s`)),
+      STALL_MS,
+    );
+  };
+  wait();
+  try {
+    const res = await net.fetch(url, { signal: abort.signal });
+    if (!res.ok || !res.body) throw new Error(`HTTP ${res.status} for ${url}`);
+    const reader = res.body.getReader();
+    const out = new Uint8Array(size);
+    let got = 0;
+    for (;;) {
+      wait();
+      const { done, value } = await reader.read();
+      if (done) break;
+      // Past its size it is not the file the catalog means, so stop reading
+      // rather than hold however much a wrong answer would send.
+      if (got + value.length > size) {
+        void reader.cancel();
+        throw new Error(`${url} is bigger than the catalog says`);
+      }
+      out.set(value, got);
+      got += value.length;
+    }
+    // Short is caught by the caller's size check, with the rest of the checks.
+    return got === size ? out : out.subarray(0, got);
+  } finally {
+    clearTimeout(timer);
+  }
 };
 
 /**
@@ -154,7 +195,7 @@ async function download(
   // no fetch is still writing into the folder after a failure has cleared it.
   const results = await Promise.allSettled(
     pack.files.map(async (file) => {
-      const data = await fetchFile(`${from}${file.name}`);
+      const data = await fetchFile(`${from}${file.name}`, file.size);
       if (data.length !== file.size || sha512(data) !== file.sha512) {
         throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
       }
