@@ -77,13 +77,10 @@ describe('the kill streak catalog', () => {
       expect(pack.name).toBe(meta.name.trim());
 
       // Every file the client could ask for is listed, and nothing else: the
-      // sounds and banners, and the banner's other colours.
+      // sounds and banners, and each other theme's.
       const tier = new RegExp(`^${id}(?:_v([2-8]))?_([1-9][0-9]?)\\.(mp3|png)$`);
       const onDisk = readdirSync(folder)
-        .filter((file) => {
-          const m = tier.exec(file);
-          return m !== null && (m[1] === undefined || m[3] === 'png');
-        })
+        .filter((file) => tier.test(file))
         .sort();
       expect(pack.files.map((file) => file.name).sort()).toEqual(onDisk);
 

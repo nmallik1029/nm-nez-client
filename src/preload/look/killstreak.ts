@@ -4,6 +4,8 @@ import { IPC } from '../../shared/ipc';
 import {
   DEFAULT_PACK_ID,
   packFileUrl,
+  soundCount,
+  soundVariant,
   variantFor,
   pickPack,
   tierFor,
@@ -168,8 +170,9 @@ export function resolvePack(id: string, list: readonly KillPack[] = packs): Kill
 }
 
 /** One sound, straight away, for the editor. Not part of any streak. */
-export function previewKillPack(pack: KillPack, volume: number): void {
-  const audio = new Audio(packFileUrl(pack.id, 1, 'sound'));
+/** `variant` is the theme: a few have sounds of their own. */
+export function previewKillPack(pack: KillPack, volume: number, variant = 1): void {
+  const audio = new Audio(packFileUrl(pack.id, 1, 'sound', soundVariant(pack, variant)));
   audio.volume = volume;
   void audio.play().catch(() => {});
 }
@@ -242,8 +245,10 @@ function load(pack: KillPack | null): void {
   sounds = [];
   variant = pack !== null && config !== null ? variantFor(pack, config.variants) : 1;
   if (!pack) return;
-  for (let tier = 1; tier <= pack.sounds; tier++) {
-    const audio = new Audio(packFileUrl(pack.id, tier, 'sound'));
+  // The theme's own sounds if it has them, the first theme's if not.
+  const voice = soundVariant(pack, variant);
+  for (let tier = 1; tier <= soundCount(pack, variant); tier++) {
+    const audio = new Audio(packFileUrl(pack.id, tier, 'sound', voice));
     audio.preload = 'auto';
     sounds.push(audio);
   }
@@ -282,7 +287,7 @@ function onKills(gained: number): void {
   // A counter that moved by two in one update was two kills.
   streak += gained;
 
-  const soundTier = tierFor(streak, active.sounds);
+  const soundTier = tierFor(streak, sounds.length);
   const audio = sounds[soundTier - 1];
   if (audio) {
     audio.volume = config.volume;

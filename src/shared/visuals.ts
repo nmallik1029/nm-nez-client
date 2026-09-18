@@ -5,7 +5,7 @@ import {
   SKY_PRESETS,
   SKY_START_COLOR,
 } from './ui/tokens';
-import { isPackId, MAX_VARIANTS } from './killstreak';
+import { isPackId, MAX_VARIANTS, retiredPack } from './killstreak';
 import { DEFAULT_FORTNITE, normaliseFortnite, type FortniteConfig } from './soundpacks';
 
 /**
@@ -224,6 +224,10 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
   const crosshair = (raw.crosshair ?? {}) as Partial<CrosshairConfig>;
   const hitmarker = (raw.hitmarker ?? {}) as Partial<HitmarkerConfig>;
   const killStreak = (raw.killStreak ?? {}) as Partial<KillStreakConfig>;
+  const { pack: streakPack, variants: streakVariants } = movePick(
+    isPackId(killStreak.pack) ? killStreak.pack : '',
+    normaliseVariants(killStreak.variants),
+  );
   const soundpacks = (raw.soundpacks ?? {}) as Partial<SoundpacksConfig>;
   const L = MARKER_LIMITS;
 
@@ -261,12 +265,12 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       // Becomes a folder and a URL, so an id that fails the check is dropped
       // rather than cleaned: a pack that has been quietly renamed is not the
       // pack anyone picked.
-      pack: isPackId(killStreak.pack) ? killStreak.pack : '',
+      pack: streakPack,
       volume: clamp(killStreak.volume, 0, 1, DEFAULT_VISUALS.killStreak.volume),
       // Anything but an explicit false is on. Configs saved before this
       // switch existed have no field, and they were showing banners.
       banners: killStreak.banners !== false,
-      variants: normaliseVariants(killStreak.variants),
+      variants: streakVariants,
     },
     soundpacks: {
       // Saved before Soundpacks existed, the row it replaced switched kill
@@ -285,6 +289,21 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
  * everyone already knows, so the first thing anyone sees is a crosshair that
  * looks like a crosshair rather than a blank canvas and eight sliders.
  */
+/**
+ * A pick of a pack that is now a theme of another moves to that pack and
+ * theme (see RETIRED_PACKS): Reaver V26 in its third colour is Reaver's fifth
+ * theme. Colours remembered for other retired packs have nowhere to go.
+ */
+function movePick(pack: string, variants: Record<string, number>): { pack: string; variants: Record<string, number> } {
+  const moved = pack === '' ? null : retiredPack(pack, variants[pack] ?? 1);
+  const kept: Record<string, number> = {};
+  for (const [id, variant] of Object.entries(variants)) if (retiredPack(id) === null) kept[id] = variant;
+  if (moved === null) return { pack, variants: kept };
+  if (moved.variant > 1) kept[moved.id] = moved.variant;
+  else delete kept[moved.id];
+  return { pack: moved.id, variants: kept };
+}
+
 /** Picks past this many are dropped: one per pack in the catalog, and room for the user's own. */
 const MAX_VARIANT_PICKS = 256;
 

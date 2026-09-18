@@ -61,7 +61,7 @@ describe('loadKillPacks', () => {
 
   it('counts sounds and banners separately', () => {
     pack('vct-2025', [1, 2, 3, 4, 5, 6], [1, 2, 3]);
-    expect(loadKillPacks([dir])).toEqual([{ id: 'vct-2025', name: 'Vct 2025', sounds: 6, banners: 3, variants: 1 }]);
+    expect(loadKillPacks([dir])).toEqual([{ id: 'vct-2025', name: 'Vct 2025', sounds: 6, banners: 3, variants: 1, variantSounds: [], variantNames: [] }]);
   });
 
   it('stops at the first gap rather than skipping it', () => {
@@ -116,7 +116,7 @@ describe('loadKillPacks', () => {
     pack('prime', [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], { name: 'Prime' }, installed);
     pack('prime', [1, 2], [], { name: 'My Prime' });
     expect(loadKillPacks([dir, installed])).toEqual([
-      { id: 'prime', name: 'My Prime', sounds: 2, banners: 0, variants: 1 },
+      { id: 'prime', name: 'My Prime', sounds: 2, banners: 0, variants: 1, variantSounds: [], variantNames: [] },
     ]);
   });
 
@@ -124,7 +124,7 @@ describe('loadKillPacks', () => {
     pack('prime', [1, 2, 3], [1], { name: 'Prime' }, installed);
     pack('prime', [], [1, 2]);
     expect(loadKillPacks([dir, installed])).toEqual([
-      { id: 'prime', name: 'Prime', sounds: 3, banners: 1, variants: 1 },
+      { id: 'prime', name: 'Prime', sounds: 3, banners: 1, variants: 1, variantSounds: [], variantNames: [] },
     ]);
   });
 
@@ -142,6 +142,29 @@ describe('loadKillPacks', () => {
     pack('bolt', [1], [1]);
     colour('bolt', 3, [1]);
     expect(loadKillPacks([dir])[0]?.variants).toBe(1);
+  });
+
+  it("counts a theme's own sounds, and names the themes from pack.json", () => {
+    pack('ora-by-onetap', [1, 2, 3], [1], { name: 'ORA by OneTap', variants: ['Watch', 'Renegade', 'Raja'] });
+    colour('ora-by-onetap', 2, [1]);
+    colour('ora-by-onetap', 3, [1]);
+    // Renegade sounds like itself; Raja plays Watch's.
+    for (const n of [1, 2]) writeFileSync(join(dir, 'ora-by-onetap', `ora-by-onetap_v2_${n}.mp3`), 'x');
+    expect(loadKillPacks([dir])[0]).toMatchObject({
+      sounds: 3,
+      variants: 3,
+      variantSounds: [2, 0],
+      variantNames: ['Watch', 'Renegade', 'Raja'],
+    });
+  });
+
+  it('names no theme unless pack.json names every one', () => {
+    pack('aeris', [1], [1], { name: 'Aeris', variants: ['Blue'] });
+    colour('aeris', 2, [1]);
+    expect(loadKillPacks([dir])[0]?.variantNames).toEqual([]);
+    pack('bolt', [1], [1], { name: 'Bolt', variants: ['Blue', ''] });
+    colour('bolt', 2, [1]);
+    expect(loadKillPacks([dir]).find((p) => p.id === 'bolt')?.variantNames).toEqual([]);
   });
 
   it('counts no colours for a pack with no banners', () => {
@@ -170,14 +193,20 @@ describe('resolveKillPackFile', () => {
     expect(resolveKillPackFile(url('aeris', 2, 'banner', 2), [dir, installed])).toBeNull();
   });
 
-  it('answers a colour only for a banner, and only as far as colours go', () => {
+  it("finds a theme's own sound", () => {
+    pack('ora-by-onetap', [1], [1], undefined, installed);
+    colour('ora-by-onetap', 2, [1], installed);
+    writeFileSync(join(installed, 'ora-by-onetap', 'ora-by-onetap_v2_1.mp3'), 'x');
+    expect(resolveKillPackFile(url('ora-by-onetap', 1, 'sound', 2), [dir, installed]))
+      .toBe(join(installed, 'ora-by-onetap', 'ora-by-onetap_v2_1.mp3'));
+  });
+
+  it('answers a theme only as far as themes go', () => {
     pack('aeris', [1], [1], undefined, installed);
     colour('aeris', 2, [1], installed);
-    writeFileSync(join(installed, 'aeris', 'aeris_v2_1.mp3'), 'x');
     writeFileSync(join(installed, 'aeris', 'aeris_v9_1.png'), 'x');
     const dirs = [dir, installed];
     for (const bad of [
-      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v2_1.mp3',
       'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v9_1.png',
       'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v1_1.png',
       'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v_1.png',

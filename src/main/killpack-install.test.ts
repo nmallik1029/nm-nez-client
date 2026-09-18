@@ -9,6 +9,7 @@ import {
   outdatedKillPacks,
   refreshKillPacks,
   removeKillPack,
+  retireKillPacks,
   type FetchFile,
   type KillCatalog,
 } from './killpack-install';
@@ -108,8 +109,8 @@ describe('listKillPackEntries', () => {
       installed: [],
       removable: [],
       available: [
-        { id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1, bytes: 5 + 10 + 6 },
-        { id: 'gaia-s-vengeance', name: "Gaia's Vengeance", sounds: 1, banners: 0, variants: 1, bytes: 4 },
+        { id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1, variantSounds: [], variantNames: [], bytes: 5 + 10 + 6 },
+        { id: 'gaia-s-vengeance', name: "Gaia's Vengeance", sounds: 1, banners: 0, variants: 1, variantSounds: [], variantNames: [], bytes: 4 },
       ],
     });
   });
@@ -117,7 +118,7 @@ describe('listKillPackEntries', () => {
   it('moves an installed pack out of the offer and makes it removable', async () => {
     await installKillPack('ion', installed, serve, CATALOG);
     const listing = listKillPackEntries(dirs, installed, CATALOG);
-    expect(listing.installed).toEqual([{ id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1 }]);
+    expect(listing.installed).toEqual([{ id: 'ion', name: 'Ion', sounds: 2, banners: 1, variants: 1, variantSounds: [], variantNames: [] }]);
     expect(listing.removable).toEqual(['ion']);
     expect(listing.available.map((pack) => pack.id)).toEqual(['gaia-s-vengeance']);
   });
@@ -147,6 +148,34 @@ describe('listKillPackEntries: colours', () => {
     };
     // v3 is missing its second banner, so it and v4 after it do not count.
     expect(listKillPackEntries(dirs, installed, catalog).available[0]).toMatchObject({ banners: 2, variants: 2 });
+  });
+
+  it("counts a theme's own sounds before it is installed", () => {
+    const names = ['ora_1.mp3', 'ora_1.png', 'ora_v2_1.png', 'ora_v2_1.mp3', 'ora_v2_2.mp3', 'ora_v3_1.png'];
+    const catalog: KillCatalog = {
+      source: SOURCE,
+      packs: [{ id: 'ora', name: 'ORA', files: names.map((name) => ({ name, size: 1, sha512: '' })) }],
+    };
+    expect(listKillPackEntries(dirs, installed, catalog).available[0]).toMatchObject({ variants: 3, variantSounds: [2, 0] });
+  });
+});
+
+describe('retireKillPacks', () => {
+  it('deletes a downloaded pack that is now a theme of another, and nothing else', () => {
+    for (const id of ['reaver-v26', 'ora-by-onetap-raja', 'reaver']) {
+      mkdirSync(join(installed, id), { recursive: true });
+      writeFileSync(join(installed, id, `${id}_1.mp3`), 'x');
+    }
+    // One of the user's own under a retired name is theirs, not ours to delete.
+    ownPack('reaver-v26', 1);
+    expect(retireKillPacks(installed, () => {}).sort()).toEqual(['ora-by-onetap-raja', 'reaver-v26']);
+    expect(existsSync(join(installed, 'reaver'))).toBe(true);
+    expect(existsSync(join(installed, 'reaver-v26'))).toBe(false);
+    expect(existsSync(join(own, 'reaver-v26'))).toBe(true);
+  });
+
+  it('does nothing when there is no download folder yet', () => {
+    expect(retireKillPacks(join(root, 'none'), () => {})).toEqual([]);
   });
 });
 

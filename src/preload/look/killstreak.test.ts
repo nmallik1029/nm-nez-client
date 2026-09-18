@@ -34,7 +34,7 @@ let answer: 'ok' | 'fail' | 'hold';
 let held: Map<string, (ok: boolean) => void>;
 
 function entry(id: string): KillPack {
-  return { id, name: CATALOG[id] ?? id, sounds: 1, banners: 0, variants: 1 };
+  return { id, name: CATALOG[id] ?? id, sounds: 1, banners: 0, variants: 1, variantSounds: [], variantNames: [] };
 }
 
 function listing(): KillPackListing {

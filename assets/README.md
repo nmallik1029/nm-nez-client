@@ -72,6 +72,25 @@ with the page's random pinned to Neon, the agent its banners already had;
 its own banners were redrawn the same way, as the sixth had come out as
 somebody else.
 
+**Themes.** A colour is one kind of theme; a line's other editions are
+another. Where the site lists one line as several (Bubblegum Deathwish in
+four colours, Reaver and its V26, Prime and Prime//2.0, Prelude to Chaos and
+its V25, the five ORA by OneTap themes, the three Radiant Entertainment
+System ones), they are one pack here with a theme each, named in
+`pack.json`'s `"variants"`. Most themes share the first one's sounds. The
+ones that do not, per the Valorant wiki's Kill Banners notes, carry their
+own as `<id>_v<k>_<n>.mp3`: ORA by OneTap's and Radiant Entertainment
+System's, and Forsaken's Gold, which plays Sovereign's. Forsaken Gold is not
+on the site; its banners are Sovereign's frames with the wiki's
+`Forsaken_Kill_Banner_Gold.png` emblem in the middle, which is where that
+banner has it. Reaver Ep 5 was Reaver byte for byte and is simply gone. The
+packs these replaced are in `RETIRED_PACKS` (`src/shared/killstreak.ts`): a
+pick of one moves to its theme, and an installed copy is deleted at launch.
+
+The wiki's "Kill Successive" files are not a sixth sound. They are the whole
+streak played back to back, ten seconds and more; Valorant's fifth sound is
+its "5th+ kill", which is what a pack's last sound already is here.
+
 Any pack changed here reaches people who already installed it: installed
 packs carry the version they were downloaded at, and the client fetches any
 that are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`).
@@ -79,9 +98,10 @@ that are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`)
 A pack is a folder named by its id (lowercase letters, digits and hyphens,
 nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
 second and so on, an optional `<id>_N.png` banner beside each, optional other
-colours of the banners as `<id>_v2_N.png`, `<id>_v3_N.png` and so on, and an
-optional `pack.json` of `{"name": "Shown Name"}`. Numbering stops at the first
-gap, and a colour counts only with every banner the first colour has. The
+themes as `<id>_v2_N.png`, `<id>_v3_N.png` and so on, with `<id>_v2_N.mp3`
+for a theme that sounds different, and an optional `pack.json` of
+`{"name": "Shown Name", "variants": ["First", "Second"]}`. Numbering stops at
+the first gap, and a theme counts only with every banner the first has. The
 rules are in `src/shared/killstreak.ts` and `src/main/killsounds.ts`.
 
 **This folder does not ship.** `electron-builder.yml` leaves it out of the

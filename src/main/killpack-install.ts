@@ -6,6 +6,7 @@ import {
   isPackId,
   MAX_TIERS,
   MAX_VARIANTS,
+  RETIRED_PACKS,
   type AvailablePack,
   type KillPackListing,
 } from '../shared/killstreak';
@@ -148,12 +149,20 @@ function describe(pack: CatalogPack): AvailablePack {
   ) {
     variants++;
   }
+  const own = (variant: number): number => {
+    let n = 0;
+    while (n < MAX_TIERS && names.has(`${pack.id}_v${variant}_${n + 1}.mp3`)) n++;
+    return n;
+  };
   return {
     id: pack.id,
     name: pack.name,
     sounds: count('mp3'),
     banners,
     variants,
+    variantSounds: Array.from({ length: variants - 1 }, (_, i) => own(i + 2)),
+    // Names are in pack.json, which the tile reads once the pack is on disk.
+    variantNames: [],
     bytes: pack.files.reduce((sum, file) => sum + file.size, 0),
   };
 }
@@ -360,6 +369,29 @@ export function removeKillPack(id: string, dir: string): boolean {
   if (!existsSync(folder)) return false;
   rmSync(folder, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   return true;
+}
+
+/**
+ * Delete the downloaded copies of packs that are now a theme of another (see
+ * RETIRED_PACKS). The catalog has no entry to keep them up to date, and left
+ * on disk each would still be a card of its own beside the pack it became.
+ * Run at launch; the config's pick has already moved to the new pack, so the
+ * player fetches that one if it is not installed. Only `dir`, never the
+ * user's own folder.
+ */
+export function retireKillPacks(dir: string, log: (...args: unknown[]) => void): string[] {
+  const gone: string[] = [];
+  for (const id of Object.keys(RETIRED_PACKS)) {
+    try {
+      if (removeKillPack(id, dir)) {
+        gone.push(id);
+        log(`kill streak pack ${id} removed: it is a theme of ${RETIRED_PACKS[id]?.id} now`);
+      }
+    } catch (err) {
+      log(`kill streak pack ${id} not removed: ${(err as Error).message}`);
+    }
+  }
+  return gone;
 }
 
 function sha512(data: Uint8Array): string {

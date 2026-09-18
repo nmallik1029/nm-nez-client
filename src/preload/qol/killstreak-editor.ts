@@ -109,15 +109,17 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
   const pick = (pack: KillPack): void => {
     // On its way off the disk: picking it would have the player fetch it back.
     if (isRemoving(pack.id)) return;
-    previewKillPack(pack, current().volume);
+    previewKillPack(pack, current().volume, variantFor(pack, current().variants));
     commit({ pack: pack.id }, false);
     draw();
   };
 
-  // Picking a colour picks the pack in it: a colour for a pack you are not
-  // using would change nothing you could see or hear.
+  // Picking a theme picks the pack in it: a theme for a pack you are not
+  // using would change nothing you could see or hear. It plays, as picking a
+  // pack does: some themes sound different.
   const pickVariant = (pack: KillPack, variant: number): void => {
     if (isRemoving(pack.id)) return;
+    previewKillPack(pack, current().volume, variant);
     const variants = { ...current().variants };
     if (variant > 1) variants[pack.id] = variant;
     else delete variants[pack.id];
@@ -143,7 +145,7 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
       }
       if (!ctx.live()) return;
       const got = listing?.installed.find((entry) => entry.id === pack.id);
-      if (got) previewKillPack(got, current().volume);
+      if (got) previewKillPack(got, current().volume, variantFor(got, current().variants));
     });
   };
 
@@ -263,7 +265,7 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
   find.addEventListener('input', draw);
   body.append(
     note(
-      'Install downloads a pack from GitHub, about a megabyte, and the x on one takes it off your PC again. To add your own, put a folder in swap/sounds/killstreak holding name_1.mp3, name_2.mp3 and so on, one per kill, with an optional name_1.png banner beside each, and name_v2_1.png and so on for a second colour of banner.',
+      'Install downloads a pack from GitHub, about a megabyte, and the x on one takes it off your PC again. To add your own, put a folder in swap/sounds/killstreak holding name_1.mp3, name_2.mp3 and so on, one per kill, with an optional name_1.png banner beside each, and name_v2_1.png and so on for a second theme, with its own name_v2_1.mp3 and so on if it sounds different.',
     ),
   );
   void listKillPacks().then(show);
@@ -306,7 +308,7 @@ function installedTile(
     for (let variant = 1; variant <= pack.variants; variant++) {
       const swatch = document.createElement('button');
       swatch.className = variant === spec.variant ? 'var on' : 'var';
-      swatch.title = `${pack.name}, variant ${variant}`;
+      swatch.title = `${pack.name}: ${pack.variantNames[variant - 1] ?? `theme ${variant}`}`;
       swatch.disabled = spec.removing;
       const image = document.createElement('img');
       image.src = packFileUrl(pack.id, 1, 'banner', variant);
@@ -345,7 +347,7 @@ function availableTile(pack: AvailablePack, busy: boolean, install: () => void):
   const face = document.createElement('div');
   face.className = 'face';
   face.append(art(null), text('nm', pack.name), text('meta', `${pack.sounds} kills, ${size(pack.bytes)}`));
-  if (pack.variants > 1) face.append(text('meta', `${pack.variants} variants`));
+  if (pack.variants > 1) face.append(text('meta', `${pack.variants} themes`));
 
   const get = document.createElement('button');
   get.className = 'get';
