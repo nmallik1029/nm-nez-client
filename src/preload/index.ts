@@ -22,7 +22,7 @@ import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
 import { installChatPlacement } from './chat-place';
-import { setAccuracyCounter } from './hud/accuracy';
+import { setAccuracyCounter, setAccuracyPlacement } from './hud/accuracy';
 import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installBadges } from './badges';
 import { installNameHighlights, repaintBoards } from './name-highlights';
@@ -150,6 +150,7 @@ async function bootstrap(): Promise<void> {
     if (cfg.ui.perfHud) hud.show();
 
     setHardpointCounter(cfg.ui.hardpointCounter);
+    setAccuracyPlacement(cfg.features.accuracyMatchPlacement);
     setAccuracyCounter(cfg.features.accuracyCounter);
 
     installNameHighlights();
@@ -386,6 +387,8 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
       });
     } else if (key === 'accuracyCounter') {
       setAccuracyCounter(value === true);
+    } else if (key === 'accuracyMatchPlacement' && (value === 'top' || value === 'bottom')) {
+      setAccuracyPlacement(value);
     } else if (key === 'hideDeathStats') {
       setDeathStatsHiding(value === true);
     } else if (key === 'hideMenuPromos') {
