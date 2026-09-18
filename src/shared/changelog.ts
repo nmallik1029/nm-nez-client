@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.66',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'fixed', text: 'If you put the kill streak packs in swap/sounds/killstreak yourself, back before the client came with them, those old copies were hiding every fix, colour and theme since: Forsaken without its Gold theme, Bolt and EX.O with kills out of order. The client now moves copies of its own old packs out of that folder, into killstreak-replaced beside it, and uses the current ones. A pack with any file of your own in it is left alone.' },
+    ],
+  },
+  {
     version: '0.1.65',
     date: '2026-09-18',
     changes: [
