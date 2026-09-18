@@ -26,7 +26,7 @@ import { sha512, swapAsar, swapFolder } from './lite-swap';
  *
  * Nothing touches the running install until `apply()`, which runs at the very
  * end of quitting. Until then everything new sits beside what it replaces
- * (`app.asar.update`, `killstreak.update/`), so a download that fails or is
+ * (`app.asar.update`, `<folder>.update/`), so a download that fails or is
  * never used leaves the client exactly as it was, and the next launch tidies
  * it away.
  */
@@ -51,6 +51,18 @@ const stagedAsar = (): string => `${liveAsar()}.update`;
 const partialAsar = (): string => `${liveAsar()}.download`;
 const previousAsar = (): string => `${liveAsar()}.old`;
 const scratch = (): string => join(app.getPath('userData'), 'update');
+
+/**
+ * Folders under resources/ that a release used to ship and no longer does.
+ *
+ * The installer clears the old install out before it writes the new one, but
+ * this update only ever replaces the folders the new release has, so one a
+ * release dropped would sit there for good. `killstreak` is the Valorant
+ * packs 0.1.53 to 0.1.58 carried, 34 MB, which are now downloaded one at a
+ * time instead; see main/killpack-install.ts. Nothing may ever ship under one
+ * of these names again, or this deletes it on every launch.
+ */
+const RETIRED_FOLDERS = ['killstreak'] as const;
 
 export type Prepared = { readonly lite: true } | { readonly lite: false; readonly reason: string };
 
@@ -242,7 +254,7 @@ export function hasStagedLite(): boolean {
  *
  * app.asar first, because it is the update. The folders after it are data
  * the app reads whatever is there, so if one of them cannot be swapped the
- * new app runs on the old packs and the next update tries again.
+ * new app runs on the old data and the next update tries again.
  */
 export function applyLite(log: (...args: unknown[]) => void): void {
   if (!staged) return;
@@ -278,6 +290,9 @@ export function cleanupLite(log: (...args: unknown[]) => void): void {
   };
   if (!app.isPackaged) return;
   for (const path of [previousAsar(), stagedAsar(), partialAsar()]) remove(path);
+  for (const name of RETIRED_FOLDERS) {
+    if (ofs.existsSync(join(resources(), name))) remove(join(resources(), name));
+  }
   try {
     for (const entry of ofs.readdirSync(resources(), { withFileTypes: true })) {
       if (entry.isDirectory() && /\.(update|old)$/.test(entry.name))

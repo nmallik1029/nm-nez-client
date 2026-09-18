@@ -91,7 +91,7 @@ export interface SkyConfig {
  */
 export interface KillStreakConfig {
   readonly on: boolean;
-  /** Folder name under `swap/sounds/killstreak`. Empty until one is picked. */
+  /** A pack id, installed or the user's own. Empty until one is picked. */
   readonly pack: string;
   /** 0 to 1. */
   readonly volume: number;

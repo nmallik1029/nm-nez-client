@@ -1,6 +1,14 @@
 import { ipcRenderer } from 'electron';
+import { BRANDING } from '../../shared/branding';
 import { IPC } from '../../shared/ipc';
-import { packFileUrl, pickPack, tierFor, type KillPack } from '../../shared/killstreak';
+import {
+  DEFAULT_PACK_ID,
+  packFileUrl,
+  pickPack,
+  tierFor,
+  type KillPack,
+  type KillPackListing,
+} from '../../shared/killstreak';
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
 import type { KillStreakConfig } from '../../shared/visuals';
 import { defineStyle } from '../style';
@@ -32,7 +40,18 @@ const REATTACH_MS = 2_000;
 
 let config: KillStreakConfig | null = null;
 let packs: readonly KillPack[] = [];
+/** The last full answer from main, or null until the first one arrives. */
+let listing: KillPackListing | null = null;
 let active: KillPack | null = null;
+
+/** Downloads under way, so a tile drawn mid-download says so. */
+const installing = new Set<string>();
+/**
+ * Packs this session has already fetched on its own, or seen removed by
+ * hand. Neither gets fetched again unasked: see `fetchWanted`.
+ */
+const leaveAlone = new Set<string>();
+const listeners = new Set<(listing: KillPackListing) => void>();
 let sounds: HTMLAudioElement[] = [];
 let streak = 0;
 
@@ -42,19 +61,74 @@ let hideTimer: ReturnType<typeof setTimeout> | undefined;
 let popTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
- * The packs on disk, asked for again: the shipped ones and the user's own.
- * A pack dropped in after launch is in the list and playable the moment this
- * answers, because main looks its files up as they are asked for.
+ * Every pack, asked for again: the installed ones and the user's own, and
+ * the rest of the catalog. A pack dropped in or installed after launch is in
+ * the list and playable the moment this answers, because main looks its
+ * files up as they are asked for.
  */
-export async function listKillPacks(): Promise<readonly KillPack[]> {
+export async function listKillPacks(): Promise<KillPackListing> {
   try {
-    packs = (await ipcRenderer.invoke(IPC.killPacksGet)) as KillPack[];
+    listing = (await ipcRenderer.invoke(IPC.killPacksGet)) as KillPackListing;
   } catch {
-    packs = [];
+    listing = { installed: [], removable: [], available: [] };
   }
+  packs = listing.installed;
   // A config that arrived before the list could not resolve its pack yet.
   if (config) apply(config);
-  return packs;
+  return listing;
+}
+
+export function isInstalling(id: string): boolean {
+  return installing.has(id);
+}
+
+/**
+ * Called with the new listing whenever a pack is installed or removed, or a
+ * download starts. The editor redraws from it; returns the unsubscribe.
+ */
+export function onKillPacksChanged(listener: (listing: KillPackListing) => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function changed(): void {
+  if (listing === null) return;
+  for (const listener of listeners) listener(listing);
+}
+
+/**
+ * Download one pack from the catalog. Resolves true once it is on disk,
+ * checked and in the list, false if anything stopped it; main logs why.
+ */
+export async function installKillPack(id: string): Promise<boolean> {
+  if (installing.has(id)) return false;
+  installing.add(id);
+  changed();
+  let ok = false;
+  try {
+    ok = (await ipcRenderer.invoke(IPC.killPacksInstall, id)) === true;
+  } catch {
+    // The channel itself failing is the same answer: not installed.
+  }
+  installing.delete(id);
+  await listKillPacks();
+  changed();
+  return ok;
+}
+
+/** Take a downloaded pack off the disk. The user's own are never touched. */
+export async function removeKillPack(id: string): Promise<boolean> {
+  // Taken off by hand is not something to quietly put back.
+  leaveAlone.add(id);
+  let ok = false;
+  try {
+    ok = (await ipcRenderer.invoke(IPC.killPacksRemove, id)) === true;
+  } catch {
+    // Reported as not removed.
+  }
+  await listKillPacks();
+  changed();
+  return ok;
 }
 
 /** The pack a config means, out of the last list main sent. See `pickPack`. */
@@ -88,7 +162,33 @@ function apply(next: KillStreakConfig): void {
   const pack = resolvePack(next.pack);
   // Every volume nudge comes through here; only a different pack reloads.
   if (pack?.id !== active?.id) load(pack);
+  if (pack === null) fetchWanted(next.pack);
   start();
+}
+
+/**
+ * On, with nothing on disk it could play: download the pack it wants, the
+ * one picked or else Default, without being asked.
+ *
+ * That is someone switching this on for the first time, who expects to hear
+ * something rather than to be sent to an editor first. It is also anyone
+ * updating from 0.1.53 to 0.1.58, which shipped every pack: the update takes
+ * those away, and this puts back the one they were using.
+ *
+ * Once a session per pack, so a download that failed is not retried on every
+ * volume nudge, and never one removed by hand. Removing the last pack turns
+ * the feature off (the editor does that), which is what keeps this from
+ * fetching it back on the next launch.
+ */
+function fetchWanted(picked: string): void {
+  if (listing === null) return;
+  const want =
+    listing.available.find((pack) => pack.id === picked) ??
+    listing.available.find((pack) => pack.id === DEFAULT_PACK_ID);
+  if (!want || leaveAlone.has(want.id) || installing.has(want.id)) return;
+  leaveAlone.add(want.id);
+  console.log(BRANDING.logPrefix, `kill streak: nothing installed to play, fetching ${want.name}`);
+  void installKillPack(want.id);
 }
 
 function load(pack: KillPack | null): void {

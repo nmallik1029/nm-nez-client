@@ -87,7 +87,7 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     openable({
       icon: 'military_tech',
       name: 'Kill streak sounds',
-      sub: 'Valorant-style: a sound and a banner for each kill in a row. Pick a pack, or add your own to swap/sounds/killstreak.',
+      sub: 'Valorant-style: a sound and a banner for each kill in a row. Edit to install and pick a pack, or add your own to swap/sounds/killstreak.',
       on: visuals.killStreak.on,
       toggle: () =>
         ctx.deps.patchVisuals({

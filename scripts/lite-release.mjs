@@ -6,9 +6,11 @@
  *
  *   lite.json                what the client reads first
  *   NM-NZ-<v>.asar           resources/app.asar, as shipped in the installer
- *   NM-NZ-<v>-extra.asar     every folder beside it (the kill streak packs),
- *                            packed into one archive the client reads through
- *                            Electron's own asar support
+ *   NM-NZ-<v>-extra.asar     every folder beside it, packed into one archive
+ *                            the client reads through Electron's own asar
+ *                            support. None ship since the kill streak packs
+ *                            stopped, so for now there is no such file and the
+ *                            manifest says `extra: null`.
  *
  * The release workflow uploads the three next to the installer. Why any of
  * this exists, and what the client does with it, is in

@@ -2136,19 +2136,35 @@ const killStreak = `
   border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none}
 #${UI_IDS.qolPanel} .find:focus{border-color:var(--nm-game-input-focus)}
 #${UI_IDS.qolPanel} .packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
-/* A button, so it inherits the panel's button look; these just re-lay it out
-   as a tile and win on specificity, a class beating the type selector. */
-#${UI_IDS.qolPanel} .pack{display:flex;flex-direction:column;align-items:center;gap:4px;
-  padding:8px 6px;text-align:center;background:var(--nm-game-row-bg);
-  border-color:var(--nm-game-border)}
+/* The tile is a box; its face is what you press. A button on a pack that is
+   on disk, so it keeps the panel's button hover, re-laid out here and winning
+   on specificity, a class beating the type selector. A plain box on one that
+   is not, with Install under it. */
+#${UI_IDS.qolPanel} .pack{position:relative;display:flex;flex-direction:column;
+  background:var(--nm-game-row-bg);border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .pack .face{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:8px 6px;text-align:center;background:none;border:0}
+#${UI_IDS.qolPanel} .pack button.face:hover{background:var(--nm-game-btn-bg-hover)}
 #${UI_IDS.qolPanel} .pack img{width:64px;height:64px;object-fit:contain}
-#${UI_IDS.qolPanel} .pack .material-icons{width:64px;height:64px;display:flex;align-items:center;
-  justify-content:center;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .pack .face .material-icons{width:64px;height:64px;display:flex;
+  align-items:center;justify-content:center;font-size:var(--nm-fs-7xl);color:var(--nm-game-text-dim)}
 #${UI_IDS.qolPanel} .pack .nm{font-size:var(--nm-fs-xs);line-height:var(--nm-lh);
   color:var(--nm-game-text-body)}
 #${UI_IDS.qolPanel} .pack .meta{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint)}
 #${UI_IDS.qolPanel} .pack.on{border-color:var(--nm-accent)}
 #${UI_IDS.qolPanel} .pack.on .nm{color:var(--nm-game-text)}
+/* Not on disk: dimmer, so the grid reads as what you have and what you could. */
+#${UI_IDS.qolPanel} .pack.out .face .material-icons{color:var(--nm-game-text-fainter)}
+#${UI_IDS.qolPanel} .pack.out .nm{color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .pack .get{margin:0 6px 6px;padding:4px 0;font-size:var(--nm-fs-xs)}
+#${UI_IDS.qolPanel} .pack .get:disabled{cursor:default;color:var(--nm-game-text-faint);
+  background:var(--nm-game-btn-bg)}
+/* Remove. Small and quiet in the corner until the tile is under the pointer:
+   it is there when you want it and not something to press by accident. */
+#${UI_IDS.qolPanel} .pack .drop{position:absolute;top:2px;right:2px;width:20px;height:20px;padding:0;
+  font-size:var(--nm-fs-md);background:none;border:0;color:var(--nm-game-text-fainter);opacity:.5}
+#${UI_IDS.qolPanel} .pack:hover .drop{opacity:1}
+#${UI_IDS.qolPanel} .pack .drop:hover{background:none;color:var(--nm-bad-text)}
 `;
 
 export const SHEETS = {

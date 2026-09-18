@@ -97,7 +97,7 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
 
   if (!wired) {
     wired = true;
-    // Whatever the last update left: the previous app.asar, the old packs.
+    // Whatever the last update left: the previous app.asar, old folders.
     if (canUpdate()) cleanupLite((...a) => fileLog('info', ...a));
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;

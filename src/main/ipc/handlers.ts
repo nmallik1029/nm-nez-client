@@ -29,7 +29,8 @@ import {
   saveUserscript,
   type SaveProblem,
 } from '../assets';
-import { loadKillPacks } from '../killsounds';
+import { installKillPack, listKillPackEntries, removeKillPack } from '../killpack-install';
+import { isPackId } from '../../shared/killstreak';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
 import type { ConfigStore } from '../config/store';
@@ -216,8 +217,34 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
 
   // Read each time the editor opens, so a pack dropped in shows up without
   // a restart. Its files are looked up as they are asked for, so it plays
-  // straight away as well.
-  registry.handle(IPC.killPacksGet, () => loadKillPacks(killPackDirs(paths)));
+  // straight away as well, and so does one that has just been installed.
+  registry.handle(IPC.killPacksGet, () =>
+    listKillPackEntries(killPackDirs(paths), paths.installedKillPacks),
+  );
+
+  // A boolean rather than a throw, since all the page does with a failure is
+  // say it did not work. Why it did not goes in the log.
+  registry.handle(IPC.killPacksInstall, async (_e, id: unknown) => {
+    if (!isPackId(id)) return false;
+    try {
+      await installKillPack(id, paths.installedKillPacks);
+      log(`kill streak pack ${id} installed`);
+      return true;
+    } catch (err) {
+      console.warn(BRANDING.logPrefix, `kill streak pack ${id} not installed:`, err);
+      return false;
+    }
+  });
+
+  registry.handle(IPC.killPacksRemove, (_e, id: unknown) => {
+    if (!isPackId(id)) return false;
+    try {
+      return removeKillPack(id, paths.installedKillPacks);
+    } catch (err) {
+      console.warn(BRANDING.logPrefix, `kill streak pack ${id} not removed:`, err);
+      return false;
+    }
+  });
 
   registry.handle(IPC.rankedSound, () =>
     loadMatchSound(paths.sounds, join(app.getAppPath(), 'assets')),

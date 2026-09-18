@@ -7,8 +7,8 @@
  * Nothing about the installer can be fixed from here short of code signing.
  *
  * But an update almost never needs it. Everything that changes between two
- * releases lives in `resources/`: the app itself in `app.asar`, and data like
- * the kill streak packs beside it. The Electron runtime, the one part that
+ * releases lives in `resources/`: the app itself in `app.asar`, and any data
+ * shipped in folders beside it. The Electron runtime, the one part that
  * needs an installer, only changes when the patched build is re-pinned. So
  * every release also publishes those files on their own, and the client
  * fetches them, checks them and swaps them in on restart. It runs nothing new,
@@ -151,7 +151,7 @@ export function liteVerdict(
   return { lite: true };
 }
 
-/** The folders under `resources/` the extra archive covers, e.g. `killstreak`. */
+/** The folders under `resources/` the extra archive covers. */
 export function extraRoots(files: readonly LiteFile[]): string[] {
   return [...new Set(files.map((f) => f.path.split('/')[0] ?? ''))].filter((r) => r !== '').sort();
 }
@@ -163,7 +163,7 @@ export function extraRoots(files: readonly LiteFile[]): string[] {
  * of null for a file that could not be read. A file missing, different, or
  * present but not in the release all mean the folders are refreshed as a
  * whole, which is simpler to get right than patching them file by file and
- * costs one download that only happens when the packs actually change.
+ * costs one download that only happens when those folders actually change.
  */
 export function extraUpToDate(
   files: readonly LiteFile[],
