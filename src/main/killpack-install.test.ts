@@ -1,11 +1,13 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   installKillPack,
   listKillPackEntries,
+  outdatedKillPacks,
+  refreshKillPacks,
   removeKillPack,
   type FetchFile,
   type KillCatalog,
@@ -27,9 +29,14 @@ const sha512 = (data: Buffer): string => createHash('sha512').update(data).diges
 const SOURCE = 'https://example.test/packs/';
 const SERVED = new Map<string, Buffer>();
 
-function file(pack: string, name: string, body: string): { name: string; size: number; sha512: string } {
+function file(
+  pack: string,
+  name: string,
+  body: string,
+  source = SOURCE,
+): { name: string; size: number; sha512: string } {
   const data = Buffer.from(body);
-  SERVED.set(`${SOURCE}${pack}/${name}`, data);
+  SERVED.set(`${source}${pack}/${name}`, data);
   return { name, size: data.length, sha512: sha512(data) };
 }
 
@@ -256,5 +263,69 @@ describe('removeKillPack', () => {
     expect(removeKillPack('../outside', installed)).toBe(false);
     expect(removeKillPack('', installed)).toBe(false);
     expect(existsSync(join(root, 'outside'))).toBe(true);
+  });
+});
+
+describe('bringing installed packs up to date', () => {
+  /**
+   * A later release's catalog with Ion's second sound fixed. Pinned to a
+   * later commit, as the real one is, so it is served from its own address.
+   */
+  const LATER = 'https://example.test/later/';
+  const fixed: KillCatalog = {
+    source: LATER,
+    packs: CATALOG.packs.map((pack) => ({
+      ...pack,
+      files: pack.files.map((f) =>
+        pack.id === 'ion' && f.name === 'ion_2.mp3'
+          ? file('ion', 'ion_2.mp3', 'second, fixed', LATER)
+          : file(pack.id, f.name, SERVED.get(`${SOURCE}${pack.id}/${f.name}`)?.toString() ?? '', LATER),
+      ),
+    })),
+  };
+
+  it('counts nothing as out of date straight after installing it', async () => {
+    await installKillPack('ion', installed, serve, CATALOG);
+    expect(outdatedKillPacks(installed, CATALOG)).toEqual([]);
+  });
+
+  it('counts a pack as out of date once the catalog has a different version of it', async () => {
+    await installKillPack('ion', installed, serve, CATALOG);
+    await installKillPack('gaia-s-vengeance', installed, serve, CATALOG);
+    expect(outdatedKillPacks(installed, fixed)).toEqual(['ion']);
+  });
+
+  it('counts one installed before versions were recorded as out of date', async () => {
+    // What 0.1.60 wrote: a name and nothing else.
+    await installKillPack('ion', installed, serve, CATALOG);
+    writeFileSync(join(installed, 'ion', 'pack.json'), JSON.stringify({ name: 'Ion' }));
+    expect(outdatedKillPacks(installed, CATALOG)).toEqual(['ion']);
+  });
+
+  it('leaves alone anything that is not a catalog pack', () => {
+    mkdirSync(join(installed, 'someone-elses'), { recursive: true });
+    mkdirSync(join(installed, 'ion.download'), { recursive: true });
+    expect(outdatedKillPacks(installed, CATALOG)).toEqual([]);
+    expect(outdatedKillPacks(join(root, 'nowhere'), CATALOG)).toEqual([]);
+  });
+
+  it('fetches only the out-of-date ones, and they are current afterwards', async () => {
+    await installKillPack('ion', installed, serve, CATALOG);
+    await installKillPack('gaia-s-vengeance', installed, serve, CATALOG);
+    const fetchFile = vi.fn(serve);
+    expect(await refreshKillPacks(installed, () => {}, fetchFile, fixed)).toEqual(['ion']);
+    expect(fetchFile).toHaveBeenCalledTimes(3);
+    expect(outdatedKillPacks(installed, fixed)).toEqual([]);
+    expect(readFileSync(join(installed, 'ion', 'ion_2.mp3'), 'utf8')).toBe('second, fixed');
+  });
+
+  it('keeps the old files, which still play, when the new ones cannot be fetched', async () => {
+    await installKillPack('ion', installed, serve, CATALOG);
+    const offline: FetchFile = () => Promise.reject(new Error('offline'));
+    const log = vi.fn();
+    expect(await refreshKillPacks(installed, log, offline, fixed)).toEqual([]);
+    expect(readFileSync(join(installed, 'ion', 'ion_2.mp3'), 'utf8')).toBe('second');
+    expect(outdatedKillPacks(installed, fixed)).toEqual(['ion']);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining('ion not brought up to date'));
   });
 });

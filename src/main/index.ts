@@ -15,6 +15,7 @@ import { RankedQueue, type QueueState } from './ranked/queue';
 import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
 import { installRequestFilter, type RequestFilter } from './net/request-filter';
+import { refreshKillPacks } from './killpack-install';
 import { resolveKillPackFile } from './killsounds';
 import { appPaths, ensureUserDirs, killPackDirs, migrateUserData } from './paths';
 import { createProtocolInbox, registerProtocolClient } from './protocol';
@@ -238,6 +239,10 @@ function start(): void {
       else pinger.reset();
     },
   });
+
+  // Downloaded kill streak packs a release has since fixed, fetched again in
+  // the background. Nothing waits on it: the old files play until it is done.
+  void refreshKillPacks(paths.installedKillPacks, log);
 
   mainWindow = createMainWindow({ config });
 

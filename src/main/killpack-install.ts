@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { net } from 'electron';
 import {
@@ -247,9 +247,13 @@ async function download(
   try {
     if (failures.length > 0) throw failures[0];
     // The name the catalog has, for loadKillPacks to read like any other
-    // pack's. Written here rather than downloaded: it is not the repo's file
-    // that matters, it is the name this client lists the pack under.
-    writeFileSync(join(staging, 'pack.json'), JSON.stringify({ name: pack.name }));
+    // pack's, and which version of the pack this is (see packStamp). Written
+    // here rather than downloaded: it is not the repo's file that matters, it
+    // is what this client lists the pack as.
+    writeFileSync(
+      join(staging, 'pack.json'),
+      JSON.stringify({ name: pack.name, stamp: packStamp(pack) }),
+    );
     const target = join(dir, pack.id);
     rmSync(target, { recursive: true, force: true });
     renameSync(staging, target);
@@ -257,6 +261,79 @@ async function download(
     rmSync(staging, { recursive: true, force: true });
     throw err;
   }
+}
+
+/**
+ * Which version of a catalog pack a download is, written into its pack.json.
+ *
+ * A hash of the pack's files as the catalog lists them, so any change to a
+ * pack's files in a later release, a sound put back in kill order or a banner
+ * that was empty, makes every copy already installed out of date.
+ */
+export function packStamp(pack: CatalogPack): string {
+  const files = pack.files.map((file) => [file.name, file.sha512]);
+  return createHash('sha256').update(JSON.stringify(files)).digest('hex').slice(0, 16);
+}
+
+function readStamp(folder: string): string | null {
+  try {
+    const parsed = JSON.parse(readFileSync(join(folder, 'pack.json'), 'utf8')) as unknown;
+    const stamp = parsed !== null && typeof parsed === 'object' && 'stamp' in parsed ? parsed.stamp : null;
+    return typeof stamp === 'string' ? stamp : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Downloaded packs that are not the version this client's catalog has.
+ *
+ * WHY. Installed means on disk, so without this a pack fixed in a later
+ * release stays broken for everyone who installed it before: 0.1.60 shipped
+ * four packs playing the wrong kill's sound, and fixing the files in the repo
+ * reaches nobody who already has them. Anything installed before stamps
+ * existed has none, and counts as out of date, which is exactly those.
+ *
+ * Only catalog packs in the download folder. A pack of the user's own is not
+ * the client's to replace, and one the catalog has since dropped is left as
+ * it is.
+ */
+export function outdatedKillPacks(dir: string, catalog: KillCatalog = KILL_CATALOG): string[] {
+  let names: string[];
+  try {
+    names = readdirSync(dir);
+  } catch {
+    return [];
+  }
+  return names.filter((id) => {
+    const pack = catalog.packs.find((entry) => entry.id === id);
+    return pack !== undefined && readStamp(join(dir, id)) !== packStamp(pack);
+  });
+}
+
+/**
+ * Download the current version of every out-of-date pack, one after another
+ * and without a word, as installing does. Run at launch. One that cannot be
+ * fetched now keeps its old files, which still play, and is tried again at
+ * the next launch.
+ */
+export async function refreshKillPacks(
+  dir: string,
+  log: (...args: unknown[]) => void,
+  fetchFile: FetchFile = fetchFromGitHub,
+  catalog: KillCatalog = KILL_CATALOG,
+): Promise<string[]> {
+  const updated: string[] = [];
+  for (const id of outdatedKillPacks(dir, catalog)) {
+    try {
+      await installKillPack(id, dir, fetchFile, catalog);
+      updated.push(id);
+      log(`kill streak pack ${id} brought up to date`);
+    } catch (err) {
+      log(`kill streak pack ${id} not brought up to date: ${(err as Error).message}`);
+    }
+  }
+  return updated;
 }
 
 /**

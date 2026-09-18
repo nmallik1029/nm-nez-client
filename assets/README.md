@@ -29,8 +29,30 @@ one is the fallback. With neither, the queue is silent and nothing breaks.
 
 ## killstreak/
 
-The kill streak packs anyone can install: 29 Valorant packs, one folder each,
+The kill streak packs anyone can install: 59 Valorant packs, one folder each,
 listed in QoL Features under Built-in, Kill streak sounds, Edit.
+
+**Where they come from.** The first 29 came from a community userscript
+builder (xWater's, on Asterea's template) as it stood in September 2025. The
+rest, and every fix since, come from the Valorant wiki's
+[Kill Banners](https://valorant.fandom.com/wiki/Kill_Banners) page, which has
+every skin line's kill sounds as `<Line> Kill <n>.mp3` and one banner each.
+Its files are fetched through the wiki's API with `format=original` (without
+it the banners come back as WebP under a `.png` name) and checked against the
+SHA-1 the API gives.
+
+That builder named each kill's file by hand, and some names were wrong. Every
+sound here was matched against the wiki's by audio fingerprint in September
+2026: Bolt, EX.O, Neptune and VCT 2025 were playing some kills' sounds on the
+wrong kill (a kill repeated, the next one missing) and are back in order, with
+the two sounds they never had taken from the wiki. Default has its sixth. Any
+pack changed here reaches people who already installed it: installed packs
+carry the version they were downloaded at, and the client fetches any that
+are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`).
+
+A wiki banner is one picture for every kill, where the first 29 have a frame
+per kill. They are cropped to the emblem and scaled to fill the same share of
+a 300px canvas as those frames do, so the grid reads as one set.
 
 A pack is a folder named by its id (lowercase letters, digits and hyphens,
 nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
