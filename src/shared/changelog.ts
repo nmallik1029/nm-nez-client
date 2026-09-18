@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.55',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'changed', text: 'Live accuracy now sits top centre or bottom centre of the screen instead of in the top right beside kills and deaths, with the match so far and this life side by side. Pick which with Edit on the Live accuracy row in QoL Features under Built-in; it starts top centre. The game’s round and flag messages show just under it there rather than being covered.' },
+    ],
+  },
+  {
     version: '0.1.54',
     date: '2026-09-18',
     changes: [
