@@ -142,6 +142,7 @@ function render(panel: HTMLElement, active: QolDeps): void {
     title.textContent = editor ? editor.title : 'QOL FEATURES';
     back.classList.toggle('on', editor !== null);
     strip.classList.toggle('gone', editor !== null);
+    panel.classList.toggle('wide', editor?.wide === true);
 
     const ctx: TabContext = {
       deps: active,

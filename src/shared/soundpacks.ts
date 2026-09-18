@@ -110,7 +110,7 @@ export const FORTNITE_SOUNDS: Readonly<Record<string, string>> = {
   'dual-pistols': 'Dual Pistols',
   'hop-rock-dualies': 'Hop Rock Dualies',
   'rocket-launcher': 'Rocket Launcher',
-  'proximity-grenade-launcher': 'Proximity Grenade Launcher',
+  'proximity-grenade-launcher': 'Proximity Launcher',
   'boom-bolt': 'Boom Bolt',
   'mechanical-bow': 'Mechanical Bow',
   'primal-bow': 'Primal Bow',
