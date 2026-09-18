@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.54',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: 'A Mods button in the row of square buttons you get in a ranked, competitive or custom lobby, beside Settings. It opens the Mod Manager, so you can change mods without leaving the game. That screen hides the menu, and the normal Mods entry with it.' },
+      { kind: 'added', text: 'Reset Mods, in the Load Mods window and beside Load Mod and Upload Mod in the Mod Manager. It unloads every mod and also stops the last one loading when you start the client, which Krunker’s own Reset Mods does not do, so a cleared mod no longer comes back on your next launch. It is what Krunker’s hidden Ctrl+/ shortcut does.' },
+    ],
+  },
+  {
     version: '0.1.53',
     date: '2026-09-18',
     changes: [
