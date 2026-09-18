@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.53',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: 'Kill streak packs now come with the client. All 29 Valorant packs are in the pack list straight away, with nothing to download or copy into a folder. Switch it on in QoL Features under Built-in and press Edit to pick one; with nothing picked it plays the stock Valorant sounds.' },
+      { kind: 'changed', text: 'Your own packs in swap/sounds/killstreak still work, and one with the same folder name as a built-in pack replaces it. Kill streak sounds also play now with the resource swapper switched off.' },
+      { kind: 'added', text: 'A Presets tab in the settings window, next to Client. Save your sensitivity or FOV under a name and switch back to it in one click, mid-match included. Presets are kept by the client, so Krunker\'s own Reset Settings does not wipe them, and per-weapon values are saved and switched too.' },
+    ],
+  },
+  {
     version: '0.1.52',
     date: '2026-09-15',
     changes: [
