@@ -91,6 +91,7 @@ export const STYLE_IDS = {
   altModal: 'kc-alt-modal-css',
   rankedPanel: 'kc-ranked-panel-css',
   badges: 'nm-badges-css',
+  boardRanks: 'nm-board-ranks-css',
   rankProgress: 'kc-rank-progress-css',
   hardpointCounter: 'kc-hp-counter-css',
   accuracyCounter: 'nm-accuracy-css',
@@ -130,4 +131,6 @@ export const STYLE_IDS = {
 export const UI_CLASSES = {
   /** One badge image, sitting in front of a name on a scoreboard. */
   badge: 'nm-badge',
+  /** A player's rank icon, copied onto the corner board beside their name. */
+  rankIcon: 'nm-rank-icon',
 } as const;
