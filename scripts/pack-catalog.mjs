@@ -155,5 +155,30 @@ function writeCatalog(dir, out, listFiles) {
   console.log(`pack-catalog: ${out}: ${packs.length} packs, ${mb(total)}, at ${commit.slice(0, 7)}`);
 }
 
+/**
+ * Every sound and banner the folder has ever had, as the first 16 hex of its
+ * git blob id: what the client compares the user's own pack folder against,
+ * to tell a copy of one of ours from a pack of theirs. See
+ * setAsideCopiedPacks in src/main/killpack-install.ts. Needs the full
+ * history, so run it from a full clone, not a shallow one.
+ */
+function writeHistory(dir, out) {
+  if (git('rev-parse', '--is-shallow-repository') !== 'false') fail('the history needs a full clone, not a shallow one');
+  const blobs = new Set();
+  for (const commit of git('rev-list', 'HEAD', '--', dir).split('\n').filter(Boolean)) {
+    for (const line of git('ls-tree', '-r', commit, '--', dir).split('\n')) {
+      const m = /^\d+ blob ([0-9a-f]{40})\t.*\.(mp3|png)$/.exec(line);
+      if (m) blobs.add(m[1].slice(0, 16));
+    }
+  }
+  const sorted = [...blobs].sort();
+  const lines = ['{', '  "blobs": ['];
+  sorted.forEach((blob, i) => lines.push(`    ${JSON.stringify(blob)}${i < sorted.length - 1 ? ',' : ''}`));
+  lines.push('  ]', '}', '');
+  writeFileSync(join(ROOT, out), lines.join('\n'));
+  console.log(`pack-catalog: ${out}: ${sorted.length} files across the folder's history`);
+}
+
 writeCatalog('assets/killstreak', 'src/main/killstreak-catalog.json', killStreakFiles);
+writeHistory('assets/killstreak', 'src/main/killstreak-history.json');
 writeCatalog('assets/soundpacks', 'src/main/soundpack-catalog.json', soundpackFiles);

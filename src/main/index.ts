@@ -15,7 +15,7 @@ import { RankedQueue, type QueueState } from './ranked/queue';
 import { createRankedWindow, type RankedWindow } from './ranked/window';
 import { normaliseToken, rankedMapLabel, rankedRegionLabel } from '../shared/ranked';
 import { installRequestFilter, type RequestFilter } from './net/request-filter';
-import { refreshKillPacks, retireKillPacks } from './killpack-install';
+import { refreshKillPacks, retireKillPacks, setAsideCopiedPacks } from './killpack-install';
 import { resolveSoundpackRequest, SOUNDPACK_CATALOG, soundSwapActive } from './soundpacks';
 import { resolveKillPackFile } from './killsounds';
 import { appPaths, ensureUserDirs, killPackDirs, migrateUserData } from './paths';
@@ -250,7 +250,9 @@ function start(): void {
 
   // Downloaded kill streak packs a release has since fixed, fetched again in
   // the background. Nothing waits on it: the old files play until it is done.
-  // First, the ones that are now a theme of another pack go.
+  // First, copies of our own old packs in the user's folder move out of the
+  // way of the current ones, and packs that are now a theme of another go.
+  setAsideCopiedPacks(paths.killPacks, paths.replacedKillPacks, log);
   retireKillPacks(paths.installedKillPacks, log);
   void refreshKillPacks(paths.installedKillPacks, log);
   // And soundpacks, which update the same way.

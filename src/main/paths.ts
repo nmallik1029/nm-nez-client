@@ -30,6 +30,8 @@ export interface AppPaths {
    * removing a pack must never be able to reach one the user made.
    */
   readonly installedKillPacks: string;
+  /** Copies of our own packs moved out of `killPacks`: see setAsideCopiedPacks. */
+  readonly replacedKillPacks: string;
   /** Installed soundpacks (other games' sounds), one folder each. See main/soundpacks.ts. */
   readonly soundpacks: string;
   readonly screenshots: string;
@@ -53,6 +55,7 @@ export function appPaths(): AppPaths {
     sounds: join(swap, 'sounds'),
     killPacks: join(swap, 'sounds', 'killstreak'),
     installedKillPacks: join(userData, 'killstreak'),
+    replacedKillPacks: join(userData, 'killstreak-replaced'),
     soundpacks: join(userData, 'soundpacks'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
   };
