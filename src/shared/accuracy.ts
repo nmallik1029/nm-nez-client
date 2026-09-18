@@ -1,5 +1,6 @@
 /**
- * Live accuracy for one life: of the shots you fired, how many landed.
+ * Live accuracy, for the match so far and for the life in progress: of the
+ * shots you fired, how many landed.
  *
  * Nothing in the page keeps this -- the figure on Krunker's death screen is
  * built once, when you die -- so it is counted from two things the game does
@@ -133,6 +134,62 @@ export function withHit(state: AccuracyState, now: number): AccuracyState {
     waiting: waiting.slice(1),
     lastHitAt: now,
   };
+}
+
+/**
+ * The match so far and the life in progress, side by side.
+ *
+ * Both are handed every shot and every hit, and dying clears only the life.
+ * The match is its own count rather than a sum of finished lives so that a
+ * rocket fired just before you die still lands in it: the life that fired it
+ * is gone by the time the hit sounds, and the match is not.
+ */
+export interface AccuracyTally {
+  readonly match: AccuracyState;
+  readonly life: AccuracyState;
+  /**
+   * The last life that fired a shot, which the life line shows from the
+   * moment you die until the new life's first shot. A dash the instant you
+   * die would take the figure away at the one moment you are likely to look
+   * at it.
+   */
+  readonly lastLife: AccuracyState;
+}
+
+export const EMPTY_TALLY: AccuracyTally = {
+  match: EMPTY_ACCURACY,
+  life: EMPTY_ACCURACY,
+  lastLife: EMPTY_ACCURACY,
+};
+
+export function tallyShots(tally: AccuracyTally, count: number, now: number): AccuracyTally {
+  if (count <= 0) return tally;
+  return {
+    ...tally,
+    match: withShots(tally.match, count, now),
+    life: withShots(tally.life, count, now),
+  };
+}
+
+export function tallyHit(tally: AccuracyTally, now: number): AccuracyTally {
+  return { ...tally, match: withHit(tally.match, now), life: withHit(tally.life, now) };
+}
+
+/**
+ * A death. Safe to call twice for one: a life with no shots in it hands
+ * nothing on, so the second call keeps the figure the first one kept.
+ */
+export function tallyNewLife(tally: AccuracyTally): AccuracyTally {
+  return {
+    match: tally.match,
+    life: EMPTY_ACCURACY,
+    lastLife: tally.life.shots > 0 ? tally.life : tally.lastLife,
+  };
+}
+
+/** What the life line shows: this life once it has fired, the last one until then. */
+export function lifeShown(tally: AccuracyTally): AccuracyState {
+  return tally.life.shots > 0 ? tally.life : tally.lastLife;
 }
 
 /** What the HUD shows: a percentage, or a dash before the first shot. */

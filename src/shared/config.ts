@@ -60,6 +60,8 @@ export type HotkeyAction =
 
 export type HotkeyConfig = Record<HotkeyAction, Keybind>;
 
+export type AccuracyPlacement = 'top' | 'bottom';
+
 export interface FeatureConfig {
   blockAds: boolean;
   hideBunnies: boolean;
@@ -97,11 +99,13 @@ export interface FeatureConfig {
    */
   hideDeathStats: boolean;
   /**
-   * A live accuracy readout for the current life, in the HUD beside kills
-   * and deaths. Counted from the ammo counter and the game's hit sound; see
-   * shared/accuracy.ts.
+   * A live accuracy readout in the HUD beside kills and deaths: the match so
+   * far and the current life, one line each. Counted from the ammo counter
+   * and the game's hit sound; see shared/accuracy.ts.
    */
   accuracyCounter: boolean;
+  /** Whether the match line of that readout sits above the life line or below it. */
+  accuracyMatchPlacement: AccuracyPlacement;
   /**
    * Each player's rank icon beside their name on the corner leaderboard, in
    * a ranked match. Copied from the centre board, where Krunker draws them
@@ -318,6 +322,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     hideMenuPromos: true,
     hideDeathStats: false,
     accuracyCounter: false,
+    accuracyMatchPlacement: 'top',
     boardRankIcons: true,
     menuSkin: false,
     enabledScripts: [],

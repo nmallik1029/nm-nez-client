@@ -1,5 +1,6 @@
 import { CLIENT_SCRIPTS } from '../scripts/registry';
 import { isScriptRunning, setScriptEnabled } from '../scripts/runner';
+import { accuracyEditor } from './accuracy-editor';
 import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
@@ -108,15 +109,14 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
         ctx.refresh();
       },
     }),
-    featureRow({
+    openable({
       icon: 'track_changes',
       name: 'Live accuracy',
-      sub: 'How many of your shots have landed this life, in the top right beside kills and deaths. Starts over when you die.',
+      sub: 'How many of your shots have landed this match and this life, in the top right beside kills and deaths. Edit puts the match line on top or underneath.',
       on: features.accuracyCounter,
-      onToggle: () => {
-        ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter });
-        ctx.refresh();
-      },
+      toggle: () =>
+        ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter }),
+      editor: accuracyEditor,
     }),
     featureRow({
       icon: 'leaderboard',
