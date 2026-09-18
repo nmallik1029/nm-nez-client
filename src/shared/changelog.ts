@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.64',
+    date: '2026-09-18',
+    changes: [
+      { kind: 'added', text: 'Kill streak packs in every colour Valorant sells them in: 117 colours across 39 packs, including Aeris, Bolt, Ion, Kuronami, Sovereign, Phaseguard and Default. An installed pack with colours has a small swatch for each under its name: press one to use that colour, and the pack remembers it. Packs you already have get their colours by themselves the next time you start the client.' },
+      { kind: 'changed', text: 'Soundpacks opens much wider, so the whole Fortnite tab fits on one screen: the hit marker and headshot at the top, and every gun three to a row below them, with no scrolling. The Valorant tab gets the room too, with twice as many packs to a row.' },
+      { kind: 'fixed', text: 'Phaseguard showed a different agent on the sixth kill from the other five.' },
+    ],
+  },
+  {
     version: '0.1.63',
     date: '2026-09-18',
     changes: [
