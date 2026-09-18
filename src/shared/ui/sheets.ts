@@ -2090,11 +2090,22 @@ const hitmarker = `
  * Bottom centre is positioned, 15px up like Krunker's health box in the
  * corner, with its margins zeroed: an absolute box is placed by its margin
  * edge, and statIcon's 10px bottom margin would lift it off that line.
+ *
+ * At the game's own statIcon size it was too small, so the whole box is
+ * zoomed to twice that. Zoom rather than bigger numbers because
+ * most of the box's geometry is Krunker's (greyInner's padding and margin,
+ * statIcon's radius), and zoom scales that with the text instead of leaving a
+ * large number in a small frame. Unlike a transform it changes layout, so at
+ * top centre the rounds score and messages still stack underneath rather than
+ * being painted over.
+ *
+ * Zoom scales the element's own offsets and margins too, so the two
+ * placements are written at half: 7.5px here lands 15px from the edge.
  */
 const accuracyCounter = `
-#${UI_IDS.accuracyCounter}{vertical-align:top}
-#${UI_IDS.accuracyCounter}[data-place=top]{margin-top:15px}
-#${UI_IDS.accuracyCounter}[data-place=bottom]{position:absolute;left:50%;bottom:15px;margin:0;
+#${UI_IDS.accuracyCounter}{vertical-align:top;zoom:2}
+#${UI_IDS.accuracyCounter}[data-place=top]{margin-top:7.5px}
+#${UI_IDS.accuracyCounter}[data-place=bottom]{position:absolute;left:50%;bottom:7.5px;margin:0;
   transform:translateX(-50%)}
 #${UI_IDS.accuracyCounter} .greyInner{display:flex;align-items:baseline;gap:var(--nm-gap-lg)}
 #${UI_IDS.accuracyCounter} .line{display:flex;align-items:baseline;gap:6px;line-height:1}
