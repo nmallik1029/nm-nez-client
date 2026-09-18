@@ -107,6 +107,15 @@ export interface FeatureConfig {
   /** Whether the match line of that readout sits above the life line or below it. */
   accuracyMatchPlacement: AccuracyPlacement;
   /**
+   * Each player's rank icon beside their name on the corner leaderboard, in
+   * a ranked match. Copied from the centre board, where Krunker draws them
+   * already; see preload/ranked/board-icons.ts.
+   *
+   * ON by default. It adds nothing outside ranked, and in ranked it only
+   * shows what the game itself already knows and draws one keypress away.
+   */
+  boardRankIcons: boolean;
+  /**
    * Restyle Krunker's menu and the windows it opens: one accent instead of
    * five button colours, a gradient backdrop instead of a text shadow on
    * every label, the frame rate and ping set as numbers, and one settings
@@ -314,6 +323,7 @@ export const DEFAULT_CONFIG: AppConfig = {
     hideDeathStats: false,
     accuracyCounter: false,
     accuracyMatchPlacement: 'top',
+    boardRankIcons: true,
     menuSkin: false,
     enabledScripts: [],
     chatHistoryLimit: 200,

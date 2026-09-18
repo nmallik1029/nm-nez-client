@@ -290,6 +290,22 @@ const BADGE = `
 `;
 
 /**
+ * Rank icons on the corner leaderboard.
+ *
+ * Krunker draws the same icons 22px tall beside the centre board's 15px
+ * names. The corner board sets 18px, and 1.25em of that is 22.5px, so the
+ * icon comes out the size the game already draws it rather than at the same
+ * ratio to the text. Ranks within a tier differ by small details, and
+ * shrinking the icon to suit the text is what would lose them.
+ *
+ * In em for the same reason as the badges: the board's font size decides the
+ * row, so the icon follows whatever that turns out to be.
+ */
+const BOARD_RANK = `
+  --nm-rank-icon-size:1.25em;
+`;
+
+/**
  * The bar on Krunker's rank card, showing how far the next rank is.
  *
  * Sits on their surface rather than ours, so the track is a well sunk into
@@ -773,6 +789,7 @@ export const TOKENS_CSS = `:root{${[
   QUEUE_BUTTON,
   SCAN,
   BADGE,
+  BOARD_RANK,
   RANK,
   UPDATE,
   QUEUE_WINDOW,

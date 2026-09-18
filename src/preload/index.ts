@@ -29,6 +29,7 @@ import { installNameHighlights, repaintBoards } from './name-highlights';
 import { installProtocolHost } from './protocol/host';
 import { installQol } from './qol/panel';
 import { installRankedPanel } from './ranked/panel';
+import { setBoardRankIcons } from './ranked/board-icons';
 import { installRankProgress } from './ranked/rank-progress';
 import { syncScripts } from './scripts/runner';
 import { installMenuSkin, setMenuSkin } from './menu-skin';
@@ -158,6 +159,9 @@ async function bootstrap(): Promise<void> {
     // The badge pictures come from main, so they land after that first pass
     // and it gets redone when they do.
     installBadges(repaintBoards);
+
+    // Same boards, so same moment: they are in the page from load.
+    setBoardRankIcons(cfg.features.boardRankIcons);
 
     // Picks the queue back up after a reload: main has been running it the
     // whole time, so this asks what state it is in rather than starting one.
@@ -389,6 +393,8 @@ function applyLocal(section: keyof AppConfig, key: string, value: unknown): void
       setAccuracyCounter(value === true);
     } else if (key === 'accuracyMatchPlacement' && (value === 'top' || value === 'bottom')) {
       setAccuracyPlacement(value);
+    } else if (key === 'boardRankIcons') {
+      setBoardRankIcons(value === true);
     } else if (key === 'hideDeathStats') {
       setDeathStatsHiding(value === true);
     } else if (key === 'hideMenuPromos') {

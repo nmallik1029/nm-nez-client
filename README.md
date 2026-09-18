@@ -119,6 +119,8 @@ Custom loading backgrounds aren't implemented.)
   Krunker's own HUD slot instead of its estimate.
 - Merged team and all chat, with `[T]`/`[M]` tags and history that survives Krunker's
   pruning. Tab switches which channel you're sending to while the chat box has focus.
+- Rank icons on the top-right leaderboard in ranked, beside each name like FACEIT's old
+  one. They're the icons Krunker already draws on its Tab scoreboard, copied across.
 - Menu promo hiding: battle pass, daily spin, Twitch drops, the corner ad slots.
 - Escape releases the cursor, which Krunker otherwise swallows.
 - Client name and version under the in-game round timer, and a changelog in the left menu.

@@ -91,6 +91,33 @@ export const KRUNKER_NAMES = {
     '.leaderName, .leaderNameM, .leaderNameF, .newLeaderName, .newLeaderNameM, .newLeaderNameF, .endTableN',
 } as const;
 
+/**
+ * Where Krunker draws a player's rank icon, and where a copy of it goes.
+ * See `preload/ranked/board-icons.ts`.
+ *
+ * The corner half was measured: it is the `.leaderItem` shape above, the name
+ * a direct child of a flex row between the counter and the score. The centre
+ * half was not, because that board only carries icons in a ranked match and
+ * the profiles this repo measures with are guests, who cannot queue ranked.
+ * It rests on two things that agree. Krunker's own stylesheet sizes
+ * `.newLeaderRanked > img` at 22px beside the 15px `.newLeaderItem` names of
+ * this board. And the Water client ships the same copy-across, reading the
+ * same row, name and icon out of `#centerLeaderDisplay`.
+ *
+ * If a ranked match ever shows no icons in the corner, `centreIcon` is the
+ * first thing to check against the live board.
+ */
+export const KRUNKER_BOARD_RANKS = {
+  /** The big board in the middle: one row per player, icon and all. */
+  centreId: 'centerLeaderDisplay',
+  centreRow: '.newLeaderItem',
+  centreName: '.newLeaderName, .newLeaderNameM, .newLeaderNameF',
+  centreIcon: '.newLeaderRanked img',
+  /** The running board in the corner, which gets the copies. */
+  cornerId: 'leaderContainer',
+  cornerName: '.leaderName, .leaderNameM, .leaderNameF',
+} as const;
+
 /** DOM ids Krunker renders that we read or overwrite. */
 export const KRUNKER_DOM_IDS = {
   hudPing: 'pingText',

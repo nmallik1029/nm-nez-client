@@ -34,8 +34,11 @@ const DONE_ATTR = 'data-nm-highlight';
  * The name is the element's own text; the clan, when there is one, is a
  * nested span holding something like " [FAME]". Reading the text nodes
  * directly rather than `textContent` is what keeps the two apart.
+ *
+ * Exported for the rank icons, which have to match a name on one board to
+ * the same name on another and should read it exactly the way this does.
  */
-function nameAndClan(el: Element): { name: string; clan: string | null } {
+export function nameAndClan(el: Element): { name: string; clan: string | null } {
   let name = '';
   for (const node of el.childNodes) {
     if (node.nodeType === Node.TEXT_NODE) name += node.textContent ?? '';

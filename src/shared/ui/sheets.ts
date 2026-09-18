@@ -646,6 +646,34 @@ const badges = `
 `;
 
 /**
+ * A rank icon on the corner board, between the position and the name.
+ *
+ * A flex item of its own in the row rather than something inside the name,
+ * so it never competes with the badges for first place in there and is never
+ * clipped by the name's `overflow:hidden`. No horizontal margin: the counter
+ * already ends in 8px and the name opens with 5px of padding, both theirs,
+ * and those are the gaps either side of it.
+ *
+ * The vertical margins are negative by exactly as much as the icon is taller
+ * than the text, so its margin box is 1em and no row gets taller than its
+ * name makes it. The board lists every player, and a few pixels on each row
+ * would push the bottom of the board a whole row further down the screen.
+ * `align-self:center` then centres it on the row. `vertical-align` is only
+ * there for the day the name stops being a direct child of a flex row, when
+ * the icon would fall back to sitting inline.
+ *
+ * `flex-shrink:0` for the same reason as the badges: a long name gets clipped,
+ * and the icon does not get squashed to make room for it.
+ */
+const boardRanks = `
+.${UI_CLASSES.rankIcon}{
+  width:var(--nm-rank-icon-size);height:var(--nm-rank-icon-size);
+  margin:calc((1em - var(--nm-rank-icon-size)) / 2) 0;
+  align-self:center;vertical-align:middle;flex-shrink:0;object-fit:contain;
+  pointer-events:none}
+`;
+
+/**
  * How far the next rank is, on Krunker's own rank card.
  *
  * A line and a bar, and no box around them. The card already has its own
@@ -2104,6 +2132,7 @@ export const SHEETS = {
   rankedPanel,
   rankProgress,
   badges,
+  boardRanks,
   hardpointCounter,
   setupWizard,
   qolPanel,

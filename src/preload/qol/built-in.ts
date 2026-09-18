@@ -118,6 +118,16 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
         ctx.deps.patchFeatures({ accuracyCounter: !ctx.deps.getFeatures().accuracyCounter }),
       editor: accuracyEditor,
     }),
+    featureRow({
+      icon: 'leaderboard',
+      name: 'Ranks on the leaderboard',
+      sub: 'Rank icons beside every name on the top right leaderboard in ranked matches. The same icons Krunker shows on its Tab scoreboard, copied across.',
+      on: features.boardRankIcons,
+      onToggle: () => {
+        ctx.deps.patchFeatures({ boardRankIcons: !ctx.deps.getFeatures().boardRankIcons });
+        ctx.refresh();
+      },
+    }),
   );
 
   for (const script of CLIENT_SCRIPTS) {
