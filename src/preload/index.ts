@@ -111,6 +111,8 @@ async function bootstrap(): Promise<void> {
         canUpdate: false,
         version: '',
         lastSeenVersion: '',
+        // Unknown reads as Windows, the settings every build had before Linux.
+        platform: '',
       }),
     );
 

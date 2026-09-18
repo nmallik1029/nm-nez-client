@@ -226,14 +226,19 @@ export interface Capabilities {
    */
   readonly canStoreAccounts: boolean;
   /**
-   * This build can update itself, i.e. it's a packaged NSIS install.
-   * False for `npm start` and for the portable exe, which has nowhere to
-   * install to. The UI hides the update controls rather than offering a
+   * This build can update itself, i.e. it's the NSIS install or the Linux
+   * AppImage. False for `npm start` and for the portable exe, which has
+   * nowhere to install to. The UI hides the update controls rather than offering a
    * button that can only fail.
    */
   readonly canUpdate: boolean;
   /** Running version, so the renderer can tell when it has changed. */
   readonly version: string;
+  /**
+   * `process.platform` of main, for the settings that differ by OS. The page
+   * can't tell reliably by itself: the user agent is ours to rewrite.
+   */
+  readonly platform: string;
   /** Version the patch notes were last shown for. '' on a fresh install. */
   readonly lastSeenVersion: string;
 }

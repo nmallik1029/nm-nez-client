@@ -1,7 +1,7 @@
-# Windows only. No macOS or Linux targets, which is what lets us skip the
-# Apple Developer ID and notarisation pipeline and the Linux ozone launcher
-# wrapper. Between them those are a good chunk of the complexity in the
-# clients this is based on.
+# Windows and Linux. No macOS target, which is what lets us skip the Apple
+# Developer ID and notarisation pipeline, a good chunk of the complexity in the
+# clients this is based on. Linux costs one launcher script, written by
+# scripts/after-pack.mjs; see the linux section below.
 #
 # Both values below mirror src/shared/branding.ts and have to stay in step.
 #
@@ -35,8 +35,9 @@ directories:
 # emits latest.yml next to the installer, which is the manifest it reads to
 # find out what the newest version is.
 #
-# Only the NSIS installer can self-update. A portable exe has no install
-# directory to replace, so those users have to download again by hand.
+# Only the NSIS installer and the AppImage can self-update, from latest.yml
+# and latest-linux.yml respectively. A portable exe has no install directory
+# to replace, so those users have to download again by hand.
 publish:
   provider: github
   owner: nmallik1029
@@ -83,6 +84,10 @@ extraResources:
 #
 # The portable exe gets no installer and so registers itself at runtime
 # instead; see src/main/protocol.ts.
+#
+# On Linux the same block becomes MimeType=x-scheme-handler/nmnez in the
+# AppImage's desktop entry, which takes effect once something integrates the
+# AppImage into the menu (AppImageLauncher, Gear Lever).
 protocols:
   - name: NM/NZ Client
     schemes:
@@ -98,7 +103,12 @@ protocols:
 #
 # scripts/fetch-electron.mjs has to have run first. It checks for the
 # setFrameCap marker, so a stock tree here fails loudly instead of quietly.
+# It installs the build for the machine it runs on, which is why each OS's
+# package is built on that OS: --linux from Windows would package electron.exe.
 electronDist: node_modules/electron/dist
+
+# The Linux launcher. Returns straight away for any other platform.
+afterPack: scripts/after-pack.mjs
 
 win:
   # No icon key here. Left to the default, electron-builder takes
@@ -121,3 +131,41 @@ nsis:
 
 portable:
   artifactName: '${productName}-${version}-Portable.${ext}'
+
+# Linux: one AppImage. It runs on any distro without installing anything, and
+# it is the Linux package electron-updater can update in place, by swapping the
+# file for the new one, which keeps it level with the NSIS install. A .deb
+# would need root for every update.
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Game
+  # PNGs named by size, the layers of build/icon.ico taken out one by one. Set
+  # explicitly because electron-builder's Linux fallback finds icon.ico, can't
+  # convert it, and fails the build. See build/README.md.
+  icon: icons
+  # The window icon at runtime; see src/main/app-icon.ts. Added to the
+  # top-level extraResources, not instead of them.
+  extraResources:
+    - from: build/icons/256x256.png
+      to: icon.png
+  desktop:
+    # The display name. productName is the file-safe one, which has a dash
+    # where the brand has a slash.
+    Name: NM/NZ
+    # Has to equal the WM_CLASS the window gets, or the dock files the running
+    # window under a generic icon instead of this entry. Electron takes that
+    # from the app name, which main sets to BRANDING.userDataDirName, while
+    # electron-builder's default here is productName.
+    StartupWMClass: nmnez
+
+appImage:
+  artifactName: '${productName}-${version}-x86_64.${ext}'
+  # What goes between AppRun and the link in the desktop entry's Exec line.
+  # Left alone it is --no-sandbox, which would switch the renderer sandbox off
+  # for every launch from the menu whatever the launcher found. An empty list
+  # doesn't help; electron-builder reads that as unset. `--` ends Chromium's
+  # switches, so the link after it can only ever be a link: the usual guard
+  # against a crafted URL passing itself off as a switch.
+  executableArgs: ['--']

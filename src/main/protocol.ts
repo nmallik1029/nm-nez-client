@@ -43,6 +43,17 @@ export function registerProtocolClient(log: (...args: unknown[]) => void): void 
     return;
   }
 
+  // Linux keeps scheme handlers in .desktop files, and the AppImage carries
+  // one with the scheme in it for whatever integrates it into the menu
+  // (AppImageLauncher, Gear Lever). Electron's call here asks xdg-settings to
+  // make a desktop file named after the app the handler, and for an AppImage
+  // that file usually doesn't exist, so the likeliest effect would be pointing
+  // the scheme away from an integration that does work.
+  if (process.platform === 'linux') {
+    log(`${PROTOCOL_SCHEME}:// left to the desktop entry on Linux`);
+    return;
+  }
+
   const claimed = app.setAsDefaultProtocolClient(PROTOCOL_SCHEME);
   log(`${PROTOCOL_SCHEME}:// ${claimed ? 'registered' : 'could not be registered'}`);
 }

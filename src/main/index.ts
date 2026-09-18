@@ -36,6 +36,7 @@ import { canUpdate, createUpdater } from './updater';
 // ── Identity ──
 // Has to happen before getPath('userData'), which is derived from the app
 // name, and before the first window, or Windows taskbar pins won't stick.
+// (The model id is Windows-only; Electron ignores it elsewhere.)
 app.setName(BRANDING.userDataDirName);
 app.setAppUserModelId(BRANDING.appId);
 
@@ -65,7 +66,10 @@ const config = new ConfigStore<AppConfig>({
 // ── Chromium switches ──
 // Module load, not whenReady. Chromium reads its command line during early C++
 // startup and silently ignores anything appended after that.
-applySwitches(app.commandLine, computeSwitches(config.get('performance'), config.get('advanced')));
+applySwitches(
+  app.commandLine,
+  computeSwitches(config.get('performance'), config.get('advanced'), process.platform),
+);
 
 // Custom schemes must also be declared before ready.
 registerSwapScheme();
