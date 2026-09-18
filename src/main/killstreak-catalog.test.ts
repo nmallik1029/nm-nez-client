@@ -76,9 +76,15 @@ describe('the kill streak catalog', () => {
       const meta = JSON.parse(readFileSync(join(folder, 'pack.json'), 'utf8')) as { name: string };
       expect(pack.name).toBe(meta.name.trim());
 
-      // Every file the client could ask for is listed, and nothing else.
-      const tier = new RegExp(`^${id}_([1-9][0-9]?)\\.(mp3|png)$`);
-      const onDisk = readdirSync(folder).filter((file) => tier.test(file)).sort();
+      // Every file the client could ask for is listed, and nothing else: the
+      // sounds and banners, and the banner's other colours.
+      const tier = new RegExp(`^${id}(?:_v([2-8]))?_([1-9][0-9]?)\\.(mp3|png)$`);
+      const onDisk = readdirSync(folder)
+        .filter((file) => {
+          const m = tier.exec(file);
+          return m !== null && (m[1] === undefined || m[3] === 'png');
+        })
+        .sort();
       expect(pack.files.map((file) => file.name).sort()).toEqual(onDisk);
 
       for (const file of pack.files) {
@@ -88,7 +94,7 @@ describe('the kill streak catalog', () => {
           size: data.length,
           sha512: sha512(data),
         });
-        expect(Number(tier.exec(file.name)?.[1])).toBeLessThanOrEqual(MAX_TIERS);
+        expect(Number(tier.exec(file.name)?.[2])).toBeLessThanOrEqual(MAX_TIERS);
       }
       expect(pack.files.some((file) => file.name === `${id}_1.mp3`)).toBe(true);
     },

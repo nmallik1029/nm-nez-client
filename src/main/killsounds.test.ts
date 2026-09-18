@@ -49,6 +49,11 @@ function pack(
   if (meta !== undefined) writeFileSync(join(folder, 'pack.json'), JSON.stringify(meta));
 }
 
+/** A banner's other colour: `<id>_v<k>_<n>.png` beside the first. */
+function colour(id: string, variant: number, banners: number[], into: string = dir): void {
+  for (const n of banners) writeFileSync(join(into, id, `${id}_v${variant}_${n}.png`), 'x');
+}
+
 describe('loadKillPacks', () => {
   it('lists nothing when the folder does not exist yet', () => {
     expect(loadKillPacks([join(dir, 'missing')])).toEqual([]);
@@ -56,7 +61,7 @@ describe('loadKillPacks', () => {
 
   it('counts sounds and banners separately', () => {
     pack('vct-2025', [1, 2, 3, 4, 5, 6], [1, 2, 3]);
-    expect(loadKillPacks([dir])).toEqual([{ id: 'vct-2025', name: 'Vct 2025', sounds: 6, banners: 3 }]);
+    expect(loadKillPacks([dir])).toEqual([{ id: 'vct-2025', name: 'Vct 2025', sounds: 6, banners: 3, variants: 1 }]);
   });
 
   it('stops at the first gap rather than skipping it', () => {
@@ -111,7 +116,7 @@ describe('loadKillPacks', () => {
     pack('prime', [1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6], { name: 'Prime' }, installed);
     pack('prime', [1, 2], [], { name: 'My Prime' });
     expect(loadKillPacks([dir, installed])).toEqual([
-      { id: 'prime', name: 'My Prime', sounds: 2, banners: 0 },
+      { id: 'prime', name: 'My Prime', sounds: 2, banners: 0, variants: 1 },
     ]);
   });
 
@@ -119,8 +124,30 @@ describe('loadKillPacks', () => {
     pack('prime', [1, 2, 3], [1], { name: 'Prime' }, installed);
     pack('prime', [], [1, 2]);
     expect(loadKillPacks([dir, installed])).toEqual([
-      { id: 'prime', name: 'Prime', sounds: 3, banners: 1 },
+      { id: 'prime', name: 'Prime', sounds: 3, banners: 1, variants: 1 },
     ]);
+  });
+
+  it("counts a banner's colours, each only with every banner the first has", () => {
+    pack('aeris', [1, 2, 3], [1, 2, 3]);
+    colour('aeris', 2, [1, 2, 3]);
+    colour('aeris', 3, [1, 2, 3]);
+    // Missing its third banner: that kill would show another colour's.
+    colour('aeris', 4, [1, 2]);
+    colour('aeris', 5, [1, 2, 3]);
+    expect(loadKillPacks([dir])[0]).toMatchObject({ banners: 3, variants: 3 });
+  });
+
+  it('stops counting colours at the first one missing', () => {
+    pack('bolt', [1], [1]);
+    colour('bolt', 3, [1]);
+    expect(loadKillPacks([dir])[0]?.variants).toBe(1);
+  });
+
+  it('counts no colours for a pack with no banners', () => {
+    pack('quiet', [1, 2]);
+    colour('quiet', 2, [1]);
+    expect(loadKillPacks([dir])[0]).toMatchObject({ banners: 0, variants: 1 });
   });
 
   it('lists the installed packs when the user has no folder at all', () => {
@@ -130,8 +157,36 @@ describe('loadKillPacks', () => {
 });
 
 describe('resolveKillPackFile', () => {
-  const url = (id: string, tier: number, kind: 'sound' | 'banner'): string =>
-    packFileUrl(id, tier, kind);
+  const url = (id: string, tier: number, kind: 'sound' | 'banner', variant?: number): string =>
+    packFileUrl(id, tier, kind, variant);
+
+  it("finds a banner in another colour, from the copy in use", () => {
+    pack('aeris', [1, 2], [1, 2], undefined, installed);
+    colour('aeris', 2, [1, 2], installed);
+    expect(resolveKillPackFile(url('aeris', 2, 'banner', 2), [dir, installed]))
+      .toBe(join(installed, 'aeris', 'aeris_v2_2.png'));
+    // The user's own aeris has one colour, and it is the copy in use.
+    pack('aeris', [1, 2], [1, 2]);
+    expect(resolveKillPackFile(url('aeris', 2, 'banner', 2), [dir, installed])).toBeNull();
+  });
+
+  it('answers a colour only for a banner, and only as far as colours go', () => {
+    pack('aeris', [1], [1], undefined, installed);
+    colour('aeris', 2, [1], installed);
+    writeFileSync(join(installed, 'aeris', 'aeris_v2_1.mp3'), 'x');
+    writeFileSync(join(installed, 'aeris', 'aeris_v9_1.png'), 'x');
+    const dirs = [dir, installed];
+    for (const bad of [
+      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v2_1.mp3',
+      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v9_1.png',
+      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v1_1.png',
+      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v_1.png',
+      'https://assets.krunker.io/sounds/killstreak/aeris/aeris_v2_v2_1.png',
+      'https://assets.krunker.io/sounds/killstreak/aeris/other_v2_1.png',
+    ]) {
+      expect(resolveKillPackFile(bad, dirs), bad).toBeNull();
+    }
+  });
 
   it('finds an installed pack file from the URL the page builds', () => {
     pack('vct-2025', [1, 2], [1], undefined, installed);

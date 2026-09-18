@@ -2176,6 +2176,16 @@ const killStreak = `
 #${UI_IDS.qolPanel} .pack .nm{font-size:var(--nm-fs-xs);line-height:var(--nm-lh);
   color:var(--nm-game-text-body)}
 #${UI_IDS.qolPanel} .pack .meta{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint)}
+/* A pack's colours, under its face: each swatch is that colour's first
+   banner, small. Wraps for a pack with more colours than fit a row. */
+#${UI_IDS.qolPanel} .pack .vars{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;
+  margin:0 4px 6px}
+/* 22px, so Valorant's four fit one row on the narrowest tile the grid draws. */
+#${UI_IDS.qolPanel} .pack .var{width:22px;height:22px;padding:1px;background:none;
+  border:var(--nm-bw-thick) solid var(--nm-game-border)}
+#${UI_IDS.qolPanel} .pack .var:hover{border-color:var(--nm-game-btn-border)}
+#${UI_IDS.qolPanel} .pack .var.on{border-color:var(--nm-accent)}
+#${UI_IDS.qolPanel} .pack .var img{width:100%;height:100%}
 #${UI_IDS.qolPanel} .pack.on{border-color:var(--nm-accent)}
 #${UI_IDS.qolPanel} .pack.on .nm{color:var(--nm-game-text)}
 /* Not on disk: dimmer, so the grid reads as what you have and what you could. */

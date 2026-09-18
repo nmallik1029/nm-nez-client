@@ -57,20 +57,39 @@ function describe(folder, file) {
 
 /**
  * A kill streak pack: only what the client would ever ask for, which is also
- * what it counts, `<id>_<n>.mp3` and `.png` numbered from 1 with no gaps.
+ * what it counts, `<id>_<n>.mp3` and `.png` numbered from 1 with no gaps, and
+ * the banner's other colours `<id>_v<k>_<n>.png`, numbered from 2 with no
+ * gaps and each with every banner the first colour has.
  */
 function killStreakFiles(id, folder) {
-  const tier = new RegExp(`^${id}_([1-9][0-9]?)\\.(mp3|png)$`);
+  const tier = new RegExp(`^${id}(?:_v([2-8]))?_([1-9][0-9]?)\\.(mp3|png)$`);
   const files = readdirSync(folder)
     .map((file) => ({ file, match: tier.exec(file) }))
-    .filter(({ match }) => match !== null)
-    .sort((a, b) => Number(a.match[1]) - Number(b.match[1]) || a.match[2].localeCompare(b.match[2]))
+    // A colour is a banner's; there is one set of sounds.
+    .filter(({ match }) => match !== null && (match[1] === undefined || match[3] === 'png'))
+    .sort(
+      (a, b) =>
+        Number(a.match[1] ?? 1) - Number(b.match[1] ?? 1) ||
+        Number(a.match[2]) - Number(b.match[2]) ||
+        a.match[3].localeCompare(b.match[3]),
+    )
     .map(({ file }) => describe(folder, file));
+  const parsed = files.map((f) => tier.exec(f.name));
+  const numbers = (ext, variant) =>
+    parsed.filter((m) => m[3] === ext && Number(m[1] ?? 1) === variant).map((m) => Number(m[2]));
   for (const ext of ['mp3', 'png']) {
-    const numbers = files.filter((f) => f.name.endsWith(`.${ext}`)).map((f) => Number(tier.exec(f.name)[1]));
-    if (numbers.some((n, i) => n !== i + 1)) fail(`${id} skips a number in its .${ext} files`);
+    if (numbers(ext, 1).some((n, i) => n !== i + 1)) fail(`${id} skips a number in its .${ext} files`);
   }
   if (!files.some((f) => f.name === `${id}_1.mp3`)) fail(`${id} has no first sound`);
+  const banners = numbers('png', 1).length;
+  const variants = [...new Set(parsed.map((m) => Number(m[1] ?? 1)))].sort((a, b) => a - b);
+  variants.forEach((variant, i) => {
+    if (variant !== i + 1) fail(`${id} skips a colour: there is no v${i + 1}`);
+    const have = numbers('png', variant);
+    if (variant > 1 && (have.length !== banners || have.some((n, j) => n !== j + 1))) {
+      fail(`${id} colour v${variant} does not have the same ${banners} banners as its first colour`);
+    }
+  });
   return files;
 }
 

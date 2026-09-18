@@ -4,6 +4,7 @@ import { IPC } from '../../shared/ipc';
 import {
   DEFAULT_PACK_ID,
   packFileUrl,
+  variantFor,
   pickPack,
   tierFor,
   type KillPack,
@@ -44,6 +45,8 @@ let packs: readonly KillPack[] = [];
 /** The last full answer from main, or null until the first one arrives. */
 let listing: KillPackListing | null = null;
 let active: KillPack | null = null;
+/** The colour its banners are in: see `variantFor`. */
+let variant = 1;
 
 /** Downloads under way, so a tile drawn mid-download says so. */
 const installing = new Set<string>();
@@ -188,8 +191,9 @@ function apply(next: KillStreakConfig): void {
   // Switched off mid-streak: take down the one already on screen too.
   if (!next.banners) hideBanner();
   const pack = resolvePack(next.pack);
-  // Every volume nudge comes through here; only a different pack reloads.
-  if (pack?.id !== active?.id) load(pack);
+  // Every volume nudge comes through here; only a different pack or colour
+  // reloads.
+  if (pack?.id !== active?.id || (pack !== null && variantFor(pack, next.variants) !== variant)) load(pack);
   fetchWanted(next.pack, pack === null);
   start();
 }
@@ -236,6 +240,7 @@ function fetchWanted(picked: string, nothingToPlay: boolean): void {
 function load(pack: KillPack | null): void {
   active = pack;
   sounds = [];
+  variant = pack !== null && config !== null ? variantFor(pack, config.variants) : 1;
   if (!pack) return;
   for (let tier = 1; tier <= pack.sounds; tier++) {
     const audio = new Audio(packFileUrl(pack.id, tier, 'sound'));
@@ -245,7 +250,7 @@ function load(pack: KillPack | null): void {
   // Warm the banners, so the first one of a streak is not a blank frame.
   for (let tier = 1; tier <= pack.banners; tier++) {
     const image = new Image();
-    image.src = packFileUrl(pack.id, tier, 'banner');
+    image.src = packFileUrl(pack.id, tier, 'banner', variant);
   }
 }
 
@@ -286,7 +291,7 @@ function onKills(gained: number): void {
   }
 
   const bannerTier = config.banners ? tierFor(streak, active.banners) : 0;
-  if (bannerTier > 0) showBanner(packFileUrl(active.id, bannerTier, 'banner'));
+  if (bannerTier > 0) showBanner(packFileUrl(active.id, bannerTier, 'banner', variant));
 
   clearTimeout(resetTimer);
   resetTimer = setTimeout(reset, STREAK_RESET_MS);

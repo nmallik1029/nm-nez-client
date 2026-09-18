@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPackId, nameFromId, packFileUrl, pickPack, tierFor, type KillPack } from './killstreak';
+import { isPackId, nameFromId, packFileUrl, pickPack, tierFor, variantFor, type KillPack } from './killstreak';
 
 /**
  * The pack id is the part worth being strict about. It is written to config
@@ -48,7 +48,7 @@ describe('tierFor', () => {
 });
 
 describe('pickPack', () => {
-  const p = (id: string): KillPack => ({ id, name: id, sounds: 1, banners: 0 });
+  const p = (id: string): KillPack => ({ id, name: id, sounds: 1, banners: 0, variants: 1 });
   // Sorted by name, as main sends them, so the stock pack is not first.
   const list = [p('aemondir'), p('default'), p('prime')];
 
@@ -76,6 +76,33 @@ describe('packFileUrl', () => {
     expect(packFileUrl('vct-2025', 1, 'banner')).toBe(
       'https://assets.krunker.io/sounds/killstreak/vct-2025/vct-2025_1.png',
     );
+  });
+
+  it("names a banner's other colours, and never a sound's", () => {
+    expect(packFileUrl('aeris', 4, 'banner', 3)).toBe('https://assets.krunker.io/sounds/killstreak/aeris/aeris_v3_4.png');
+    // The first colour is the plain file, so a pack without colours is untouched.
+    expect(packFileUrl('aeris', 4, 'banner', 1)).toBe(packFileUrl('aeris', 4, 'banner'));
+    expect(packFileUrl('aeris', 4, 'sound', 3)).toBe('https://assets.krunker.io/sounds/killstreak/aeris/aeris_4.mp3');
+  });
+});
+
+describe('variantFor', () => {
+  const pack = { id: 'aeris', variants: 4 };
+
+  it('shows the colour picked for that pack', () => {
+    expect(variantFor(pack, { aeris: 3 })).toBe(3);
+    expect(variantFor(pack, { aeris: 4, bolt: 2 })).toBe(4);
+  });
+
+  it('shows the first colour when there is no pick, or one the pack does not have', () => {
+    // A pick made on an installed pack, now replaced by the user's own copy
+    // with fewer colours, falls back rather than asking for a missing file.
+    expect(variantFor(pack, {})).toBe(1);
+    expect(variantFor(pack, { bolt: 3 })).toBe(1);
+    expect(variantFor(pack, { aeris: 5 })).toBe(1);
+    expect(variantFor({ id: 'aeris', variants: 1 }, { aeris: 2 })).toBe(1);
+    expect(variantFor(pack, { aeris: 2.5 })).toBe(1);
+    expect(variantFor(pack, { aeris: 0 })).toBe(1);
   });
 });
 

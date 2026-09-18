@@ -58,14 +58,30 @@ episode re-release, mostly) are left out. Ayakashi has no kill pips on the
 site, so it is one banner. Default's sixth sound is from the wiki; the site
 has five.
 
+**Colours.** Valorant sells some lines in several colours: the same sounds,
+the banner's emblem and pips recoloured. On the site they are the line's
+`data-pip-v1`..`v3` and `data-emblem-v1`..`v3`, drawn with `setVariant(k)`,
+and for some lines only on the episode re-release's page (Ion's are on
+`ionep5`). 39 packs have them, 117 colours in all, rendered the same way as
+the first colour and kept only where they differ from the pack's banners
+and from each other: by hue, since Ayakashi's colours are only its eyes, or
+by over 2% of the picture, since Default's second is another emblem. Each is
+`<id>_v<k>_<n>.png`, numbered from 2, with as many banners as the first.
+Phaseguard draws a random agent on every render, so its colours were drawn
+with the page's random pinned to Neon, the agent its banners already had;
+its own banners were redrawn the same way, as the sixth had come out as
+somebody else.
+
 Any pack changed here reaches people who already installed it: installed
 packs carry the version they were downloaded at, and the client fetches any
 that are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`).
 
 A pack is a folder named by its id (lowercase letters, digits and hyphens,
 nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
-second and so on, an optional `<id>_N.png` banner beside each, and an optional
-`pack.json` of `{"name": "Shown Name"}`. Numbering stops at the first gap. The
+second and so on, an optional `<id>_N.png` banner beside each, optional other
+colours of the banners as `<id>_v2_N.png`, `<id>_v3_N.png` and so on, and an
+optional `pack.json` of `{"name": "Shown Name"}`. Numbering stops at the first
+gap, and a colour counts only with every banner the first colour has. The
 rules are in `src/shared/killstreak.ts` and `src/main/killsounds.ts`.
 
 **This folder does not ship.** `electron-builder.yml` leaves it out of the

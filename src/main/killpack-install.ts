@@ -5,6 +5,7 @@ import { net } from 'electron';
 import {
   isPackId,
   MAX_TIERS,
+  MAX_VARIANTS,
   type AvailablePack,
   type KillPackListing,
 } from '../shared/killstreak';
@@ -138,11 +139,21 @@ function describe(pack: CatalogPack): AvailablePack {
     while (n < MAX_TIERS && names.has(`${pack.id}_${n + 1}.${ext}`)) n++;
     return n;
   };
+  const banners = count('png');
+  let variants = 1;
+  while (
+    banners > 0 &&
+    variants < MAX_VARIANTS &&
+    Array.from({ length: banners }, (_, i) => `${pack.id}_v${variants + 1}_${i + 1}.png`).every((name) => names.has(name))
+  ) {
+    variants++;
+  }
   return {
     id: pack.id,
     name: pack.name,
     sounds: count('mp3'),
-    banners: count('png'),
+    banners,
+    variants,
     bytes: pack.files.reduce((sum, file) => sum + file.size, 0),
   };
 }

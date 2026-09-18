@@ -1,6 +1,7 @@
 import {
   DEFAULT_PACK_ID,
   packFileUrl,
+  variantFor,
   type AvailablePack,
   type KillPack,
   type KillPackListing,
@@ -113,6 +114,17 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
     draw();
   };
 
+  // Picking a colour picks the pack in it: a colour for a pack you are not
+  // using would change nothing you could see or hear.
+  const pickVariant = (pack: KillPack, variant: number): void => {
+    if (isRemoving(pack.id)) return;
+    const variants = { ...current().variants };
+    if (variant > 1) variants[pack.id] = variant;
+    else delete variants[pack.id];
+    commit({ pack: pack.id, variants }, false);
+    draw();
+  };
+
   const install = (pack: AvailablePack): void => {
     const before = current().pack;
     // Started before the pick, so the player sees this pack on its way and
@@ -206,6 +218,8 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
           installedTile(pack, {
             on: pack.id === chosen,
             pick: () => pick(pack),
+            variant: variantFor(pack, current().variants),
+            pickVariant: (variant) => pickVariant(pack, variant),
             remove: removable.has(pack.id) ? () => remove(pack) : null,
             removing: isRemoving(pack.id),
           }),
@@ -249,7 +263,7 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
   find.addEventListener('input', draw);
   body.append(
     note(
-      'Install downloads a pack from GitHub, about a megabyte, and the x on one takes it off your PC again. To add your own, put a folder in swap/sounds/killstreak holding name_1.mp3, name_2.mp3 and so on, one per kill, with an optional name_1.png banner beside each.',
+      'Install downloads a pack from GitHub, about a megabyte, and the x on one takes it off your PC again. To add your own, put a folder in swap/sounds/killstreak holding name_1.mp3, name_2.mp3 and so on, one per kill, with an optional name_1.png banner beside each, and name_v2_1.png and so on for a second colour of banner.',
     ),
   );
   void listKillPacks().then(show);
@@ -257,7 +271,15 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
 
 function installedTile(
   pack: KillPack,
-  spec: { on: boolean; pick: () => void; remove: (() => void) | null; removing: boolean },
+  spec: {
+    on: boolean;
+    pick: () => void;
+    /** The colour its banners are in, and choosing another. */
+    variant: number;
+    pickVariant: (variant: number) => void;
+    remove: (() => void) | null;
+    removing: boolean;
+  },
 ): HTMLElement {
   const tile = document.createElement('div');
   tile.className = spec.on ? 'pack on' : 'pack';
@@ -266,7 +288,7 @@ function installedTile(
   face.className = 'face';
   face.title = `${pack.name}: plays its first sound`;
   face.append(
-    art(pack.banners > 0 ? packFileUrl(pack.id, 1, 'banner') : null),
+    art(pack.banners > 0 ? packFileUrl(pack.id, 1, 'banner', spec.variant) : null),
     text('nm', pack.name),
     text('meta', pack.banners > 0 ? `${pack.sounds} kills` : `${pack.sounds} kills, no banner`),
   );
@@ -274,6 +296,28 @@ function installedTile(
   face.disabled = spec.removing;
   face.addEventListener('click', spec.pick);
   tile.append(face);
+
+  // One swatch per colour, each its own first banner in small: the colours
+  // are the difference, so they are what you choose between. Beside the
+  // face rather than in it, which is a button already.
+  if (pack.banners > 0 && pack.variants > 1) {
+    const row = document.createElement('div');
+    row.className = 'vars';
+    for (let variant = 1; variant <= pack.variants; variant++) {
+      const swatch = document.createElement('button');
+      swatch.className = variant === spec.variant ? 'var on' : 'var';
+      swatch.title = `${pack.name}, variant ${variant}`;
+      swatch.disabled = spec.removing;
+      const image = document.createElement('img');
+      image.src = packFileUrl(pack.id, 1, 'banner', variant);
+      image.alt = '';
+      image.loading = 'lazy';
+      swatch.append(image);
+      swatch.addEventListener('click', () => spec.pickVariant(variant));
+      row.append(swatch);
+    }
+    tile.append(row);
+  }
 
   if (spec.remove) {
     const remove = spec.remove;
@@ -301,6 +345,7 @@ function availableTile(pack: AvailablePack, busy: boolean, install: () => void):
   const face = document.createElement('div');
   face.className = 'face';
   face.append(art(null), text('nm', pack.name), text('meta', `${pack.sounds} kills, ${size(pack.bytes)}`));
+  if (pack.variants > 1) face.append(text('meta', `${pack.variants} variants`));
 
   const get = document.createElement('button');
   get.className = 'get';

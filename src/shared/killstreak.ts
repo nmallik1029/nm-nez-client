@@ -27,6 +27,14 @@ export interface KillPack {
   readonly sounds: number;
   /** Contiguous from 1, and 0 for a pack that is sound only. */
   readonly banners: number;
+  /**
+   * How many colours its banners come in, 1 for most. Valorant sells some
+   * skin lines in several colours, each with its own banner and the same
+   * sounds: the first colour is `<id>_<n>.png`, and colour k is
+   * `<id>_v<k>_<n>.png` beside it, numbered from 2 with no gaps and each with
+   * as many banners as the first.
+   */
+  readonly variants: number;
 }
 
 /** A pack the client can download, and has not. */
@@ -56,6 +64,9 @@ export interface KillPackListing {
  * thousand existence checks.
  */
 export const MAX_TIERS = 12;
+
+/** The most colours a pack is looked for in. Valorant's go to four. */
+export const MAX_VARIANTS = 8;
 
 /** Where the page asks for pack files. See the note at the top. */
 export const KILL_PACK_BASE = 'https://assets.krunker.io/sounds/killstreak/';
@@ -105,8 +116,20 @@ export function tierFor(streak: number, count: number): number {
   return Math.min(Math.floor(streak), count);
 }
 
-export function packFileUrl(id: string, tier: number, kind: 'sound' | 'banner'): string {
-  return `${KILL_PACK_BASE}${id}/${id}_${tier}.${kind === 'sound' ? 'mp3' : 'png'}`;
+/** A pack file's address. `variant` is the banner's colour; sounds have one. */
+export function packFileUrl(id: string, tier: number, kind: 'sound' | 'banner', variant = 1): string {
+  if (kind === 'sound') return `${KILL_PACK_BASE}${id}/${id}_${tier}.mp3`;
+  return `${KILL_PACK_BASE}${id}/${id}${variant > 1 ? `_v${variant}` : ''}_${tier}.png`;
+}
+
+/**
+ * The colour a pack's banners show in: the one picked for it, if the pack has
+ * that many, and its first otherwise. A pick outlives the pack it was made on
+ * being replaced by one of the user's own with fewer colours.
+ */
+export function variantFor(pack: Pick<KillPack, 'id' | 'variants'>, picks: Readonly<Record<string, number>>): number {
+  const pick = picks[pack.id];
+  return typeof pick === 'number' && Number.isInteger(pick) && pick >= 1 && pick <= pack.variants ? pick : 1;
 }
 
 /** `prelude-to-chaos` to `Prelude To Chaos`, for a pack with no name of its own. */

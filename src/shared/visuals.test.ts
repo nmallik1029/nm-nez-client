@@ -213,12 +213,12 @@ describe('normaliseVisuals', () => {
 
 describe('normaliseVisuals: killStreak', () => {
   it('starts off, with no pack and a quiet volume', () => {
-    expect(normaliseVisuals({}).killStreak).toEqual({ on: false, pack: '', volume: 0.3, banners: true });
+    expect(normaliseVisuals({}).killStreak).toEqual({ on: false, pack: '', volume: 0.3, banners: true, variants: {} });
   });
 
   it('keeps a real pack id and a volume in range', () => {
     const k = normaliseVisuals({ killStreak: { on: true, pack: 'vct-2025', volume: 0.75 } }).killStreak;
-    expect(k).toEqual({ on: true, pack: 'vct-2025', volume: 0.75, banners: true });
+    expect(k).toEqual({ on: true, pack: 'vct-2025', volume: 0.75, banners: true, variants: {} });
   });
 
   it('drops a pack id that could leave the folder, rather than cleaning it', () => {
@@ -249,6 +249,36 @@ describe('normaliseVisuals: killStreak', () => {
     const before = normaliseVisuals({ sky: { on: true, color: '#112233' } });
     expect(before.sky).toEqual({ on: true, color: '#112233' });
     expect(before.killStreak).toEqual(DEFAULT_VISUALS.killStreak);
+  });
+});
+
+describe('normaliseVisuals: killStreak colours', () => {
+  it('keeps a colour past the first for a real pack id', () => {
+    expect(normaliseVisuals({ killStreak: { variants: { aeris: 3, 'vct-2025': 2 } } }).killStreak.variants).toEqual({
+      aeris: 3,
+      'vct-2025': 2,
+    });
+  });
+
+  it('drops what is not a colour, or not a pack', () => {
+    // The first colour is what no entry means, so it is not kept either.
+    const variants = normaliseVisuals({
+      killStreak: {
+        variants: { aeris: 1, bolt: 9, ion: 2.5, prime: '2', '../x': 2, Ion: 2, chronovoid: -1, doombringer: 4 },
+      },
+    }).killStreak.variants;
+    expect(variants).toEqual({ doombringer: 4 });
+  });
+
+  it('survives the shapes a hostile patch would actually take', () => {
+    for (const variants of [null, 5, 'aeris', [2, 3], { __proto__: { aeris: 2 } }]) {
+      expect(normaliseVisuals({ killStreak: { variants } }).killStreak.variants).toEqual({});
+    }
+  });
+
+  it('keeps no more picks than there could be packs for', () => {
+    const many = Object.fromEntries(Array.from({ length: 400 }, (_, i) => [`pack-${i}`, 2]));
+    expect(Object.keys(normaliseVisuals({ killStreak: { variants: many } }).killStreak.variants)).toHaveLength(256);
   });
 });
 

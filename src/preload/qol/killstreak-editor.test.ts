@@ -107,15 +107,19 @@ let heldRemove: Map<string, () => void>;
 let calls: string[];
 let saved: KillStreakConfig | null;
 
+/** Reaver comes in three colours, the way Valorant sells some lines; the rest in one. */
+const shape = (id: string): { sounds: number; banners: number; variants: number } =>
+  id === 'reaver' ? { sounds: 1, banners: 1, variants: 3 } : { sounds: 1, banners: 0, variants: 1 };
+
 function listing(): unknown {
-  const onDisk = [...installed].map((id) => ({ id, name: CATALOG[id] ?? id, sounds: 1, banners: 0 }));
+  const onDisk = [...installed].map((id) => ({ id, name: CATALOG[id] ?? id, ...shape(id) }));
   onDisk.sort((a, b) => a.name.localeCompare(b.name));
   return {
     installed: onDisk,
     removable: [...installed],
     available: Object.keys(CATALOG)
       .filter((id) => !installed.has(id))
-      .map((id) => ({ id, name: CATALOG[id], sounds: 1, banners: 0, bytes: 1 })),
+      .map((id) => ({ id, name: CATALOG[id], ...shape(id), bytes: 1 })),
   };
 }
 
@@ -159,7 +163,7 @@ async function open(start: Pick<KillStreakConfig, 'on' | 'pack'>) {
   const player = await import('../look/killstreak');
   const { killStreakEditor } = await import('./killstreak-editor');
 
-  let killStreak: KillStreakConfig = { ...start, volume: 0.3, banners: true };
+  let killStreak: KillStreakConfig = { ...start, volume: 0.3, banners: true, variants: {} };
   const deps = {
     getFeatures: () => ({}),
     patchFeatures: () => {},
@@ -215,12 +219,19 @@ async function open(start: Pick<KillStreakConfig, 'on' | 'pack'>) {
     return [...(row?.walk() ?? [])].find((el) => el.className.startsWith('sw'));
   };
   const toggle = (label: string): void => sw(label)?.click();
+  /** A tile's colour swatches, first colour first. */
+  const metas = (name: string): string[] =>
+    [...tile(name).walk()].filter((el) => el.className === 'meta').map((el) => el.textContent);
+  const swatches = (name: string): FakeEl[] =>
+    [...tile(name).walk()].filter((el) => el.tagName === 'button' && el.className.split(' ').includes('var'));
   /** What the switch says, which has to be what the config is. */
   const shows = (): string | undefined => sw('Play kill streak sounds')?.textContent;
 
   return {
     press,
     toggle,
+    swatches,
+    metas,
     shows,
     config: () => killStreak,
     plays: () => player.resolvePack(killStreak.pack)?.id ?? null,
@@ -490,5 +501,39 @@ describe('the x', () => {
     expect(installed.has('reaver')).toBe(true);
     expect(editor.config()).toMatchObject({ on: true, pack: 'reaver' });
     expect(toasts).toHaveLength(1);
+  });
+});
+
+describe('colours', () => {
+  it('picks the pack in the colour pressed, and remembers it for that pack', async () => {
+    installed.add('reaver');
+    installed.add('ion');
+    const editor = await open({ on: true, pack: 'ion' });
+    expect(editor.swatches('Reaver')).toHaveLength(3);
+    // One colour is no choice: nothing to press.
+    expect(editor.swatches('Ion')).toHaveLength(0);
+
+    editor.swatches('Reaver')[2]?.click();
+    await settle();
+    expect(editor.config()).toMatchObject({ pack: 'reaver', variants: { reaver: 3 } });
+    expect(editor.plays()).toBe('reaver');
+    expect(editor.swatches('Reaver').map((el) => el.className)).toEqual(['var', 'var', 'var on']);
+
+    // Back to Ion and back again: Reaver is still in its third colour.
+    editor.press('Ion', 'face');
+    await settle();
+    expect(editor.config().variants).toEqual({ reaver: 3 });
+    expect(editor.swatches('Reaver').map((el) => el.className)).toEqual(['var', 'var', 'var on']);
+
+    // The first colour is what no entry means, so choosing it clears the entry.
+    editor.swatches('Reaver')[0]?.click();
+    await settle();
+    expect(editor.config()).toMatchObject({ pack: 'reaver', variants: {} });
+  });
+
+  it('says how many colours a pack not yet installed comes in', async () => {
+    const editor = await open({ on: false, pack: '' });
+    expect(editor.swatches('Reaver')).toHaveLength(0);
+    expect(editor.metas('Reaver')).toContain('3 variants');
   });
 });
