@@ -18,6 +18,7 @@ import { setKillStreak } from './look/killstreak';
 import { installSkyHook, setSky } from './look/sky';
 import { debounced } from './schedule';
 import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
+import { normalisePresets } from '../shared/presets';
 import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
@@ -117,6 +118,9 @@ async function bootstrap(): Promise<void> {
   // level deep, so a section written by an older build arrives with whole
   // objects missing from it.
   cfg.visuals = normaliseVisuals(cfg.visuals);
+  // Same again, and more so: the store never looks inside a list at all, and
+  // what is in these ends up as arguments to the game's own setSetting.
+  cfg.presets = { ...cfg.presets, saved: normalisePresets(cfg.presets.saved) };
   // Releases the map request the hook may already be holding.
   setSky(cfg.visuals.sky);
 

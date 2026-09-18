@@ -21,6 +21,13 @@ This is pretty useless but if you want a more specific, tuned FPS and ping meter
 Set your filters once in settings (region, mode, map, player count, time left), then one
 key scans the live lobby list and drops you into the best match.
 
+### Setting presets
+
+A Presets tab in Krunker's settings window, next to Client. Save your sensitivity or FOV
+under a name and switch back to it with one click, mid-match included. Presets are kept by
+the client, so Krunker's own "Reset Settings" doesn't wipe them. If you play with
+per-weapon settings, every weapon's values are saved and switched too.
+
 ### External ranked queue
 
 Like basically everybody knows, clients like Glorp basically revolutionized queueing ranked with an External Ranked Queue. This isn't necessarily a bad thing but another window on my screen when I alt+tab was really annoying. So queuing for ranked is in basically the same layout as the normal ranked menu, but persists throughout lobby hopping, refreshing, etc. Closing the client will remove you from queue. 

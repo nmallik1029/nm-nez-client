@@ -958,6 +958,17 @@ const settings = `
 /* A select that is shown but not usable. Greyed and unclickable, with
    the reason in its hint - see buildThemeRows in krunker-tab.ts. */
 .kc-select-off{opacity:.5;cursor:not-allowed}
+/* Presets tab. The name box is Krunker's .inputGrey2, which floats right with
+   a margin to suit its own rows; in a flex row the float does nothing and the
+   margin only pushes it away from its Save button. */
+.kc-actionbtns .kc-preset-name{margin:0;width:170px}
+/* Where Apply would be, on the preset the game is using right now. */
+.kc-note.kc-preset-inuse{color:var(--nm-accent)}
+/* Update and Delete, waiting for their second click. Important, and a class
+   more specific, because the NM/NZ menu style sets every .settingsBtn's
+   colours with !important and this has to read as a warning under both. */
+.kc-actionbtns .settingsBtn.kc-armed{background:var(--nm-danger) !important;
+  border-color:var(--nm-danger-border) !important;color:var(--nm-text-hi) !important}
 .kc-keywrap{display:flex;align-items:center;gap:var(--nm-gap-sm)}
 .kc-keyicon{min-width:104px;text-align:center;cursor:pointer;user-select:none}
 .kc-keyicon.kc-capturing{background:var(--nm-accent-bg);color:var(--nm-text-hi);
