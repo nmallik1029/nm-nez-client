@@ -14,7 +14,8 @@
  * placed in 3D, at Krunker's own volume settings. Guns are keyed by the
  * number in their sound, `weapon_2` for the Assault Rifle, and a weapon
  * skin's own sound is `weapon_2_<n>`, which counts as the same gun: the pick
- * is for the gun, whatever skin is on it.
+ * is for the gun, whatever skin is on it. The names are Krunker's own
+ * `sound_list` and `SOUND.getSound` in its game.js.
  *
  * The Fortnite files come from the Fortnite wiki's ripped game audio, one
  * close-range shot per gun, trimmed and levelled to sit beside Krunker's own;
@@ -197,12 +198,23 @@ export const KRUNKER_GUNS: readonly KrunkerGun[] = [
   { weapon: 21, name: 'Grappler', options: ['grappler'] },
 ];
 
-/** The hit marker: Krunker plays `hit_0` when a shot of yours lands. */
+/** The hit marker: Krunker plays `hit_0` when a shot of yours lands anywhere but the head. */
 export const HIT_OPTIONS: readonly string[] = [
   'hit-body', 'hit-body-2', 'hit-body-3', 'hit-shield', 'hit-shield-2', 'hit-shield-3', 'hit-shield-4',
 ];
-/** The headshot: `headshot_0`, which the built-in headshot script also plays on every kill. */
+/**
+ * The headshot. Krunker has two sounds for it and this answers both. A shot
+ * that lands on the head plays `crit_0` in place of `hit_0` (the same file
+ * under another name, so in Krunker a headshot sounds like any hit), and a
+ * kill with one plays `headshot_0`, which the built-in headshot script also
+ * plays on every kill. Fortnite's headshot is the sound of the hit, so
+ * answering only `headshot_0` would leave every headshot that does not kill
+ * on Krunker's own.
+ */
 export const HEADSHOT_OPTIONS: readonly string[] = ['hit-critical', 'hit-crit-elimination'];
+
+/** Krunker's sounds the headshot pick answers. See HEADSHOT_OPTIONS. */
+const HEADSHOT_SOUNDS: ReadonlySet<string> = new Set(['crit_0', 'headshot_0']);
 
 export interface FortniteConfig {
   readonly on: boolean;
@@ -267,14 +279,16 @@ export function soundKeyFromUrl(url: string): string | null {
  *
  * `config` is what is in effect: switched off, by its own switch or the
  * Soundpacks one (see `effectiveFortnite`), nothing is replaced.
- * `weapon_<n>` and every skin's `weapon_<n>_<m>` are gun n. Guns missing
- * from KRUNKER_GUNS, and every other sound (reloads, footsteps), are left.
+ * `weapon_<n>`, every skin's `weapon_<n>_<m>` (m is the skin's model
+ * number) and the Charge Rifle's charged shot `weapon_29_blast` are gun n.
+ * Guns missing from KRUNKER_GUNS, and every other sound (reloads, which end
+ * `_r_<n>`, footsteps), are left.
  */
 export function fortniteSoundFor(key: string, config: FortniteConfig): string | null {
   if (!config.on) return null;
   if (key === 'hit_0') return config.hit || null;
-  if (key === 'headshot_0') return config.headshot || null;
-  const m = /^weapon_(\d+)(?:_\d+)?$/.exec(key);
+  if (HEADSHOT_SOUNDS.has(key)) return config.headshot || null;
+  const m = /^weapon_(\d+)(?:_\d+|_blast)?$/.exec(key);
   if (!m) return null;
   const gun = KRUNKER_GUNS.find((entry) => String(entry.weapon) === m[1]);
   if (!gun) return null;

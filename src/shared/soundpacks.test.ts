@@ -133,8 +133,17 @@ describe('fortniteSoundFor', () => {
     expect(fortniteSoundFor('weapon_1_12', f)).toBe('bolt-action-sniper-rifle');
   });
 
-  it('answers the hit marker and the headshot', () => {
+  it("answers the Charge Rifle's charged shot as the Charge Rifle", () => {
+    expect(fortniteSoundFor('weapon_29_blast', ON)).toBe(fortniteSoundFor('weapon_29', ON));
+    expect(fortniteSoundFor('weapon_29_blast', ON)).not.toBeNull();
+  });
+
+  it('answers the hit marker, and the headshot as both of the sounds Krunker has for one', () => {
     expect(fortniteSoundFor('hit_0', ON)).toBe('hit-body');
+    // A headshot that lands, which in Krunker is hit_0's file under another
+    // name, and a kill with one. Answering only the kill left every other
+    // headshot sounding like a body hit.
+    expect(fortniteSoundFor('crit_0', ON)).toBe('hit-critical');
     expect(fortniteSoundFor('headshot_0', ON)).toBe('hit-critical');
   });
 
@@ -142,11 +151,16 @@ describe('fortniteSoundFor', () => {
     const f = { ...ON, guns: { ...ON.guns, '2': '' }, hit: '', headshot: '' };
     expect(fortniteSoundFor('weapon_2', f)).toBeNull();
     expect(fortniteSoundFor('hit_0', f)).toBeNull();
+    expect(fortniteSoundFor('crit_0', f)).toBeNull();
     expect(fortniteSoundFor('headshot_0', f)).toBeNull();
   });
 
   it('leaves guns it has no pick for, and every other sound', () => {
-    for (const key of ['weapon_13', 'weapon_2_reload', 'reload_2', 'footstep_0', 'weapon_', 'hit_1', 'weapon_2_5_1']) {
+    // Reloads as Krunker names them (weapon_5_11_r_1), and near misses.
+    for (const key of [
+      'weapon_13', 'weapon_2_reload', 'reload_2', 'weapon_5_11_r_1', 'weapon_29_blast_r_1', 'weapon_2_blast2',
+      'footstep_0', 'weapon_', 'hit_1', 'crit_1', 'instantkill_0', 'weapon_2_5_1',
+    ]) {
       expect(fortniteSoundFor(key, ON), key).toBeNull();
     }
   });
@@ -156,7 +170,7 @@ describe('fortniteSoundFor', () => {
   });
 
   it('answers nothing while it is off', () => {
-    for (const key of ['weapon_2', 'weapon_2_5', 'hit_0', 'headshot_0']) {
+    for (const key of ['weapon_2', 'weapon_2_5', 'weapon_29_blast', 'hit_0', 'crit_0', 'headshot_0']) {
       expect(fortniteSoundFor(key, DEFAULT_FORTNITE)).toBeNull();
     }
   });
@@ -176,6 +190,7 @@ describe('changedSounds', () => {
       expect(changed('weapon_2')).toBe(true);
       expect(changed('weapon_21')).toBe(true);
       expect(changed('headshot_0')).toBe(true);
+      expect(changed('crit_0')).toBe(true);
       expect(changed('weapon_13')).toBe(false);
       expect(changed('footstep_0')).toBe(false);
     }
