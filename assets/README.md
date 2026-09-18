@@ -29,30 +29,36 @@ one is the fallback. With neither, the queue is silent and nothing breaks.
 
 ## killstreak/
 
-The kill streak packs anyone can install: 59 Valorant packs, one folder each,
+The kill streak packs anyone can install: 76 Valorant packs, one folder each,
 listed in QoL Features under Built-in, Kill streak sounds, Edit.
 
-**Where they come from.** The first 29 came from a community userscript
-builder (xWater's, on Asterea's template) as it stood in September 2025. The
-rest, and every fix since, come from the Valorant wiki's
-[Kill Banners](https://valorant.fandom.com/wiki/Kill_Banners) page, which has
-every skin line's kill sounds as `<Line> Kill <n>.mp3` and one banner each.
-Its files are fetched through the wiki's API with `format=original` (without
-it the banners come back as WebP under a `.png` name) and checked against the
-SHA-1 the API gives.
+**Where they come from.** [Kingdom Archives](https://kingdomarchives.com/killbanners),
+which has every skin line's kill banner at 1 to 6 kills and its kill sounds.
+It does not keep the per-kill pictures as files: the page draws each one on a
+300px canvas from layers (frame, ring, emblem, and one pip per kill) and its
+Download button zips that canvas with the sound for that kill. So a pack's
+banners are the page's own drawing, taken by loading
+`killbanners?banner=<slug>` in a hidden browser, calling its `setKills(1..6)`,
+and saving the canvas, which reproduces what the button gives to within a
+rounding step. Its sounds are the page's `audio-1` to `audio-5` (or `-6`).
 
-That builder named each kill's file by hand, and some names were wrong. Every
-sound here was matched against the wiki's by audio fingerprint in September
-2026: Bolt, EX.O, Neptune and VCT 2025 were playing some kills' sounds on the
-wrong kill (a kill repeated, the next one missing) and are back in order, with
-the two sounds they never had taken from the wiki. Default has its sixth. Any
-pack changed here reaches people who already installed it: installed packs
-carry the version they were downloaded at, and the client fetches any that
-are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`).
+The first 29 were downloaded from it by hand, one Download per kill, and some
+presses were at the wrong kill count, which put the wrong sound and picture on
+that kill. Every pack here was checked in September 2026: each banner against
+the page's drawing for its kill count (by where its pips are, so a colour
+variant still matches), and each sound against the Valorant wiki's
+[Kill Banners](https://valorant.fandom.com/wiki/Kill_Banners) files by audio
+fingerprint. Bolt, EX.O, Neptune, VCT 2025 and Default had kills out of order,
+now fixed, and a pack keeps the colour variant it was downloaded in.
 
-A wiki banner is one picture for every kill, where the first 29 have a frame
-per kill. They are cropped to the emblem and scaled to fill the same share of
-a 300px canvas as those frames do, so the grid reads as one set.
+Lines that are the same as another in every picture and every sound (an
+episode re-release, mostly) are left out. Ayakashi has no kill pips on the
+site, so it is one banner. Default's sixth sound is from the wiki; the site
+has five.
+
+Any pack changed here reaches people who already installed it: installed
+packs carry the version they were downloaded at, and the client fetches any
+that are behind at launch (`refreshKillPacks` in `src/main/killpack-install.ts`).
 
 A pack is a folder named by its id (lowercase letters, digits and hyphens,
 nothing else) holding `<id>_1.mp3` for the first kill, `<id>_2.mp3` for the
