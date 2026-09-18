@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import type { UpdateState } from '../shared/ipc';
+import { applyLite, cleanupLite, hasStagedLite, prepareLite } from './lite-update';
 
 /**
  * Self-update, against GitHub Releases.
@@ -21,6 +22,12 @@ import type { UpdateState } from '../shared/ipc';
  *    launch. Nothing happens until the Update button is pressed.
  *
  * Only a packaged NSIS install can do any of this. See `canUpdate`.
+ *
+ * And the installer is the fallback, not the first choice. Windows Smart App
+ * Control will not run an unsigned exe, so on machines that have it on the
+ * installer never starts. An update that only changes the app is fetched as
+ * the app's own files instead and swapped in on restart; see
+ * `lite-update.ts`. electron-updater still does the checking either way.
  */
 
 export interface UpdaterDeps {
@@ -62,6 +69,8 @@ function fileLog(level: string, ...args: unknown[]): void {
 
 let state: UpdateState = { status: 'idle' };
 let wired = false;
+/** A download in flight, so a second press of Update does not start another. */
+let preparing = false;
 
 export function currentUpdateState(): UpdateState {
   return state;
@@ -82,6 +91,8 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
 
   if (!wired) {
     wired = true;
+    // Whatever the last update left: the previous app.asar, the old packs.
+    if (canUpdate()) cleanupLite((...a) => fileLog('info', ...a));
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = false;
     autoUpdater.logger = {
@@ -139,15 +150,61 @@ export function createUpdater(deps: UpdaterDeps): UpdaterControls {
     },
 
     download() {
-      if (!canUpdate()) return;
-      set({ status: 'downloading', version: 'version' in state ? state.version : '', percent: 0 });
-      void autoUpdater.downloadUpdate().catch(() => {
-        // Reported through the error event.
-      });
+      if (!canUpdate() || preparing) return;
+      const version = 'version' in state ? state.version : '';
+      set({ status: 'downloading', version, percent: 0 });
+
+      const viaInstaller = (why: string): void => {
+        fileLog('info', `updating with the installer: ${why}`);
+        set({ status: 'downloading', version, percent: 0 });
+        void autoUpdater.downloadUpdate().catch(() => {
+          // Reported through the error event.
+        });
+      };
+
+      preparing = true;
+      void prepareLite(
+        version,
+        (percent) => set({ status: 'downloading', version, percent }),
+        (...a) => fileLog('info', ...a),
+      )
+        .then((result) => {
+          if (result.lite) {
+            deps.log(`update ready without the installer: ${version}`);
+            set({ status: 'ready', version });
+          } else {
+            viaInstaller(result.reason);
+          }
+        })
+        .catch((err: unknown) => {
+          fileLog('error', 'no-installer update failed:', err);
+          viaInstaller(err instanceof Error ? err.message : String(err));
+        })
+        .finally(() => {
+          preparing = false;
+        });
     },
 
     install() {
       if (state.status !== 'ready') return;
+
+      if (hasStagedLite()) {
+        set({ status: 'installing', version: state.version });
+        // Swapped at the very end of quitting, once the windows are gone and
+        // nothing is left reading the app. relaunch() only takes effect when
+        // the quit completes, so asking for it first is how the client comes
+        // back on the new files.
+        app.once('will-quit', () => {
+          try {
+            applyLite((...a) => fileLog('info', ...a));
+          } catch (err) {
+            fileLog('error', 'swapping the update in failed; the old version stays:', err);
+          }
+        });
+        app.relaunch();
+        setTimeout(() => app.quit(), 120);
+        return;
+      }
 
       /*
        * Silent, so the update skips the installer wizard. That is only
