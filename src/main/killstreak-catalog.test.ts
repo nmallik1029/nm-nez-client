@@ -47,7 +47,7 @@ const folders = readdirSync(PACKS, { withFileTypes: true })
 describe('the kill streak catalog', () => {
   it('fetches from this repo at a fixed commit, never a branch', () => {
     // A branch moves under clients that are already out there; see
-    // scripts/killstreak-catalog.mjs.
+    // scripts/pack-catalog.mjs.
     expect(KILL_CATALOG.source).toMatch(
       /^https:\/\/raw\.githubusercontent\.com\/nmallik1029\/nm-nez-client\/[0-9a-f]{40}\/assets\/killstreak\/$/,
     );

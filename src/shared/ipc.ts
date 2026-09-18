@@ -120,6 +120,12 @@ export const IPC = {
   killPacksInstall: 'killpacks:install',
   /** Renderer -> main. Delete one downloaded pack by id. Never the user's own. */
   killPacksRemove: 'killpacks:remove',
+  /** Renderer -> main. Every soundpack and whether it is installed. A `SoundpackStatus[]`. */
+  soundpacksGet: 'soundpacks:get',
+  /** Renderer -> main. Download one soundpack by id. True once it is on disk and checked. */
+  soundpacksInstall: 'soundpacks:install',
+  /** Renderer -> main. Delete one installed soundpack by id. */
+  soundpacksRemove: 'soundpacks:remove',
   /**
    * Game page -> main. Whether an Escape press should be taken by main and
    * turned into a release: true while the mouse is locked and nothing is

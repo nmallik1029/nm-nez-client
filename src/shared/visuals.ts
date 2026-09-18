@@ -6,6 +6,7 @@ import {
   SKY_START_COLOR,
 } from './ui/tokens';
 import { isPackId } from './killstreak';
+import { DEFAULT_FORTNITE, normaliseFortnite, type FortniteConfig } from './soundpacks';
 
 /**
  * The three things the client draws over Krunker's own art: a crosshair, a
@@ -99,11 +100,23 @@ export interface KillStreakConfig {
   readonly banners: boolean;
 }
 
+/**
+ * The Soundpacks row's switch: everything under it plays only while this is
+ * on, each game's own switch as well. See shared/soundpacks.ts.
+ */
+export interface SoundpacksConfig {
+  readonly on: boolean;
+}
+
 export interface VisualsConfig {
   readonly sky: SkyConfig;
   readonly crosshair: CrosshairConfig;
   readonly hitmarker: HitmarkerConfig;
+  /** Valorant's tab: kill streak announcers. */
   readonly killStreak: KillStreakConfig;
+  readonly soundpacks: SoundpacksConfig;
+  /** Fortnite's tab: gun, hit and headshot sounds. */
+  readonly fortnite: FortniteConfig;
 }
 
 /** Ranges every number is held inside. The editors read them for their sliders. */
@@ -205,6 +218,7 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
   const crosshair = (raw.crosshair ?? {}) as Partial<CrosshairConfig>;
   const hitmarker = (raw.hitmarker ?? {}) as Partial<HitmarkerConfig>;
   const killStreak = (raw.killStreak ?? {}) as Partial<KillStreakConfig>;
+  const soundpacks = (raw.soundpacks ?? {}) as Partial<SoundpacksConfig>;
   const L = MARKER_LIMITS;
 
   return {
@@ -247,6 +261,13 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       // switch existed have no field, and they were showing banners.
       banners: killStreak.banners !== false,
     },
+    soundpacks: {
+      // Saved before Soundpacks existed, the row it replaced switched kill
+      // streaks alone, so someone who had them on has Soundpacks on and keeps
+      // hearing them.
+      on: typeof soundpacks.on === 'boolean' ? soundpacks.on : killStreak.on === true,
+    },
+    fortnite: normaliseFortnite(raw.fortnite),
   };
 }
 
@@ -292,6 +313,8 @@ export const DEFAULT_VISUALS: VisualsConfig = {
     offsetY: 0,
   },
   killStreak: { on: false, pack: '', volume: 0.3, banners: true },
+  soundpacks: { on: false },
+  fortnite: DEFAULT_FORTNITE,
 };
 
 export { MARKER_PRESETS, SKY_PRESETS };

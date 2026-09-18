@@ -43,10 +43,11 @@ import { empty, featureRow, note } from './row';
  */
 
 export function killStreakEditor(): PanelView {
-  return { title: 'KILL STREAK', render };
+  return { title: 'KILL STREAK', render: renderKillStreak };
 }
 
-function render(body: HTMLElement, ctx: TabContext): void {
+/** The editor's body, which is also the Soundpacks editor's Valorant tab. */
+export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
   defineStyle(STYLE_IDS.killStreak, SHEETS.killStreak);
 
   // Read fresh on every write. The slider and the pack grid both commit

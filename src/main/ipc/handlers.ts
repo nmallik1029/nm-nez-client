@@ -30,6 +30,7 @@ import {
   type SaveProblem,
 } from '../assets';
 import { installKillPack, listKillPackEntries, removeKillPack } from '../killpack-install';
+import { SOUNDPACK_CATALOG, soundpackStatus } from '../soundpacks';
 import { isPackId } from '../../shared/killstreak';
 import { loadThemes } from '../themes';
 import * as clip from '../clipboard';
@@ -177,6 +178,11 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
       deps.refreshRequestFilter();
     }
 
+    // Whether Krunker's sounds are answered at all follows these two.
+    if (section === 'visuals' && ['soundpacks', 'fortnite'].some(has)) {
+      deps.refreshRequestFilter();
+    }
+
     if (section === 'fixes' && has('disableBackgroundThrottle')) {
       const contents = getWindow()?.webContents;
       if (!contents || contents.isDestroyed()) return;
@@ -233,6 +239,37 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     } catch (err) {
       console.warn(BRANDING.logPrefix, `kill streak pack ${id} not installed:`, err);
       return false;
+    }
+  });
+
+  // Soundpacks install through the same machinery as kill streak packs, with
+  // their own catalog and folder. Installing or removing one changes whether
+  // the game's sounds need answering, so the filter is rebuilt after either.
+  registry.handle(IPC.soundpacksGet, () => soundpackStatus(paths.soundpacks));
+
+  registry.handle(IPC.soundpacksInstall, async (_e, id: unknown) => {
+    if (!isPackId(id)) return false;
+    try {
+      await installKillPack(id, paths.soundpacks, undefined, SOUNDPACK_CATALOG);
+      log(`soundpack ${id} installed`);
+      return true;
+    } catch (err) {
+      console.warn(BRANDING.logPrefix, `soundpack ${id} not installed:`, err);
+      return false;
+    } finally {
+      deps.refreshRequestFilter();
+    }
+  });
+
+  registry.handle(IPC.soundpacksRemove, (_e, id: unknown) => {
+    if (!isPackId(id)) return false;
+    try {
+      return removeKillPack(id, paths.soundpacks);
+    } catch (err) {
+      console.warn(BRANDING.logPrefix, `soundpack ${id} not removed:`, err);
+      return false;
+    } finally {
+      deps.refreshRequestFilter();
     }
   });
 

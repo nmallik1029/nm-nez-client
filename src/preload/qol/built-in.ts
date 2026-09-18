@@ -4,7 +4,7 @@ import { accuracyEditor } from './accuracy-editor';
 import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
-import { killStreakEditor } from './killstreak-editor';
+import { soundpacksEditor, toggleSoundpacks } from './soundpacks-editor';
 import { featureRow } from './row';
 import { showToast } from '../toast';
 import { skyEditor } from './sky-editor';
@@ -85,19 +85,13 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
       editor: skyEditor,
     }),
     openable({
-      icon: 'military_tech',
-      name: 'Kill streak sounds',
-      sub: 'Valorant-style: a sound and a banner for each kill in a row. Edit to install and pick a pack, or add your own to swap/sounds/killstreak.',
-      on: visuals.killStreak.on,
-      // Read at the click, not when the tab was drawn. The kill streak editor
-      // can still be writing the config after you have come back here, a
-      // download it started finishing or failing, and a copy from before
-      // that would put its old pick back.
-      toggle: () => {
-        const killStreak = ctx.deps.getVisuals().killStreak;
-        ctx.deps.patchVisuals({ killStreak: { ...killStreak, on: !killStreak.on } });
-      },
-      editor: killStreakEditor,
+      icon: 'library_music',
+      name: 'Soundpacks',
+      sub: 'Sounds from other games: Valorant kill streak announcers, and Fortnite gun, hit and headshot sounds with a Fortnite gun picked for each Krunker gun. Edit to install and pick.',
+      on: visuals.soundpacks.on,
+      // Reads the config at the click, like the editor's own switch.
+      toggle: () => toggleSoundpacks(ctx.deps),
+      editor: soundpacksEditor,
     }),
   );
 

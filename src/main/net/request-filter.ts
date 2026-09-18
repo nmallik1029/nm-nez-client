@@ -8,6 +8,10 @@ export interface RequestFilterDeps {
   readonly getFeatures: () => FeatureConfig;
   /** Returns a `swap://` URL for a kill streak pack file, or null. */
   readonly resolveKillPack: (url: string) => string | null;
+  /** Returns a `swap://` URL for a soundpack sound, or null. */
+  readonly resolveSoundpack: (url: string) => string | null;
+  /** Whether a soundpack is replacing Krunker's sounds right now. */
+  readonly soundpacksActive: () => boolean;
   /** Returns a `swap://` URL for a swapped asset, or null. */
   readonly resolveSwap: (url: string) => string | null;
   /** How many files the swap folder has right now. */
@@ -21,7 +25,8 @@ export interface RequestFilter {
    * Rebuild the URL patterns from what is switched on now.
    *
    * Call after anything that changes the answer: one of the four features
-   * being toggled, or a swap folder rescan that finds its first file.
+   * being toggled, a swap folder rescan that finds its first file, or a
+   * soundpack switched on, off, installed or removed.
    */
   refresh(): void;
 }
@@ -52,6 +57,7 @@ export function installRequestFilter(session: Session, deps: RequestFilterDeps):
       blockAds: features.blockAds,
       swapping: features.resourceSwapper && deps.swapFileCount() > 0,
       blockingProps: features.hideBunnies || features.hideTurfBanners,
+      soundpacks: deps.soundpacksActive(),
     });
 
     session.webRequest.onBeforeRequest({ urls }, (details, callback) => {
@@ -70,6 +76,7 @@ export function installRequestFilter(session: Session, deps: RequestFilterDeps):
         hideBunnies: live.hideBunnies,
         hideTurfBanners: live.hideTurfBanners,
         resolveKillPack: deps.resolveKillPack,
+        resolveSoundpack: deps.resolveSoundpack,
         resolveSwap: live.resourceSwapper ? deps.resolveSwap : () => null,
       });
 
