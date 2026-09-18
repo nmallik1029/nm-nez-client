@@ -118,6 +118,41 @@ export const KRUNKER_BOARD_RANKS = {
   cornerName: '.leaderName, .leaderNameM, .leaderNameF',
 } as const;
 
+/**
+ * Krunker's mods: the two windows, and the lobby bar a Mods button goes into.
+ *
+ * Read off the live game on 2026-09-18 from a competitive lobby, and checked
+ * against the deobfuscated game.js. The windows are found by `label` rather
+ * than by index: `windows[3]` is the Mod Manager today, but an update that
+ * adds a window renumbers everything after it, and a button that opens the
+ * wrong window is worse than no button. `showWindow(n)` opens `windows[n - 1]`.
+ *
+ *   mods       Mod Manager: Load Mod | Upload Mod links, then browse tabs
+ *   mods_load  Load Mods: the file drop and a Paste Mod Url row
+ *   mods_pub   Publish Mod, the Upload Mod link's target
+ *
+ * The lobby bar is `#compBtnLst`, the row of square icon buttons in a
+ * competitive or custom lobby and a ranked match. It is static markup in the
+ * page that Krunker only shows and hides, never rebuilds, so a button added
+ * to it once stays for the life of the page. There is no Mods button on it,
+ * and the menu's own Mods entry lives under More Krunker, which that screen
+ * does not show.
+ */
+export const KRUNKER_MODS = {
+  managerLabel: 'mods',
+  loaderLabel: 'mods_load',
+  publishLabel: 'mods_pub',
+  lobbyBarId: 'compBtnLst',
+  /** The lobby's Settings button, copied so ours wears the same shape and blue. */
+  lobbyTemplateOnclick: 'showWindow(1)',
+  /** More Krunker's own icon for Mods. */
+  icon: 'color_lens',
+  /** Krunker's own switch for showing mods at all: off on its Microsoft Store build. */
+  canShowFlag: 'canShowMods',
+  /** The class on the links inside Krunker's windows, Load Mod among them. */
+  linkClass: 'menuLink',
+} as const;
+
 /** DOM ids Krunker renders that we read or overwrite. */
 export const KRUNKER_DOM_IDS = {
   hudPing: 'pingText',

@@ -22,6 +22,8 @@ export const UI_IDS = {
   scan: 'kc-scan',
   /** Queue launcher in Krunker's ranked footer. */
   queueButton: 'kc-ranked-launch',
+  /** Mods, added to the square icon row of a competitive or custom lobby. */
+  lobbyModsButton: 'nm-lobby-mods',
   altModal: 'kc-alt-modal',
   /** Section index down the left of the settings window. */
   sectionNav: 'kc-sectnav',
