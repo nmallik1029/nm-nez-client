@@ -121,7 +121,8 @@ export const FRIENDS: readonly FriendHighlight[] = [
   { name: 'zeit2k', color: '#dc143c' },
   { name: 'blueeyes4044', color: '#000000' },
   { name: 'PvlseFN', color: '#ce9a46'},
-  { name: 'iliegai', color: '#a8ffec'}
+  { name: 'iliegai', color: '#a8ffec'},
+  { name: 'Kittehh', color: '#47ceff' },
 ];
 
 /** Clans, by tag, without the brackets Krunker draws around them. */
