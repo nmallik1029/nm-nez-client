@@ -16,10 +16,20 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.67',
+    date: '2026-09-19',
+    changes: [
+      { kind: 'fixed', text: 'Linux: the client starts on a Wayland desktop without XWayland, where it closed straight away, and when run as root.' },
+      { kind: 'fixed', text: 'Linux on NVIDIA: the driver\'s vsync is only switched off while the FPS uncap is on. With the default 60 fps cap it was off too, which could tear.' },
+      { kind: 'changed', text: 'Linux: on a laptop with two GPUs, launching from the menu entry uses the dedicated one. The AppImage is now always called NM-NZ-x86_64.AppImage, so a shortcut or menu entry pointing at it keeps working after updates.' },
+      { kind: 'changed', text: 'Linux: Raw mouse input says it isn\'t available there and what to do instead (a flat mouse acceleration profile), and stops asking for it after the first refusal. The README\'s Linux section covers mouse acceleration, two-GPU laptops and sharp text with GNOME\'s fractional scaling.' },
+    ],
+  },
+  {
     version: '0.1.66',
     date: '2026-09-18',
     changes: [
-      { kind: 'fixed', text: 'If you put the kill streak packs in swap/sounds/killstreak yourself, back before the client came with them, those old copies were hiding every fix, colour and theme since: Forsaken without its Gold theme, Bolt and EX.O with kills out of order. The client now moves copies of its own old packs out of that folder, into killstreak-replaced beside it, and uses the current ones. A pack with any file of your own in it is left alone.' },
+      { kind: 'fixed', text: 'If you put the kill streak packs in swap/sounds/killstreak yourself, back before the client came with them, those old copies were hiding every fix, colour and theme since: Forsaken without its Gold theme, Bolt and EX.O with kills out of order. The client now moves copies of its own old packs out of that folder, into a killstreak-replaced folder beside the downloaded packs, and uses the current ones. A pack with any file of your own in it is left alone.' },
     ],
   },
   {
