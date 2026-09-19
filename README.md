@@ -161,19 +161,39 @@ There's an AppImage on the releases page, x86_64 only. It runs on any distro wit
 installing anything, and it updates itself the same way the Windows installer does.
 
 ```sh
-chmod +x NM-NZ-*-x86_64.AppImage
-./NM-NZ-*-x86_64.AppImage
+chmod +x NM-NZ-x86_64.AppImage
+./NM-NZ-x86_64.AppImage
 ```
+
+It keeps that name when it updates, so a shortcut or menu entry pointing at it keeps working.
+(Before 0.1.67 the file had the version in its name; an older copy renames itself once, at its
+next update.)
 
 A few things that are different from Windows:
 
 - **FUSE.** AppImages need `libfuse2` to mount themselves. Ubuntu 22.04 and later don't ship it
   by default: `sudo apt install libfuse2` (it's `libfuse2t64` on 24.04). If you'd rather not,
-  `./NM-NZ-*.AppImage --appimage-extract-and-run` works without it, just slower to start.
+  `./NM-NZ-x86_64.AppImage --appimage-extract-and-run` works without it, just slower to start.
 - **X11, even on Wayland.** The client runs under XWayland on a Wayland desktop. Native
   Wayland is where Linux Krunker clients break: pointer lock lets the cursor escape on
   multi-monitor setups, and NVIDIA's driver crashes the GPU process. If you want to try native
-  Wayland anyway, start it with `--ozone-platform=wayland`.
+  Wayland anyway, start it with `--ozone-platform=wayland`. On a Wayland desktop with no XWayland
+  at all, it runs natively by itself.
+- **Mouse acceleration.** Chromium only has raw mouse input on Windows, so on Linux your desktop's
+  pointer acceleration applies in game, and a fast flick travels further than a slow one. GNOME
+  and KDE turn acceleration on for mice by default. For 1:1 aim, set the acceleration profile to
+  **Flat** in your mouse settings (GNOME: turn Mouse Acceleration off under Mouse & Touchpad;
+  KDE: set pointer acceleration to None or Flat under Mouse).
+- **Laptops with two GPUs.** Chromium doesn't choose a GPU on Linux, so the game runs on whichever
+  drives the screen, usually the weaker integrated one. Launched from the menu entry (see below)
+  it asks for the dedicated GPU, which GNOME and KDE honour. From a terminal, start it with
+  `switcherooctl launch ./NM-NZ-x86_64.AppImage`, or `prime-run` on NVIDIA, or `DRI_PRIME=1` in
+  front on AMD and Intel.
+- **Blurry on GNOME with fractional scaling.** XWayland apps are drawn at 100% and stretched. GNOME
+  47 and later can draw them sharp:
+  `gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer', 'xwayland-native-scaling']"`,
+  then log out and back in. Older GNOME also let the cursor escape pointer lock with fractional
+  scaling on; that was fixed in November 2025, so keep GNOME up to date.
 - **The sandbox on Ubuntu 24.04 and later.** Chromium's renderer sandbox needs unprivileged user
   namespaces, and Ubuntu now blocks them for anything without an AppArmor profile, which an
   AppImage can't have. The client checks at launch, and when they're blocked it starts without
@@ -182,7 +202,8 @@ A few things that are different from Windows:
   `sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0` (put it in
   `/etc/sysctl.d/` to keep it across reboots). That relaxes an Ubuntu hardening for every
   program on the machine, which is the trade you're making. Fedora, Arch, Debian and SteamOS
-  allow namespaces out of the box.
+  allow namespaces out of the box. Run as root, it always starts without the sandbox, since
+  Chromium refuses to run as root with one.
 - **Menu entry and `nmnez://` links.** An AppImage doesn't add itself to your app menu. Use
   [AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher) or
   [Gear Lever](https://flathub.org/apps/it.mijorus.gearlever) to integrate it. The desktop

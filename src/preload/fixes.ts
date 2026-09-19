@@ -77,6 +77,12 @@ export function installEscapePointerLockFix(): void {
 }
 
 let rawInputEnabled = false;
+/**
+ * The platform said it has no raw input. Linux, where Chromium implements
+ * unadjusted movement only for Windows and ChromeOS: every lock there would
+ * otherwise cost a refused request before the real one.
+ */
+let rawInputUnsupported = false;
 
 /**
  * Ask pointer lock for raw, unaccelerated mouse deltas.
@@ -108,7 +114,7 @@ export function installRawInputHook(enabled: boolean): void {
     this: HTMLCanvasElement,
     options?: PointerLockOptions,
   ): Promise<void> {
-    if (!rawInputEnabled) return original.call(this, options);
+    if (!rawInputEnabled || rawInputUnsupported) return original.call(this, options);
 
     // Chromium *rejects* when the platform can't supply unadjusted movement
     // instead of falling back on its own. Drop this catch and the lock never
@@ -124,6 +130,7 @@ export function installRawInputHook(enabled: boolean): void {
         // into "too many pointer lock requests" and kept you locked out
         // longer the harder you clicked.
         if ((err as { name?: unknown } | null)?.name === 'NotSupportedError') {
+          rawInputUnsupported = true;
           return original.call(this, options);
         }
         return Promise.reject(err instanceof Error ? err : new Error(String(err)));

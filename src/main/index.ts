@@ -21,7 +21,7 @@ import { resolveKillPackFile } from './killsounds';
 import { appPaths, ensureUserDirs, killPackDirs, migrateUserData } from './paths';
 import { createProtocolInbox, registerProtocolClient } from './protocol';
 import { findProtocolUrl } from '../shared/protocol';
-import { applySwitches, computeSwitches } from './platform/flags';
+import { applySwitches, computeSwitches, gpuEnvironment } from './platform/flags';
 import { browserUserAgent } from './platform/user-agent';
 import { loadThemes, watchThemes } from './themes';
 import {
@@ -72,6 +72,9 @@ applySwitches(
   app.commandLine,
   computeSwitches(config.get('performance'), config.get('advanced'), process.platform),
 );
+// The GPU process's environment is ours when Chromium starts it, so this has
+// to land now too. See gpuEnvironment.
+Object.assign(process.env, gpuEnvironment(config.get('performance'), process.platform, process.env));
 
 // Custom schemes must also be declared before ready.
 registerSwapScheme();

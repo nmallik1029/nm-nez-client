@@ -132,9 +132,15 @@ export function computeSwitches(
   // ── Force-past-safety performance switches ──
   if (advanced.perfTweaks) {
     add('enable-gpu-rasterization');
-    add('disable-gpu-driver-bug-workarounds');
+    // Not on Linux. Chromium's Linux workarounds are for Mesa and NVIDIA bugs
+    // that hang or corrupt (gpu_driver_bug_list.json has "Mesa hangs the
+    // system when allocating large textures"), and there is no other
+    // renderer to fall back to when one bites.
+    if (!isLinux) add('disable-gpu-driver-bug-workarounds');
     add('disable-software-rasterizer');
-    add('force-high-performance-gpu');
+    // Chromium only chooses between GPUs on Windows and macOS (gpu_init.cc).
+    // On Linux the dedicated GPU is the desktop entry's PrefersNonDefaultGPU.
+    if (!isLinux) add('force-high-performance-gpu');
     // The 1ms Windows timer. There is no equivalent to ask for elsewhere.
     if (isWindows) add('raise-timer-frequency');
     add('disable-best-effort-tasks');
@@ -163,6 +169,27 @@ export function angleSwitchValue(backend: AngleBackend, platform: NodeJS.Platfor
     return backend === 'gl' || backend === 'vulkan' ? backend : null;
   }
   return backend === 'default' ? 'd3d11' : backend;
+}
+
+/**
+ * Environment the GPU process needs, which a switch can't set. Set on
+ * `process.env` at module load, before Chromium starts the GPU process, which
+ * inherits it.
+ *
+ * Linux only: NVIDIA's driver keeps its own vsync (`__GL_SYNC_TO_VBLANK`) that
+ * the uncap's --disable-gpu-vsync may not reach. It is turned off only while
+ * the uncap is on. The launcher used to turn it off always, which left the
+ * default 60 fps with nothing holding it to the display: tearing, for nothing.
+ * A value already in the environment is the player's and wins.
+ */
+export function gpuEnvironment(
+  performance: PerformanceConfig,
+  platform: NodeJS.Platform,
+  env: Readonly<Record<string, string | undefined>>,
+): Record<string, string> {
+  if (platform !== 'linux' || !performance.fpsUnlocked) return {};
+  if (env['__GL_SYNC_TO_VBLANK'] !== undefined) return {};
+  return { __GL_SYNC_TO_VBLANK: '0' };
 }
 
 /** Apply a computed switch list to Electron's command line. */
