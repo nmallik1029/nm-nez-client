@@ -86,6 +86,8 @@ interface ToggleSpec {
   readonly key: string;
   readonly label: string;
   readonly hint?: string;
+  /** In place of `hint` on Linux, for a setting that works differently there. */
+  readonly linuxHint?: string;
   /** Chromium reads this at process start; needs a full restart. */
   readonly restart?: boolean;
   /** Takes effect on the next asset load; needs a page reload. */
@@ -154,6 +156,7 @@ const GROUPS: { title: string; items: ToggleSpec[] }[] = [
         key: 'rawInput',
         label: 'Raw mouse input',
         hint: 'Takes movement straight from the mouse instead of letting Windows curve it. Without this a fast flick travels further than a slow one over the same distance. Applies next time you click into the game.',
+        linuxHint: 'Not available on Linux: Chromium only has raw mouse input on Windows, so your desktop’s mouse acceleration applies in game. Set the acceleration profile to Flat in your mouse settings for the same 1:1 aim.',
       },
     ],
   },
@@ -608,7 +611,8 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
 
     // Hints are a hover tooltip rather than a second line. A description under
     // every row roughly doubles the height of the tab.
-    attachTooltip(title, rowTooltip(spec.hint, kind, spec.experimental === true));
+    const hint = deps.capabilities.platform === 'linux' && spec.linuxHint !== undefined ? spec.linuxHint : spec.hint;
+    attachTooltip(title, rowTooltip(hint, kind, spec.experimental === true));
 
     // Krunker's native toggle: a .switch label around a checkbox and a
     // .slider round div, which its CSS turns into the pill.

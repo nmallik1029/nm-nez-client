@@ -5,7 +5,7 @@
  * Three things have to be decided before Chromium's own startup, which is
  * earlier than any of our JavaScript runs, so they can only live out here:
  *
- *   X11.        `--ozone-platform=x11`, so the game runs under XWayland on a
+ *   Display.    `--ozone-platform=x11`, so the game runs under XWayland on a
  *               Wayland desktop. Native Wayland is where Linux Krunker
  *               clients have broken: pointer lock lets the cursor escape the
  *               window on multi-monitor setups, which ends aim mid-fight, and
@@ -14,18 +14,23 @@
  *               backend in early C++ startup and ignores the switch if main
  *               appends it later. A command-line `--ozone-platform=wayland`
  *               still wins, since Chromium keeps the last value it sees.
+ *               With no X server at all, `--ozone-platform=wayland` instead:
+ *               Chromium otherwise tries X11 and exits unless the session
+ *               sets XDG_SESSION_TYPE=wayland, which not every one does.
  *   Sandbox.    An AppImage can't carry a setuid-root chrome-sandbox (it runs
  *               from a nosuid FUSE mount), so the renderer sandbox relies on
  *               unprivileged user namespaces. Ubuntu 24.04 and later block
  *               those by default, and Chromium then refuses to start at all.
  *               The launcher checks first and only drops to --no-sandbox, with
- *               a message saying so, when neither sandbox can work. Userscripts
- *               run in the renderer, so keeping it where the kernel allows is
- *               worth the check.
- *   NVIDIA.     `__GL_SYNC_TO_VBLANK=0` turns off the driver's own vsync, which
- *               --disable-gpu-vsync doesn't reach, and threaded optimisations
- *               cut GPU-process CPU time at high frame rates. Mesa ignores
- *               both. Either can be overridden from the environment.
+ *               a message saying so, when neither sandbox can work, or when
+ *               running as root, which Chromium refuses with a sandbox.
+ *               Userscripts run in the renderer, so keeping it where the
+ *               kernel allows is worth the check.
+ *   NVIDIA.     Threaded optimisations cut GPU-process CPU time at high frame
+ *               rates; Mesa ignores the variable. It can be overridden from
+ *               the environment. The driver's own vsync is decided in main,
+ *               which knows whether the uncap is on (gpuEnvironment in
+ *               src/main/platform/flags.ts).
  *
  * All of it is from Krunker Civilian Client's afterPack-linux.js and
  * launch-electron.js (GPL-3.0, bigjakk), which ship the same patched Electron
@@ -45,17 +50,27 @@ function launcher(bin) {
 here=$(dirname "$(readlink -f "$0")")
 
 # XWayland rather than native Wayland; see scripts/after-pack.mjs. Only when
-# there is an X server, so a Wayland-only desktop still starts.
+# there is an X server. With none, native Wayland has to be asked for by name:
+# Chromium only picks it by itself when XDG_SESSION_TYPE says wayland, which a
+# compositor started from a terminal often doesn't set, and then it tries X11,
+# finds no display and exits.
 display=
 if [ -n "$DISPLAY" ]; then
   display=--ozone-platform=x11
+elif [ -n "$WAYLAND_DISPLAY" ]; then
+  display=--ozone-platform=wayland
 fi
 
-# User namespaces first, which is what Chromium itself tries first. Then a
-# setuid-root chrome-sandbox, if one has been set up. Otherwise nothing is
-# left, and Chromium would refuse to start rather than run without one.
+# Root first: Chromium refuses to run as root with any sandbox, and says so
+# only after the namespace check below has passed. Then user namespaces, which
+# is what Chromium itself tries first. Then a setuid-root chrome-sandbox, if
+# one has been set up. Otherwise nothing is left, and Chromium would refuse to
+# start rather than run without one.
 sandbox=
-if unshare --user --map-root-user true >/dev/null 2>&1; then
+if [ "$(id -u)" = 0 ]; then
+  echo "[NM] Running as root, which Chromium only allows with --no-sandbox. Starting with it." >&2
+  sandbox=--no-sandbox
+elif unshare --user --map-root-user true >/dev/null 2>&1; then
   :
 elif [ -u "$here/chrome-sandbox" ] && [ "$(stat -c %u "$here/chrome-sandbox" 2>/dev/null)" = 0 ]; then
   :
@@ -65,7 +80,8 @@ else
   sandbox=--no-sandbox
 fi
 
-export __GL_SYNC_TO_VBLANK="\${__GL_SYNC_TO_VBLANK:-0}"
+# NVIDIA's vsync is main's to decide, from the uncap setting: see gpuEnvironment
+# in src/main/platform/flags.ts.
 export __GL_THREADED_OPTIMIZATIONS="\${__GL_THREADED_OPTIMIZATIONS:-1}"
 
 exec "$here/${bin}" $display $sandbox "$@"

@@ -7,6 +7,7 @@ import {
   computeSwitches,
   FRAME_CAP_MAX,
   FRAME_CAP_MIN,
+  gpuEnvironment,
   type AdvancedConfig,
   type AngleBackend,
   type PerformanceConfig,
@@ -125,6 +126,20 @@ describe('computeSwitches', () => {
     expect(names).toHaveLength(new Set(names).size);
   });
 
+  it('leaves out the perf tweaks that are no-ops or risky on Linux', () => {
+    const tweaks = { perfTweaks: true };
+    const linux = computeSwitches(perf(), adv(tweaks), 'linux');
+    const win = computeSwitches(perf(), adv(tweaks), 'win32');
+    // Chromium only chooses between GPUs on Windows and macOS.
+    expect(named(linux, 'force-high-performance-gpu')).toHaveLength(0);
+    expect(named(win, 'force-high-performance-gpu')).toHaveLength(1);
+    // Mesa's workarounds guard against hangs, with no renderer to fall back to.
+    expect(named(linux, 'disable-gpu-driver-bug-workarounds')).toHaveLength(0);
+    expect(named(win, 'disable-gpu-driver-bug-workarounds')).toHaveLength(1);
+    // The rest of the group still applies.
+    expect(named(linux, 'enable-gpu-rasterization')).toHaveLength(1);
+  });
+
   it('leaves ANGLE to Chromium on Linux unless asked for a backend Linux has', () => {
     const angle = (backend: AngleBackend) =>
       named(computeSwitches(perf(), adv({ angleBackend: backend }), 'linux'), 'use-angle')[0]?.value;
@@ -158,5 +173,18 @@ describe('applySwitches', () => {
     applySwitches({ appendSwitch }, [{ name: 'solo' }, { name: 'pair', value: 'x' }]);
     expect(appendSwitch).toHaveBeenNthCalledWith(1, 'solo');
     expect(appendSwitch).toHaveBeenNthCalledWith(2, 'pair', 'x');
+  });
+});
+
+describe('gpuEnvironment', () => {
+  it("turns NVIDIA's own vsync off on Linux, only while the uncap is on", () => {
+    expect(gpuEnvironment(perf({ fpsUnlocked: true }), 'linux', {})).toEqual({ __GL_SYNC_TO_VBLANK: '0' });
+    // Capped at the display, the driver's vsync is what stops tearing.
+    expect(gpuEnvironment(perf({ fpsUnlocked: false }), 'linux', {})).toEqual({});
+  });
+
+  it("leaves a value the player set, and every other platform, alone", () => {
+    expect(gpuEnvironment(perf(), 'linux', { __GL_SYNC_TO_VBLANK: '1' })).toEqual({});
+    expect(gpuEnvironment(perf(), 'win32', {})).toEqual({});
   });
 });

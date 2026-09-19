@@ -156,9 +156,20 @@ linux:
     # from the app name, which main sets to BRANDING.userDataDirName, while
     # electron-builder's default here is productName.
     StartupWMClass: nmnez
+    # Launch on the dedicated GPU of a laptop that has two. Chromium never
+    # chooses between GPUs on Linux (force-high-performance-gpu is Windows
+    # and macOS only), so without this the game runs on the integrated one.
+    # GNOME and KDE honour it through switcheroo-control, which does nothing
+    # on a machine with one GPU. Only reaches launches from the menu entry.
+    PrefersNonDefaultGPU: 'true'
 
 appImage:
-  artifactName: '${productName}-${version}-x86_64.${ext}'
+  # No version in the name. electron-updater replaces an AppImage in place
+  # only when its name has none; with one, each update moves the file to the
+  # new version's name, and a menu entry or shortcut pointing at the old path
+  # breaks (electron-builder#2964). A copy downloaded with a versioned name
+  # moves to this one at its next update and stays put from then on.
+  artifactName: '${productName}-x86_64.${ext}'
   # What goes between AppRun and the link in the desktop entry's Exec line.
   # Left alone it is --no-sandbox, which would switch the renderer sandbox off
   # for every launch from the menu whatever the launcher found. An empty list
