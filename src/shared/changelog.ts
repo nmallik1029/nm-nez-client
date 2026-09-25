@@ -16,6 +16,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.69',
+    date: '2026-09-25',
+    changes: [
+      { kind: 'fixed', text: 'Fortnite sounds went silent in any lobby running a mod, because a mod loads its own sounds in a way the swap could not see. They now win over a mod while they are switched on, and a mod keeps every sound Fortnite does not replace. Shots still come from where they were fired and fade with distance.' },
+      {
+        kind: 'added',
+        text:
+          "A volume for the Fortnite sounds, on the Fortnite tab under Soundpacks. It goes to 200%, because the ripped Fortnite audio is quieter than Krunker's own; 100% is Krunker's level.",
+      },
+      { kind: 'fixed', text: 'Headshot sound on every kill could ding twice on a headshot kill once the Fortnite volume was in play.' },
+      { kind: 'added', text: 'QoL Features opens from the icon row a competitive, custom or ranked lobby shows, next to Mods. Its switches were out of reach for the whole match before.' },
+      { kind: 'fixed', text: 'The Mods button could be missing from that row if you joined a ranked match more than a minute after starting the client.' },
+    ],
+  },
+  {
     version: '0.1.68',
     date: '2026-09-23',
     changes: [
