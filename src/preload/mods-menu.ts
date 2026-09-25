@@ -1,10 +1,11 @@
 import { KRUNKER_MODS } from '../krunker/constants';
 import { UI_IDS } from '../shared/ui';
+import { installLobbyButton } from './lobby-button';
 import { windowIndexByLabel, withResetInLoader, withResetInManager } from './mods-markup';
 
 /**
- * Mods from inside a match: a Mods button on the lobby's icon row, and Reset
- * Mods in the windows that load them.
+ * Mods from inside a match: a Mods button on the lobby's icon row (placed by
+ * `lobby-button.ts`), and Reset Mods in the windows that load them.
  *
  * A competitive or custom lobby, and a ranked match, swap Krunker's menu for a
  * row of square icon buttons (`#compBtnLst`): loadout, customize, settings,
@@ -62,38 +63,6 @@ function wrapGen(win: KrunkerWindow | undefined, transform: (html: string) => st
 }
 
 /**
- * Add Mods to the lobby's icon row, as a copy of the row's own Settings button.
- *
- * Copied rather than built so it keeps their size, blue, icon style and the
- * tick on hover without this file owning any of it. It goes straight after
- * Settings, with the other two blue buttons that change how the game looks.
- * The handler is an inline string like its neighbours', run in the page's own
- * scope: `playSelect` and `showWindow` are theirs.
- */
-function placeLobbyButton(managerIndex: number): boolean {
-  if (document.getElementById(UI_IDS.lobbyModsButton)) return true;
-  const bar = document.getElementById(KRUNKER_MODS.lobbyBarId);
-  if (!bar) return false;
-
-  const template =
-    Array.from(bar.children).find((el) =>
-      (el.getAttribute('onclick') ?? '').includes(KRUNKER_MODS.lobbyTemplateOnclick),
-    ) ?? bar.firstElementChild;
-  if (!template) return false;
-
-  const button = template.cloneNode(true) as HTMLElement;
-  button.id = UI_IDS.lobbyModsButton;
-  for (const el of button.querySelectorAll('[id]')) el.removeAttribute('id');
-  button.setAttribute('onclick', `playSelect(),showWindow(${managerIndex + 1})`);
-  button.title = 'Mods';
-  const icon = button.querySelector('.material-icons, .material-icons-outlined');
-  if (icon) icon.textContent = KRUNKER_MODS.icon;
-
-  template.insertAdjacentElement('afterend', button);
-  return true;
-}
-
-/**
  * Everything, once the game has built what it touches.
  *
  * Returns true when there is nothing left to wait for: all three pieces are
@@ -110,12 +79,21 @@ function install(): boolean {
   const loader = windowIndexByLabel(windows, KRUNKER_MODS.loaderLabel);
   const publish = windowIndexByLabel(windows, KRUNKER_MODS.publishLabel);
 
-  const lobby = placeLobbyButton(manager);
+  // Registered, not placed: the icon row is only built on entering one of
+  // those lobbies, so `lobby-button.ts` waits for it and puts it back on
+  // every rebuild. Nothing here has to wait for that to have happened.
+  installLobbyButton({
+    id: UI_IDS.lobbyModsButton,
+    icon: KRUNKER_MODS.icon,
+    title: 'Mods',
+    // Krunker's own, in its own scope: the same window More Krunker opens.
+    onclick: `playSelect(),showWindow(${manager + 1})`,
+  });
   const inLoader = wrapGen(windows[loader], (html) => withResetInLoader(html, manager));
   const inManager = wrapGen(windows[manager], (html) =>
     withResetInManager(html, manager, [publish, loader]),
   );
-  return lobby && inLoader && inManager;
+  return inLoader && inManager;
 }
 
 /**

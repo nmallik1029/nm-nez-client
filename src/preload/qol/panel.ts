@@ -1,4 +1,5 @@
 import { SHEETS, STYLE_IDS, UI_IDS } from '../../shared/ui';
+import { installLobbyButton } from '../lobby-button';
 import { installMenuItem } from '../menu-item';
 import { defineStyle } from '../style';
 import { renderBuiltIn } from './built-in';
@@ -210,7 +211,7 @@ function installDropGuard(): void {
   window.addEventListener('drop', guard, true);
 }
 
-/** Add the menu row. The panel itself is built the first time it is opened. */
+/** Add the menu row and the lobby button. The panel is built the first time it is opened. */
 export function installQol(qolDeps: QolDeps): void {
   deps = qolDeps;
 
@@ -221,6 +222,18 @@ export function installQol(qolDeps: QolDeps): void {
     icon: 'tune',
     label: 'QoL Features',
     position: 'bottom',
+    onClick: toggleQol,
+  });
+
+  // And on the icon row a competitive, custom or ranked lobby shows instead
+  // of that menu, where every one of these switches is otherwise out of
+  // reach for the whole match. `onClick` rather than an inline handler like
+  // the Mods button's, because the panel is ours and the page's own scope
+  // has no way to open it.
+  installLobbyButton({
+    id: UI_IDS.lobbyQolButton,
+    icon: 'tune',
+    title: 'QoL Features',
     onClick: toggleQol,
   });
 
