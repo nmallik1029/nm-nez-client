@@ -8,6 +8,9 @@ import {
   HEADSHOT_OPTIONS,
   HIT_OPTIONS,
   KRUNKER_GUNS,
+  fortniteFileUrl,
+  fortniteVolume,
+  MAX_VOLUME,
   normaliseFortnite,
   soundKeyFromUrl,
   type FortniteConfig,
@@ -210,5 +213,60 @@ describe('effectiveFortnite', () => {
     expect(effectiveFortnite(true, DEFAULT_FORTNITE).on).toBe(false);
     // Off keeps the picks, so switching back on brings them back.
     expect(effectiveFortnite(false, ON).guns).toEqual(ON.guns);
+  });
+});
+
+describe('the Fortnite volume', () => {
+  const loud: FortniteConfig = { ...ON, volume: 1.5 };
+
+  it("defaults to Krunker's own level, and normalises to it", () => {
+    expect(DEFAULT_FORTNITE.volume).toBe(1);
+    expect(normaliseFortnite({}).volume).toBe(1);
+    expect(normaliseFortnite({ volume: 'loud' }).volume).toBe(1);
+    expect(normaliseFortnite({ volume: NaN }).volume).toBe(1);
+  });
+
+  it('keeps a volume in range and clamps one outside it', () => {
+    expect(normaliseFortnite({ volume: 0 }).volume).toBe(0);
+    expect(normaliseFortnite({ volume: 1.5 }).volume).toBe(1.5);
+    expect(normaliseFortnite({ volume: 99 }).volume).toBe(MAX_VOLUME);
+    expect(normaliseFortnite({ volume: -1 }).volume).toBe(0);
+  });
+
+  it('leaves the call alone at 1, where the multiply would do nothing', () => {
+    expect(fortniteVolume('weapon_2', ON, undefined)).toBeNull();
+    expect(fortniteVolume('weapon_2', ON, 0.5)).toBeNull();
+  });
+
+  it('leaves alone every sound the pack does not replace', () => {
+    // A gun with no Fortnite sound, a reload, and the pack switched off.
+    expect(fortniteVolume('weapon_99', loud, undefined)).toBeNull();
+    expect(fortniteVolume('weapon_2_r_1', loud, undefined)).toBeNull();
+    expect(fortniteVolume('weapon_2', { ...loud, on: false }, undefined)).toBeNull();
+  });
+
+  it('scales a replaced sound, and reads a missing volume as 1 the way Krunker does', () => {
+    expect(fortniteVolume('weapon_2', loud, undefined)).toBeCloseTo(1.5);
+    expect(fortniteVolume('weapon_2', loud, 0.4)).toBeCloseTo(0.6);
+    // Krunker's own `(volume || 1)`: a falsy volume is 1 to it, so to us too.
+    expect(fortniteVolume('weapon_2', loud, 0)).toBeCloseTo(1.5);
+    expect(fortniteVolume('hit_0', loud, undefined)).toBeCloseTo(1.5);
+  });
+
+  it('never returns a volume Krunker would read back as full', () => {
+    // `(volume || 1)` turns a 0 into full volume, so all the way down has to
+    // be sent as very nearly nothing instead.
+    const silent = fortniteVolume('weapon_2', { ...ON, volume: 0 }, undefined);
+    expect(silent).not.toBeNull();
+    expect(silent).toBeGreaterThan(0);
+    expect(silent).toBeLessThan(0.001);
+  });
+});
+
+describe('fortniteFileUrl', () => {
+  it('is an address main answers from the pack on disk', () => {
+    expect(fortniteFileUrl('hand-cannon')).toBe(
+      'https://assets.krunker.io/sounds/soundpacks/fortnite/hand-cannon.ogg',
+    );
   });
 });

@@ -216,6 +216,12 @@ export const HEADSHOT_OPTIONS: readonly string[] = ['hit-critical', 'hit-crit-el
 /** Krunker's sounds the headshot pick answers. See HEADSHOT_OPTIONS. */
 const HEADSHOT_SOUNDS: ReadonlySet<string> = new Set(['crit_0', 'headshot_0']);
 
+/**
+ * As loud as the Fortnite sounds can be set, twice Krunker's own. Past
+ * doubling, ripped audio clips rather than gets louder.
+ */
+export const MAX_VOLUME = 2;
+
 export interface FortniteConfig {
   readonly on: boolean;
   /**
@@ -226,6 +232,17 @@ export interface FortniteConfig {
   /** Empty keeps Krunker's own, as for a gun. */
   readonly hit: string;
   readonly headshot: string;
+  /**
+   * How loud Fortnite's sounds are against Krunker's own, 0 to 2.
+   *
+   * A multiplier on the volume the game would have used, not a volume of its
+   * own: `SOUND.play` works out `(volume || 1) * getVolume(name)`, so this
+   * scales the first term and leaves the second, which is what keeps the
+   * game's own category volume, 3D placement and distance falloff. It goes
+   * above 1 because the ripped Fortnite audio is quieter than Krunker's own,
+   * and being able to hear it is the point of having the control.
+   */
+  readonly volume: number;
 }
 
 /** Every gun on its best fit, and Fortnite's own hit and headshot. */
@@ -234,6 +251,7 @@ export const DEFAULT_FORTNITE: FortniteConfig = {
   guns: Object.fromEntries(KRUNKER_GUNS.map((gun) => [String(gun.weapon), gun.options[0] ?? ''])),
   hit: 'hit-body',
   headshot: 'hit-critical',
+  volume: 1,
 };
 
 /**
@@ -260,6 +278,10 @@ export function normaliseFortnite(value: unknown): FortniteConfig {
     guns,
     hit: one(raw.hit, HIT_OPTIONS, DEFAULT_FORTNITE.hit),
     headshot: one(raw.headshot, HEADSHOT_OPTIONS, DEFAULT_FORTNITE.headshot),
+    volume:
+      typeof raw.volume === 'number' && Number.isFinite(raw.volume)
+        ? Math.min(MAX_VOLUME, Math.max(0, raw.volume))
+        : DEFAULT_FORTNITE.volume,
   };
 }
 
@@ -294,6 +316,35 @@ export function fortniteSoundFor(key: string, config: FortniteConfig): string | 
   if (!gun) return null;
   const pick = config.guns[String(gun.weapon)] ?? '';
   return pick !== '' && gun.options.includes(pick) ? pick : null;
+}
+
+/** Where a Fortnite sound is served from. Main answers this from disk. */
+export function fortniteFileUrl(sound: string): string {
+  return `${SOUNDPACK_BASE}${FORTNITE_PACK_ID}/${sound}.ogg`;
+}
+
+/**
+ * Krunker reads a falsy volume as 1 (`(volume || 1)` in its `play`), so a
+ * sound turned all the way down has to be sent as very nearly nothing
+ * instead of as nothing.
+ */
+const MIN_AUDIBLE = 0.0001;
+
+/**
+ * The volume to pass `SOUND.play` in place of the one it was called with,
+ * or null to leave the call alone.
+ *
+ * Null for every sound the pack does not replace, and for a volume of 1,
+ * where the multiply would be a no-op: the wrapper is on the path of every
+ * sound the game plays, so the common answer is the cheap one.
+ */
+export function fortniteVolume(key: string, config: FortniteConfig, passed: unknown): number | null {
+  if (config.volume === 1) return null;
+  if (fortniteSoundFor(key, config) === null) return null;
+  // Krunker's own reading of what it was passed, so we scale what it would
+  // have used rather than what it was given.
+  const base = typeof passed === 'number' && passed > 0 ? passed : 1;
+  return Math.max(MIN_AUDIBLE, base * config.volume);
 }
 
 /**
