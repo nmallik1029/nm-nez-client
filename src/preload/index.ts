@@ -15,7 +15,8 @@ import { installEscapeLockRelease } from './escape-lock';
 import { setCrosshair } from './look/crosshair';
 import { setHitmarker } from './look/hitmarker';
 import { setKillStreak } from './look/killstreak';
-import { applyFortnite, initFortnite } from './look/soundpacks';
+import { applyFortnite, currentFortnite, initFortnite } from './look/soundpacks';
+import { installFortniteSound } from './look/fortnite-sound';
 import { installSkyHook, setSky } from './look/sky';
 import { debounced } from './schedule';
 import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
@@ -155,6 +156,9 @@ async function bootstrap(): Promise<void> {
     setHitmarker(cfg.visuals.hitmarker);
     setKillStreak(effectiveKillStreak(cfg.visuals));
     initFortnite(cfg.visuals);
+    // After initFortnite, so the first sound the game loads is already
+    // decided, and before any mod can be loaded from the lobby.
+    installFortniteSound(currentFortnite);
 
     hud = createPerfHud({ corner: cfg.ui.perfHudCorner, detail: cfg.ui.perfHudDetail });
     if (cfg.ui.perfHud) hud.show();

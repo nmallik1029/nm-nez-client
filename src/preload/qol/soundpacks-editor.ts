@@ -4,6 +4,7 @@ import {
   HEADSHOT_OPTIONS,
   HIT_OPTIONS,
   KRUNKER_GUNS,
+  MAX_VOLUME,
   type FortniteConfig,
 } from '../../shared/soundpacks';
 import {
@@ -16,7 +17,7 @@ import {
 } from '../look/soundpacks';
 import { showToast } from '../toast';
 import type { PanelView, QolDeps, TabContext } from './context';
-import { actions, chooser, heading, hint, picker } from './controls';
+import { actions, chooser, heading, hint, picker, slider } from './controls';
 import { renderKillStreak } from './killstreak-editor';
 import { empty, featureRow, note } from './row';
 
@@ -236,6 +237,16 @@ function renderPicks(slot: HTMLElement, ctx: TabContext): void {
       sub: "Each gun fires with the Fortnite gun picked for it, yours and everyone else's, and hits and headshots sound like Fortnite's.",
       on: start.on,
       onToggle: () => commit({ on: !current().on }, true),
+    }),
+    slider({
+      label: 'Volume',
+      min: 0,
+      max: MAX_VOLUME * 100,
+      step: 5,
+      value: Math.round(start.volume * 100),
+      // 100% is Krunker's own level, and it reads as the default it is.
+      format: (value) => (value === 100 ? "100% (Krunker's)" : `${value}%`),
+      onChange: (value) => commit({ volume: value / 100 }, false),
     }),
     // Hits first: two picks people change, above twenty-two they mostly set once.
     heading('Hits'),

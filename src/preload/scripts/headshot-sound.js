@@ -27,8 +27,21 @@
 'use strict';
 
 var HEADSHOT = 'headshot_0';
-/** Krunker's own ding is the only one called without a volume. */
-var NATIVE_CALL_ARGS = 1;
+/**
+ * Put on our own replays so the hook below can tell them from Krunker's.
+ *
+ * It goes in the options argument, which Krunker's `play` reads for
+ * `fadeIn` and `isInspectSound` and is otherwise happy to be handed a key
+ * it does not know. Marked rather than counted: this used to tell the two
+ * apart by argument count, on the grounds that the game's own call passes
+ * no volume, and that quietly stops being true the moment anything else
+ * wraps `play` and fills the volume in -- which the Fortnite pack's own
+ * volume does. Getting it wrong means the game's ding is no longer
+ * silenced and a headshot kill dings twice.
+ */
+var REPLAY_OPTS = { nmHeadshotReplay: true };
+/** Where that options argument sits in `play(name, volume, loop, rate, isAsset, localLoad, opts)`. */
+var OPTS_ARG = 6;
 /** How often to check the counter element is still the one we are watching. */
 var REATTACH_MS = 2000;
 
@@ -40,7 +53,9 @@ var timer = null;
 
 function ding() {
   var sound = window.SOUND;
-  if (sound && typeof sound.play === 'function') sound.play(HEADSHOT, 1, false);
+  if (sound && typeof sound.play === 'function') {
+    sound.play(HEADSHOT, 1, false, undefined, undefined, undefined, REPLAY_OPTS);
+  }
 }
 
 /**
@@ -65,8 +80,7 @@ function onCount() {
 /**
  * Drop Krunker's own headshot ding.
  *
- * Told apart from ours by its arguments: the game calls play('headshot_0')
- * with nothing else, and every replay of ours passes a volume.
+ * Told apart from ours by the marker we pass: see REPLAY_OPTS.
  */
 function hookSound() {
   var sound = window.SOUND;
@@ -74,7 +88,10 @@ function hookSound() {
 
   originalPlay = sound.play;
   sound.play = function (name) {
-    if (name === HEADSHOT && arguments.length <= NATIVE_CALL_ARGS) return undefined;
+    if (name === HEADSHOT) {
+      var opts = arguments[OPTS_ARG];
+      if (!opts || opts.nmHeadshotReplay !== true) return undefined;
+    }
     return originalPlay.apply(this, arguments);
   };
   return true;

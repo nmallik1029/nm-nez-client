@@ -2,9 +2,9 @@ import { ipcRenderer } from 'electron';
 import { IPC } from '../../shared/ipc';
 import {
   changedSounds,
+  DEFAULT_FORTNITE,
   effectiveFortnite,
-  FORTNITE_PACK_ID,
-  SOUNDPACK_BASE,
+  fortniteFileUrl,
   type FortniteConfig,
 } from '../../shared/soundpacks';
 import type { VisualsConfig } from '../../shared/visuals';
@@ -55,7 +55,7 @@ export async function removeSoundpack(id: string): Promise<boolean> {
 
 /** One Fortnite sound, straight away, for the editor. */
 export function previewFortniteSound(id: string, volume = 0.5): void {
-  const audio = new Audio(`${SOUNDPACK_BASE}${FORTNITE_PACK_ID}/${id}.ogg`);
+  const audio = new Audio(fortniteFileUrl(id));
   audio.volume = volume;
   void audio.play().catch(() => {});
 }
@@ -93,6 +93,18 @@ export function reloadGameSounds(test: (key: string) => boolean): number {
 
 /** What the page last put in effect, so a change only reloads what it changed. */
 let applied: FortniteConfig | null = null;
+
+/**
+ * The Fortnite config as it stands, for `fortnite-sound.ts`.
+ *
+ * The same value the reloads are worked out from, rather than a second copy
+ * read from somewhere else: a wrapper that disagreed with what was last
+ * applied would replace a sound the game had not been made to load again.
+ * Off until the first config arrives, so nothing is touched before then.
+ */
+export function currentFortnite(): FortniteConfig {
+  return applied ?? { ...DEFAULT_FORTNITE, on: false };
+}
 
 /**
  * Put a Fortnite change in effect: saved first, then the game's copies let
