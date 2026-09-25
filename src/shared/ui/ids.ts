@@ -24,6 +24,8 @@ export const UI_IDS = {
   queueButton: 'kc-ranked-launch',
   /** Mods, added to the square icon row of a competitive or custom lobby. */
   lobbyModsButton: 'nm-lobby-mods',
+  /** QoL Features, on that same row: the left menu it usually lives in is not on that screen. */
+  lobbyQolButton: 'nm-lobby-qol',
   altModal: 'kc-alt-modal',
   /** Section index down the left of the settings window. */
   sectionNav: 'kc-sectnav',
