@@ -7,6 +7,7 @@ import {
   isNearBottom,
   isTeamMode,
   overflowCount,
+  restoreAnchor,
 } from './chat';
 
 const SENDER = KRUNKER_CHAT.senderMarker;
@@ -117,5 +118,58 @@ describe('isNearBottom', () => {
 
   it('follows when the list is shorter than the viewport', () => {
     expect(isNearBottom(0, 100, 200)).toBe(true);
+  });
+});
+
+describe('restoreAnchor', () => {
+  // A list of ids standing in for #chatList's children.
+  const anchorIn = (list: string[], previous: string | null, next: string | null) =>
+    restoreAnchor(
+      previous,
+      next,
+      (node) => list.includes(node),
+      (node) => list[list.indexOf(node) + 1] ?? null,
+      list[0] ?? null,
+    );
+
+  it('puts a message back before the one that followed it', () => {
+    // An expired message from the middle: it returns to the middle, not the top.
+    expect(anchorIn(['h1', 'h2', 'b'], 'h2', 'b')).toBe('b');
+  });
+
+  it('falls back to after the one that preceded it', () => {
+    expect(anchorIn(['h1', 'h2', 'new'], 'h1', 'gone')).toBe('h2');
+  });
+
+  it('appends when the preceding message is now the last', () => {
+    expect(anchorIn(['h1', 'h2'], 'h2', null)).toBeNull();
+  });
+
+  it('goes to the top when neither neighbour is still in the list', () => {
+    expect(anchorIn(['a', 'b'], 'gone', 'also-gone')).toBe('a');
+    expect(anchorIn([], null, null)).toBeNull();
+  });
+
+  it('restores a whole batch in order when undone newest first', () => {
+    // Krunker's cap takes the top three, then the Chat Timer expires 'b'.
+    const before = ['h1', 'h2', 'h3', 'a', 'b', 'c'];
+    const list = [...before];
+    const records: { removed: string; previous: string | null; next: string | null }[] = [];
+    const remove = (node: string) => {
+      const i = list.indexOf(node);
+      records.push({ removed: node, previous: list[i - 1] ?? null, next: list[i + 1] ?? null });
+      list.splice(i, 1);
+    };
+    remove('h1');
+    remove('h2');
+    remove('h3');
+    remove('b');
+    list.push('new');
+
+    for (const record of [...records].reverse()) {
+      const anchor = anchorIn(list, record.previous, record.next);
+      list.splice(anchor === null ? list.length : list.indexOf(anchor), 0, record.removed);
+    }
+    expect(list).toEqual([...before, 'new']);
   });
 });
