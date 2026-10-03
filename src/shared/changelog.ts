@@ -16,6 +16,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.70',
+    date: '2026-10-03',
+    changes: [
+      {
+        kind: 'fixed',
+        text:
+          "Krunker's October update rebuilt the main menu, and everything piled on top of everything else. The old menu is back: the play buttons in a row along the bottom in their old colours, the match info above them on two rows, and your class bottom right. Popular Now is hidden.",
+      },
+      { kind: 'fixed', text: 'Loadout and Alt Manager were missing under your class, because the update took the Loadout button out. Both are back beside Customize.' },
+    ],
+  },
+  {
     version: '0.1.69',
     date: '2026-09-25',
     changes: [
