@@ -762,6 +762,15 @@ export const KRUNKER_SETTINGS = {
  *     Item 6 shipped through a fully green CI run. A change to the game's own
  *     markup is verified by launching the client and looking at it, or it is
  *     not verified.
+ *
+ * 15. THE MENU YOU SEE IS NOT THE MENU KRUNKER SHIPS.
+ *     The 2026-10-02 update moved the play row into a right-hand column of
+ *     Svelte `.actionCard`s, pinned the match info over the ad strip, added a
+ *     Popular Now rail and centred the class card. shared/ui/krunker-classic.css
+ *     puts the old layout back, always on, and items 2 and 3 above describe
+ *     that restored layout. When a rule behaves oddly, check whether it is
+ *     fighting the game's new value under the classic one. The ids survived
+ *     the update; the classes did not (`.button` is now `.actionCard`).
  */
 
 /** True when `url` is the game or one of its mirrors. */

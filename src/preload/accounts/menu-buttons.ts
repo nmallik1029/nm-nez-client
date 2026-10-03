@@ -16,6 +16,14 @@ import { coalesced } from '../schedule';
  * all the game styling come along. Rebuilding them would mean hardcoding
  * showWindow(3), which is the kind of coupling that rots without telling you.
  *
+ * Krunker's October update dropped the Loadout button. The card is now a
+ * clickable class chip and a lone Customize, side by side in #menuClassFooter,
+ * and Customize opens window 3 on its third tab instead of window 53. So on
+ * that shape Loadout is cloned from Customize, which brings the classes and
+ * hover sound, and given the chip's onclick, which is Krunker's own way into
+ * the Loadout tab. Still nothing hardcoded: if the chip ever stops carrying a
+ * handler there is no Loadout to make, and the card is left alone.
+ *
  *   before                    after
  *   ┌────────────────────┐    ┌─────────┬──────────┐
  *   │      Loadout       │    │ Loadout │Customize │
@@ -45,12 +53,58 @@ const ALT_ID = UI_IDS.altManagerButton;
 /** The ID rule that carries these buttons' width and display mode. */
 const BUTTON_SELECTOR = '#customizeButton';
 
+/** Where the class card keeps its chip and Customize since the October update. */
+const FOOTER_ID = 'menuClassFooter';
+/** The chip: class name and weapon icon, clicking it opens Loadout. */
+const CHIP_ID = 'menuClassContainerInner';
+
+/** The two buttons to pair, and where the row that holds them goes. */
+interface ClassButtons {
+  readonly loadout: HTMLElement;
+  readonly customize: HTMLElement;
+  /** The row is inserted in front of this. */
+  readonly before: Element;
+}
+
 /** Find one of the game's buttons by the window index its onclick opens. */
 function findByWindowIndex(container: Element, index: number): HTMLElement | null {
   for (const el of container.querySelectorAll<HTMLElement>('.button')) {
     if ((el.getAttribute('onclick') ?? '').includes(`showWindow(${index})`)) return el;
   }
   return null;
+}
+
+/** Before the October update: Loadout and Customize, each in its own wrapper. */
+function stackedButtons(container: Element): ClassButtons | null {
+  const loadout = findByWindowIndex(container, 3);
+  const customize = findByWindowIndex(container, 53);
+  if (!loadout || !customize) return null;
+  return { loadout, customize, before: loadout.parentElement ?? loadout };
+}
+
+/**
+ * After it: no Loadout, so make one. Goes in the footer straight after the
+ * chip, where the stacked card had its first button.
+ */
+function footerButtons(container: Element): ClassButtons | null {
+  const footer = container.querySelector(`#${FOOTER_ID}`);
+  const chip = footer?.querySelector(`#${CHIP_ID}`);
+  const customize = footer?.querySelector<HTMLElement>(':scope > .button');
+  const open = chip?.getAttribute('onclick');
+  if (!chip || !customize || !open) return null;
+
+  const loadout = customize.cloneNode(true) as HTMLElement;
+  const label = [...loadout.childNodes].find(
+    (node) => node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== '',
+  );
+  const icon = loadout.querySelector('.material-icons');
+  // Not the button we know. Better no Loadout than a mislabelled one.
+  if (!label || !icon) return null;
+  loadout.setAttribute('onclick', open);
+  // The old button's label and glyph, word for word.
+  label.textContent = 'Loadout ';
+  icon.textContent = 'sync';
+  return { loadout, customize, before: chip.nextElementSibling ?? customize };
 }
 
 /**
@@ -61,10 +115,17 @@ function findByWindowIndex(container: Element, index: number): HTMLElement | nul
  * exact, no layout needed, and unaffected by the container's 0.7 transform or
  * the UI rescale that makes an early getBoundingClientRect() read short.
  *
+ * Every rule with that selector, merged in document order, which is how the
+ * cascade resolves them on the buttons themselves. There are two now: the
+ * game's, which lost its width in the October update, then the classic sheet's
+ * (shared/ui/krunker-classic.css), which puts the old width and padding back.
+ * The first one alone would be the new, narrower button.
+ *
  * Null if Krunker renames the rule, in which case we fall back to the
  * browser's own sizing rather than making a number up.
  */
 function buttonRule(): CSSStyleDeclaration | null {
+  let merged: CSSStyleDeclaration | null = null;
   for (const sheet of document.styleSheets) {
     let rules: CSSRuleList;
     try {
@@ -73,10 +134,17 @@ function buttonRule(): CSSStyleDeclaration | null {
       continue; // Cross-origin sheet; not ours to read.
     }
     for (const rule of rules) {
-      if (rule instanceof CSSStyleRule && rule.selectorText === BUTTON_SELECTOR) return rule.style;
+      if (!(rule instanceof CSSStyleRule) || rule.selectorText !== BUTTON_SELECTOR) continue;
+      merged ??= document.createElement('div').style;
+      for (const name of rule.style) {
+        const priority = rule.style.getPropertyPriority(name);
+        // A later plain declaration does not beat an earlier !important.
+        if (merged.getPropertyPriority(name) === 'important' && priority !== 'important') continue;
+        merged.setProperty(name, rule.style.getPropertyValue(name), priority);
+      }
     }
   }
-  return null;
+  return merged;
 }
 
 export interface MenuButtonDeps {
@@ -88,10 +156,12 @@ function place(deps: MenuButtonDeps): void {
   if (!container) return;
   if (document.getElementById(ROW_ID)) return;
 
-  const loadout = findByWindowIndex(container, 3);
-  const customize = findByWindowIndex(container, 53);
+  // Stacked first: on the new card findByWindowIndex(3) finds Customize,
+  // which opens window 3 now, but 53 is gone, so the old shape can't misfire.
+  const buttons = stackedButtons(container) ?? footerButtons(container);
   // Menu isn't what we expect. Leave it be rather than half-rebuild it.
-  if (!loadout || !customize) return;
+  if (!buttons) return;
+  const { loadout, customize } = buttons;
 
   defineStyle(STYLE_IDS.menuButtons, SHEETS.menuButtons);
 
@@ -102,7 +172,7 @@ function place(deps: MenuButtonDeps): void {
 
   const row = document.createElement('div');
   row.id = ROW_ID;
-  loadoutWrapper?.insertAdjacentElement('beforebegin', row);
+  buttons.before.insertAdjacentElement('beforebegin', row);
   row.append(loadout, customize);
 
   // Krunker's own button classes, so the alt manager matches the two above it
