@@ -76,6 +76,33 @@ export function overflowCount(currentCount: number, limit: number): number {
   return Math.max(0, currentCount - limit);
 }
 
+/**
+ * Where a message Krunker took out of the list goes back in. Returns the node
+ * to insert before; null means append.
+ *
+ * Krunker removes from two places. Its 35-message cap takes from the top, but
+ * its Chat Timer expires messages wherever they sit, and with history kept
+ * those are below everything already put back. Putting every removal back at
+ * the top sent each expired message up past the whole history, so the bottom
+ * of chat, the part you read, showed older lines than the ones that had just
+ * arrived.
+ *
+ * So a removal goes back next to the sibling it had, which the mutation record
+ * names. The caller undoes records newest first, so that sibling has already
+ * been restored when it was itself removed in the same batch.
+ */
+export function restoreAnchor<T>(
+  previous: T | null,
+  next: T | null,
+  isInList: (node: T) => boolean,
+  after: (node: T) => T | null,
+  first: T | null,
+): T | null {
+  if (next !== null && isInList(next)) return next;
+  if (previous !== null && isInList(previous)) return after(previous);
+  return first;
+}
+
 /** True when a scroll position is close enough to the bottom to keep following. */
 export function isNearBottom(
   scrollTop: number,

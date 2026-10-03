@@ -5,6 +5,7 @@ import {
   isNearBottom,
   isTeamMode,
   overflowCount,
+  restoreAnchor,
 } from '../shared/chat';
 import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { defineStyle, toggleStyle } from './style';
@@ -20,9 +21,10 @@ import { defineStyle, toggleStyle } from './style';
  *     toggle used to.
  *  2. Krunker deletes old messages out of the DOM. We put them back as they
  *     go, then trim to our own larger limit so the list stays bounded.
- *  3. Krunker force-scrolls to the bottom on every new message, which yanks
- *     you down mid-read. If you've scrolled up, that scroll gets undone and
- *     your position held.
+ *  3. Krunker force-scrolls to the bottom on a new message, which yanks you
+ *     down mid-read. If you've scrolled up, that scroll gets undone and your
+ *     position held. It only does that during a round, though, so following
+ *     along is ours to do everywhere else.
  */
 
 export interface ChatOptions {
@@ -71,14 +73,14 @@ function syncMergeStyle(): void {
   toggleStyle(STYLE_IDS.chatMerge, SHEETS.chatMerge, options.merged);
 }
 
-function tagMessage(node: HTMLElement, teamMode: boolean): boolean {
+function tagMessage(node: HTMLElement, teamMode: boolean): void {
   const body = node.querySelector(`.${KRUNKER_CHAT.messageBodyClass}`);
-  if (!body) return false;
+  if (!body) return;
 
   if (isChatNoise(body.textContent ?? '')) {
     selfRemoved.add(node);
     node.remove();
-    return true;
+    return;
   }
 
   const item = node.querySelector(`.${KRUNKER_CHAT.itemClass}`);
@@ -87,32 +89,40 @@ function tagMessage(node: HTMLElement, teamMode: boolean): boolean {
     dataTab: node.dataset['tab'],
     itemText: item?.textContent ?? node.textContent ?? '',
   });
-  if (!tag) return false;
+  if (!tag) return;
 
   const label = document.createElement('span');
   label.className = `kc-chat-tag ${tag.cssClass}`;
   label.textContent = tag.label;
   body.insertBefore(label, body.firstChild);
-  return true;
 }
 
-function reinsertRemoved(mutations: MutationRecord[]): boolean {
-  if (options.historyLimit <= 0 || !chatList || !observer || reinserting) return false;
+function reinsertRemoved(mutations: MutationRecord[]): void {
+  if (options.historyLimit <= 0 || !chatList || !observer || reinserting) return;
 
-  const removed: HTMLElement[] = [];
-  for (const mutation of mutations) {
-    for (const node of mutation.removedNodes) {
-      if (isMessage(node) && !selfRemoved.has(node)) removed.push(node);
-    }
-  }
-  if (removed.length === 0) return false;
+  const list = chatList;
+  const isRemoval = (mutation: MutationRecord) =>
+    Array.from(mutation.removedNodes).some((node) => isMessage(node) && !selfRemoved.has(node));
+  if (!mutations.some(isRemoval)) return;
 
   reinserting = true;
   // Detach first. Re-inserting fires the observer again and we'd loop.
   observer.disconnect();
 
-  const firstLive = chatList.firstChild;
-  for (const node of removed) chatList.insertBefore(node, firstLive);
+  // Newest record first, so each removal finds the neighbour it was recorded
+  // against already back in place. See restoreAnchor.
+  for (const mutation of [...mutations].reverse()) {
+    const anchor = restoreAnchor<Node>(
+      mutation.previousSibling,
+      mutation.nextSibling,
+      (node) => node.parentNode === list,
+      (node) => node.nextSibling,
+      list.firstChild,
+    );
+    for (const node of mutation.removedNodes) {
+      if (isMessage(node) && !selfRemoved.has(node)) list.insertBefore(node, anchor);
+    }
+  }
 
   // Reading scrollHeight forces layout, so only when we actually need it to
   // fix up the scroll anchor.
@@ -132,17 +142,16 @@ function reinsertRemoved(mutations: MutationRecord[]): boolean {
 
   observer.observe(chatList, { childList: true });
   reinserting = false;
-  return true;
 }
 
 function handleMutations(mutations: MutationRecord[]): void {
-  let heightChanged = reinsertRemoved(mutations);
+  reinsertRemoved(mutations);
 
   if (options.merged) {
     const teamMode = isTeamMode(currentMode());
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
-        if (isMessage(node) && tagMessage(node, teamMode)) heightChanged = true;
+        if (isMessage(node)) tagMessage(node, teamMode);
       }
     }
   }
@@ -152,9 +161,12 @@ function handleMutations(mutations: MutationRecord[]): void {
   if (scrollPaused) {
     // Undo Krunker's force-scroll and hold your place.
     chatList.scrollTop = savedScrollTop;
-  } else if (heightChanged) {
-    // Following along, so Krunker's own scroll already hit the bottom. Only
-    // re-pin if we changed the height after it ran.
+  } else {
+    // Following along, on every change. Krunker's own scroll can't be relied
+    // on for this: it only scrolls while you are alive in a round, so on the
+    // menu, spectating or dead a new message landed below the fold and chat
+    // looked frozen. And when it does scroll it measures before history is
+    // put back.
     chatList.scrollTop = chatList.scrollHeight;
   }
 }
