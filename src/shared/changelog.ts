@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.71',
+    date: '2026-10-03',
+    changes: [
+      { kind: 'fixed', text: "Chat sat still while new messages arrived below it on the menu, spectating or dead, because Krunker only scrolls chat while you are alive in a round. It now follows new messages everywhere, and still holds your place if you have scrolled up." },
+      { kind: 'fixed', text: "With Krunker's Chat Timer on, the newest messages could vanish from the bottom of chat and older ones show in their place. Expired messages now stay where they were." },
+    ],
+  },
+  {
     version: '0.1.70',
     date: '2026-10-03',
     changes: [
