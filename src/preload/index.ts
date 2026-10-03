@@ -43,7 +43,8 @@ import { installModsMenu } from './mods-menu';
 import { installRankedLaunchButton } from './ranked-button';
 import { installRealPing } from './ping';
 import { hookKrunkerSettings, type SettingsTab } from './settings/krunker-tab';
-import { installTokens } from './style';
+import { defineStyle, installTokens } from './style';
+import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { activeTheme, knownThemes, setActiveTheme, setThemes } from './themes';
 import { showToast } from './toast';
 import { installWatermark } from './watermark';
@@ -73,6 +74,12 @@ const log = (...args: unknown[]): void => console.log(BRANDING.logPrefix, ...arg
 // an await, so another surface could define its stylesheet ahead of the tokens
 // and land above them in the cascade.
 installTokens();
+
+// Krunker's pre-October main menu, which the menu skin and the class buttons
+// are both built against. Always on, and straight after the tokens so that
+// every sheet defined later, the skin included, lands after it and restyles
+// the old layout rather than the new one. See shared/ui/krunker-classic.css.
+defineStyle(STYLE_IDS.krunkerClassic, SHEETS.krunkerClassic);
 
 /*
  * The sky is decided by the map JSON, and the menu asks for a map before the

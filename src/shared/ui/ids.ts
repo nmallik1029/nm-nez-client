@@ -108,6 +108,7 @@ export const STYLE_IDS = {
   update: 'kc-update-css',
   menuSkin: 'kc-menu-skin-css',
   krunkerWindows: 'kc-krunker-windows-css',
+  krunkerClassic: 'kc-krunker-classic-css',
   hudMinimal: 'kc-hud-minimal-css',
   setupWizard: 'kc-setup-css',
   qolPanel: 'kc-qol-panel-css',

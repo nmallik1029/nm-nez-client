@@ -1,6 +1,7 @@
 import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_CLASSES, UI_IDS } from './ids';
 import hudMinimal from './hud-minimal.css?raw';
+import krunkerClassic from './krunker-classic.css?raw';
 
 /**
  * Every stylesheet the client installs, in one file.
@@ -1645,7 +1646,7 @@ const menuSkin = `
   padding-top:16px !important;
   padding-bottom:0 !important;margin-bottom:0 !important;gap:4px !important}
 /* Krunker's own margins would show up as gaps between grid cells. */
-#subLogoButtons > .button{margin:0 !important;width:auto !important}
+#subLogoButtons > :is(.button,.actionCard){margin:0 !important;width:auto !important}
 /* The class card would otherwise sit under the bar now that it reaches the
    right edge. Its transform-origin is bottom right, so raising bottom moves it
    straight up. */
@@ -1678,21 +1679,27 @@ const menuSkin = `
  * --kc-hue, not --nm-: that prefix is the token set, guarded by
  * tokens.test.ts. This is plumbing so the two shared rules are written
  * once instead of five times, not a value anyone would theme.
+ *
+ * :is(.button,.actionCard) because Krunker's October update swapped the
+ * ".button small" row for Svelte .actionCard elements under the same ids. The
+ * classic sheet (krunker-classic.css) draws those as the old buttons again,
+ * and :is() scores as its strongest argument, one class, so these rules
+ * weigh exactly what they did when they only said .button.
  */
-#subLogoButtons > .button{--kc-hue:var(--nm-menu-line-hi);
+#subLogoButtons > :is(.button,.actionCard){--kc-hue:var(--nm-menu-line-hi);
   border:var(--nm-bw-chunky) solid var(--kc-hue) !important;
   border-radius:var(--nm-radius) !important;background:var(--nm-menu-fill) !important;
   color:var(--nm-menu-bone) !important;text-shadow:none !important;
   transition:color var(--nm-fast),border-color var(--nm-fast),background var(--nm-fast)}
-#subLogoButtons > .button:hover{transform:none !important;
+#subLogoButtons > :is(.button,.actionCard):hover{transform:none !important;
   background:var(--kc-hue) !important;border-color:var(--kc-hue) !important;
   color:var(--nm-menu-ink) !important}
-#subLogoButtons > .button:active{transform:none !important}
-#subLogoButtons > #menuBtnQuickMatch.button{--kc-hue:var(--nm-menu-purple)}
-#subLogoButtons > #menuBtnRanked.button{--kc-hue:var(--nm-menu-ember)}
-#subLogoButtons > #menuBtnHost.button{--kc-hue:var(--nm-menu-red)}
-#subLogoButtons > #menuBtnBrowser.button{--kc-hue:var(--nm-menu-pink)}
-#subLogoButtons > #menuBtnCustomGames.button{--kc-hue:var(--nm-menu-cyan)}
+#subLogoButtons > :is(.button,.actionCard):active{transform:none !important}
+#subLogoButtons > #menuBtnQuickMatch:is(.button,.actionCard){--kc-hue:var(--nm-menu-purple)}
+#subLogoButtons > #menuBtnRanked:is(.button,.actionCard){--kc-hue:var(--nm-menu-ember)}
+#subLogoButtons > #menuBtnHost:is(.button,.actionCard){--kc-hue:var(--nm-menu-red)}
+#subLogoButtons > #menuBtnBrowser:is(.button,.actionCard){--kc-hue:var(--nm-menu-pink)}
+#subLogoButtons > #menuBtnCustomGames:is(.button,.actionCard){--kc-hue:var(--nm-menu-cyan)}
 /* The 2x KR badge, in the red the game already draws it. In the accent it
    read as part of the Ranked button rather than as a flag stuck on it. */
 #menuBtnRanked .menuItemRankedLabel{background:var(--nm-menu-red) !important;
@@ -2230,6 +2237,7 @@ export const SHEETS = {
   update,
   menuSkin,
   krunkerWindows,
+  krunkerClassic,
   hudMinimal,
   killStreak,
   deathStats,

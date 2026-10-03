@@ -1,0 +1,130 @@
+/*
+ * Krunker's main menu as it was before the 2026-10-02 update.
+ *
+ * That update (build 05W8X -> EFoor) rebuilt the menu: the play buttons became
+ * Svelte "action cards" with icons in a column on the right, the match info
+ * became a one-line pill pinned over the ad strip, a "Popular Now" rail went
+ * in above the buttons, and the class card moved to the middle of the screen
+ * with its Loadout button folded into a clickable chip. Everything below puts
+ * the old layout back, and it is always on, skin or no skin: this is the game
+ * we restyle, not part of the restyle.
+ *
+ * The values are Krunker's own, copied from main.css?build=05W8X (archived on
+ * the Wayback Machine, still served by krunker.io) and from the Svelte styles
+ * the old loader injected, read off a running copy of each build. That is why
+ * this is a .css file: these colours and sizes are the game's data, not steps
+ * on our scale, so they sit outside the token guard the way hud-minimal.css
+ * does. Do not "tokenise" them; the point is that they match 05W8X exactly.
+ *
+ * Each rule restores only what the update changed. Where the update ADDED a
+ * property the old rule never set, it goes back to what that property was
+ * before: `inherit` for an inherited property, the initial value otherwise.
+ *
+ * Specificity: Krunker's rules here are a single id, ours are the same id and
+ * come later in the document (preload/style.ts appends after the page's own
+ * links), so ours win without !important. The Svelte rules are two classes,
+ * which any id beats. !important only appears where the game's own rule had it.
+ */
+
+/* ---- click to play, spectate: back down from 40% / 42% ---- */
+#uiBase.onMenu #spectButton{top:calc(48% - 60px)}
+#instructions{top:50%}
+
+/* ---- the play row: centred along the bottom again, not a column on the right ---- */
+#subLogoButtons{right:auto;left:50%;bottom:139px;transform:translate(-50%,0) scale(0.95);
+  display:block;flex-direction:row;align-items:normal;gap:normal}
+
+/* Popular Now did not exist. Its own rule is display:block !important, hence
+   this one has to be too. */
+#subLogoButtons > .popRail{display:none !important}
+
+/*
+ * The action cards, drawn as the `.button small buttonX` they replaced.
+ *
+ * Krunker's old markup was `<div class="button small buttonP" id="menuBtnQuickMatch">`,
+ * so this is `.button` and `.button.small` from main.css, folded into one rule
+ * against the new element. The ids stayed the same across the update, which is
+ * what lets the colours below go on by id.
+ *
+ * The edge goes through a custom property so hover can turn it white with a
+ * plain border-color: per-id border rules would outrank the hover rule.
+ */
+#subLogoButtons > .actionCard{position:relative;display:inline-block;width:auto;
+  height:40px;padding:5px 22px 13px;margin:0 3px 6px;gap:normal;box-sizing:content-box;
+  border:4px solid var(--kc-classic-edge, white);border-radius:4px;
+  background:rgba(0,0,0,0.3);color:white;text-align:center;vertical-align:bottom;
+  line-height:45px;font-size:20.5px;cursor:pointer;pointer-events:all;transition:0.08s}
+#subLogoButtons > .actionCard:hover{transform:scale(0.95);border-color:white;color:white}
+#subLogoButtons > .actionCard:active{transform:scale(0.9);border-color:white}
+#menuBtnQuickMatch{--kc-classic-edge:#b447ff}
+/* .buttonPI was pink, but main.css also had #menuBtnRanked{border:4px solid
+   #7ce87a !important}, so Ranked was green. */
+#menuBtnRanked{--kc-classic-edge:#7ce87a}
+#menuBtnHost,#menuBtnBrowser{--kc-classic-edge:#ff4747}
+#menuBtnCustomGames{--kc-classic-edge:#31caec}
+/* The old buttons were a bare label. */
+#subLogoButtons > .actionCard .cardIcon{display:none}
+#subLogoButtons > .actionCard .cardLabel{font-size:inherit;font-weight:inherit;
+  letter-spacing:inherit;text-transform:inherit;line-height:inherit;text-shadow:inherit}
+
+/*
+ * Match info: back in the flow above the buttons, as two rows.
+ *
+ * The old block was two `.match-row`s, map and region on the first, Invite and
+ * Join and the buffs on the second with FPS and ping at its right. The new one
+ * is four segments with dividers on one line. A two-column grid puts the same
+ * four back on two rows without moving any of Svelte's elements: map and
+ * actions take the left column, region and telemetry are pinned to the right.
+ *
+ * Pinning both right-hand segments to column 2 is what keeps the second row
+ * right when the menu skin lifts Invite/Join up beside the map name: the
+ * telemetry then cannot back-fill the empty left cell.
+ */
+#matchInfoHolder{position:static;bottom:auto;left:auto;transform:none;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px 8px;
+  margin-bottom:20px;padding:0 0 12px;font-size:20px;
+  border-bottom:5px solid #585858;pointer-events:inherit}
+#matchInfoHolder > .match-divider{display:none}
+#matchInfoHolder > .match-seg:has(#menuRegionLabel),
+#matchInfoHolder > .match-seg:has(.menuDebugInfo){grid-column:2;justify-self:end}
+#matchInfoHolder > .match-info-actions{gap:6px;padding-left:7px}
+#mapInfoHld{padding-left:7px}
+#mapInfo{font-size:20px}
+
+/* ---- class card: bottom right again, not centre stage ---- */
+#menuClassContainer{left:auto;right:21px;bottom:80px;transform:scale(0.7);
+  transform-origin:bottom right;text-align:right}
+/* The grey glow the update put behind the character. */
+#menuClassContainer::before{content:none}
+#classPreviewCanvas{margin-bottom:-100px;margin-right:-113px}
+#bubbleContainer{right:420px}
+.speechBox{line-height:inherit}
+
+/*
+ * The chip and the Customize button now share a wrapper, #menuClassFooter.
+ * Stacked and right-aligned, it lays out like the old card, which was the
+ * class line with each button in its own block under it. The Loadout button
+ * the update removed is put back by accounts/menu-buttons.ts.
+ */
+#menuClassFooter{display:flex;flex-direction:column;align-items:flex-end;
+  width:auto;margin:0;gap:0}
+#menuClassFooter > .button{margin-top:8px}
+/* Back from a bordered chip to bare text and icon. It stays clickable: that
+   is Krunker's own door into Loadout now, and costs nothing to keep. */
+#menuClassContainerInner{display:inline-flex;width:449px;height:85px;justify-content:flex-end;
+  gap:normal;padding:0;background:none;border:0;border-radius:0;transition:none}
+#menuClassContainerInner:hover{background:none}
+#menuClassContainerInfo{height:85px;justify-content:space-between}
+#menuClassName{font-size:17px}
+#menuClassSubtext{font-size:30px;margin-bottom:0;text-shadow:
+  -1px -1px 0 #202020,1px -1px 0 #202020,-1px 1px 0 #202020,1px 1px 0 #202020,
+  -2px -2px 0 #202020,2px -2px 0 #202020,-2px 2px 0 #202020,2px 2px 0 #202020,
+  -3px -3px 0 #202020,3px -3px 0 #202020,-3px 3px 0 #202020,3px 3px 0 #202020,
+  -4px -4px 0 #202020,4px -4px 0 #202020,-4px 4px 0 #202020,4px 4px 0 #202020}
+#menuClassSubtext span{line-height:inherit}
+#menuClassIcn{margin-left:10px;border-radius:4px;border:4px solid #353534;width:85px;height:85px}
+/* height and margin-bottom were the shared .button's 30px and 6px; the update
+   overrode them here. font-size carried !important in the game's rule too. */
+#customizeButton{width:449px;height:30px;margin-bottom:6px;padding:15px;font-size:27px !important}
+/* The glyph's size is an inline style on the span, 42px before and 30px now. */
+#customizeButton .material-icons{font-size:42px !important}
