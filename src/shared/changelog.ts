@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.74',
+    date: '2026-10-17',
+    changes: [
+      { kind: 'changed', text: "Your name colour and the sky colour are picked on a full colour wheel instead of eight swatches: drag round it for the colour, slide for brightness, or type a hex code. The board or the sky shows it as you drag." },
+    ],
+  },
+  {
     version: '0.1.73',
     date: '2026-10-17',
     changes: [
