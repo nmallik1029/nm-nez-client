@@ -1,10 +1,13 @@
-import { OWN_NAME_PRESETS, type OwnNameConfig } from '../../shared/visuals';
+import { OWN_ALIAS_MAX, OWN_NAME_PRESETS, type OwnNameConfig } from '../../shared/visuals';
 import type { PanelView, TabContext } from './context';
-import { colorRow, hint } from './controls';
+import { colorRow, heading, hint, textRow } from './controls';
 import { featureRow } from './row';
 
 /**
- * Your own name's colour on the leaderboards.
+ * Your own name on the leaderboards: its colour, and what it says.
+ *
+ * The two are independent. The switch is the colour's; the name is off when
+ * it is empty, so you can have either without the other.
  *
  * Every handler reads the setting fresh rather than closing over the copy the
  * panel was drawn with. Picking a colour does not redraw the panel, so a
@@ -13,7 +16,7 @@ import { featureRow } from './row';
  */
 
 export function ownNameEditor(): PanelView {
-  return { title: 'YOUR NAME COLOUR', render };
+  return { title: 'YOUR NAME', render };
 }
 
 function render(body: HTMLElement, ctx: TabContext): void {
@@ -25,6 +28,7 @@ function render(body: HTMLElement, ctx: TabContext): void {
   const config = current();
 
   body.append(
+    heading('Colour'),
     featureRow({
       icon: 'person',
       name: 'Colour your name',
@@ -45,8 +49,17 @@ function render(body: HTMLElement, ctx: TabContext): void {
       on: config.bold,
       onToggle: () => commit({ bold: !current().bold }, true),
     }),
+    hint('A name the client already colours keeps that colour.'),
+    heading('Name'),
+    textRow({
+      label: 'Show as',
+      value: config.alias,
+      placeholder: 'Your real name',
+      maxLength: OWN_ALIAS_MAX,
+      onChange: (alias) => commit({ alias }, false),
+    }),
     hint(
-      "Only you see this. It changes your copy of the boards and nobody else's. A name the client already colours keeps that colour.",
+      "Empty shows your real name. Only you see either of these: they change your copy of the boards and nobody else's. Chat and the kill feed keep your real name.",
     ),
   );
 }

@@ -86,7 +86,8 @@ export interface SkyConfig {
 }
 
 /**
- * Your own name on the leaderboards, in a colour you pick.
+ * Your own name on the leaderboards, in a colour you pick, and under a name
+ * you pick if you want one.
  *
  * The same thing `shared/highlights.ts` does for the names written into the
  * client, but set from the QoL panel by whoever is playing, and only ever
@@ -94,10 +95,29 @@ export interface SkyConfig {
  * boards and goes nowhere.
  */
 export interface OwnNameConfig {
+  /** The colour and bold. The name below has its own off, which is empty. */
   readonly on: boolean;
   /** '#rrggbb'. */
   readonly color: string;
   readonly bold: boolean;
+  /** Shown in place of your name. Empty shows your real one. */
+  readonly alias: string;
+}
+
+/** Longest name the alias field takes. Krunker's own names are shorter. */
+export const OWN_ALIAS_MAX = 24;
+
+/**
+ * An alias as it can be stored: one line of plain text, trimmed and capped.
+ *
+ * It only ever reaches the page as a text node's data, so nothing in it can
+ * be markup. Control characters go because a line break or a tab in a
+ * leaderboard row is only ever a mistake.
+ */
+export function normaliseAlias(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  // eslint-disable-next-line no-control-regex
+  return value.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, OWN_ALIAS_MAX).trim();
 }
 
 /**
@@ -259,6 +279,7 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
       on: ownName.on === true,
       color: color(ownName.color, DEFAULT_VISUALS.ownName.color),
       bold: ownName.bold === true,
+      alias: normaliseAlias(ownName.alias),
     },
     crosshair: {
       on: crosshair.on === true,
@@ -351,7 +372,7 @@ function normaliseVariants(value: unknown): Record<string, number> {
 
 export const DEFAULT_VISUALS: VisualsConfig = {
   sky: { on: false, color: SKY_START_COLOR },
-  ownName: { on: false, color: OWN_NAME_START_COLOR, bold: false },
+  ownName: { on: false, color: OWN_NAME_START_COLOR, bold: false, alias: '' },
   crosshair: {
     on: false,
     image: '',

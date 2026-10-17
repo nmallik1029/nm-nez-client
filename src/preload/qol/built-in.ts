@@ -129,8 +129,8 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
     }),
     openable({
       icon: 'person',
-      name: 'Your name colour',
-      sub: 'Your own name in a colour you pick, on the corner leaderboard and the Tab scoreboard. Only you see it.',
+      name: 'Your name',
+      sub: 'Your own name in a colour you pick, and under a different name if you like, on the corner leaderboard and the Tab scoreboard. Only you see it. The switch is the colour; Edit for the name.',
       on: visuals.ownName.on,
       toggle: () =>
         ctx.deps.patchVisuals({ ownName: { ...visuals.ownName, on: !visuals.ownName.on } }),
