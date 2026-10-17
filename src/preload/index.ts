@@ -136,7 +136,12 @@ async function bootstrap(): Promise<void> {
   // Releases the map request the hook may already be holding.
   setSky(cfg.visuals.sky);
 
-  installFixes(cfg.fixes, cfg.ui.hideAdContainers, cfg.features.hideMenuPromos);
+  installFixes(
+    cfg.fixes,
+    cfg.ui.hideAdContainers,
+    cfg.features.hideMenuPromos,
+    capabilities.platform,
+  );
   // Escape leaving the game through main rather than the page, which is what
   // lets you click straight back in. Always on. See shared/escape-lock.ts.
   installEscapeLockRelease();

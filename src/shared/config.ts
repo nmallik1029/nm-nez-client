@@ -183,6 +183,22 @@ export interface FixConfig {
   rawInput: boolean;
 }
 
+/**
+ * Whether one "not supported" answer to raw input should stop the client
+ * asking for it again this session.
+ *
+ * Linux only. Chromium implements unadjusted movement for Windows and ChromeOS
+ * alone, so on Linux the answer is always no and asking on every lock only
+ * delays it. On Windows it is supported, and a refusal there is a passing
+ * one: the raw input registration behind it can fail for a moment. Giving up
+ * on the first one would drop you onto the accelerated cursor for the rest
+ * of the session with nothing on screen to say so, which is exactly the
+ * flick this setting exists to stop. Unknown reads as Windows.
+ */
+export function rawInputRefusalIsFinal(platform: string): boolean {
+  return platform === 'linux';
+}
+
 export type HudCorner = 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
 
 export interface UiConfig {
