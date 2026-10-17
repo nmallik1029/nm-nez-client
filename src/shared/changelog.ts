@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.72',
+    date: '2026-10-17',
+    changes: [
+      { kind: 'added', text: "Your name colour, in QoL Features under Built-in: pick a colour for your own name on the top right leaderboard, the Tab scoreboard and the end of match table, bold if you like. Only you see it. A name the client already colours keeps that colour." },
+    ],
+  },
+  {
     version: '0.1.71',
     date: '2026-10-03',
     changes: [
