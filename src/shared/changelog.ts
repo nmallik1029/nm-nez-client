@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.75',
+    date: '2026-10-17',
+    changes: [
+      { kind: 'fixed', text: "Raw mouse input could switch itself off on Windows for the rest of the session after one refused request, leaving you on Windows mouse acceleration with nothing to say so: good FPS, aim that felt off. It now asks on every lock again, as it did before 0.1.67." },
+      { kind: 'fixed', text: "Valorant kill streak packs and the Fortnite sounds install on networks that block GitHub, from a mirror of the same files, every one still checked. A pack that arrived while an antivirus was scanning it is no longer thrown away, and a failed install says why instead of only to check your connection." },
+    ],
+  },
+  {
     version: '0.1.74',
     date: '2026-10-17',
     changes: [
