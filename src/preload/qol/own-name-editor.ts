@@ -1,6 +1,7 @@
-import { OWN_ALIAS_MAX, OWN_NAME_PRESETS, type OwnNameConfig } from '../../shared/visuals';
+import { OWN_ALIAS_MAX, type OwnNameConfig } from '../../shared/visuals';
+import { colorWheel } from './color-wheel';
 import type { PanelView, TabContext } from './context';
-import { colorRow, heading, hint, textRow } from './controls';
+import { heading, hint, textRow } from './controls';
 import { featureRow } from './row';
 
 /**
@@ -36,10 +37,9 @@ function render(body: HTMLElement, ctx: TabContext): void {
       on: config.on,
       onToggle: () => commit({ on: !current().on }, true),
     }),
-    colorRow({
+    colorWheel({
       label: 'Colour',
       value: config.color,
-      presets: OWN_NAME_PRESETS,
       onPick: (color) => commit({ color }, false),
     }),
     featureRow({

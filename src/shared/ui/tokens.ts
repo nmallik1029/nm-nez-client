@@ -424,18 +424,6 @@ export const MARKER_PRESETS: readonly string[] = [
 /** Where the sky picker starts: a clear middle-of-the-day blue. */
 export const SKY_START_COLOR = '#8fd3ff';
 
-/** Day, night, sunset, overcast, and four that are nothing like a sky. */
-export const SKY_PRESETS: readonly string[] = [
-  '#8fd3ff',
-  '#0a1020',
-  '#ff8a3d',
-  '#6b7280',
-  '#b48cff',
-  '#000000',
-  '#ffd9a0',
-  '#1f6f4f',
-];
-
 /**
  * Where your own name's colour starts: a warm gold.
  *
@@ -444,20 +432,6 @@ export const SKY_PRESETS: readonly string[] = [
  */
 export const OWN_NAME_START_COLOR = '#ffd84a';
 
-/**
- * The swatches for your own name. Picked to read on Krunker's dark, see-through
- * boards, and to stay clear of the red it draws the other team in.
- */
-export const OWN_NAME_PRESETS: readonly string[] = [
-  '#ffd84a',
-  '#48eaff',
-  '#4ade80',
-  '#fa50ae',
-  '#b447ff',
-  '#ff8a3d',
-  '#ccccff',
-  '#a8ffec',
-];
 
 /**
  * The standalone ranked queue window, which is a separate document with a

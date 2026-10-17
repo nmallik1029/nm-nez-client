@@ -2,9 +2,7 @@ import {
   HITMARKER_START_COLOR,
   MARKER_PRESETS,
   MARKER_START_COLOR,
-  OWN_NAME_PRESETS,
   OWN_NAME_START_COLOR,
-  SKY_PRESETS,
   SKY_START_COLOR,
 } from './ui/tokens';
 import { isPackId, MAX_VARIANTS, retiredPack } from './killstreak';
@@ -410,7 +408,7 @@ export const DEFAULT_VISUALS: VisualsConfig = {
   fortnite: DEFAULT_FORTNITE,
 };
 
-export { MARKER_PRESETS, OWN_NAME_PRESETS, SKY_PRESETS };
+export { MARKER_PRESETS };
 
 /** One arm, as a line the painter strokes at `thickness`. */
 export interface MarkerLine {
