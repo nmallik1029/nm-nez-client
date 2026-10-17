@@ -16,6 +16,13 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.73',
+    date: '2026-10-17',
+    changes: [
+      { kind: 'added', text: "Show yourself under another name on the leaderboards: QoL Features, Built-in, Your name, then Edit and type it into Show as. It changes your row on the top right leaderboard, the Tab scoreboard and the end of match table, on your screen only. Leave it empty for your real name." },
+    ],
+  },
+  {
     version: '0.1.72',
     date: '2026-10-17',
     changes: [
