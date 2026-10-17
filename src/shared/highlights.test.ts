@@ -97,13 +97,17 @@ describe('withOwnName', () => {
     expect(withOwnName(null, own)).toEqual({ nameColor: '#ffd84a', clanColor: null, bold: false });
   });
 
-  it('beats a list colour on your name, and keeps your clan tag the clan colour', () => {
-    const listed = highlightFor('illegal', 'Fame', FRIENDS, CLANS);
-    expect(withOwnName(listed, own)).toEqual({ nameColor: '#ffd84a', clanColor: '#e4552e', bold: true });
+  it('leaves a listed friend exactly as the list has them', () => {
+    const listed = highlightFor('illegal', null, FRIENDS, CLANS);
+    expect(withOwnName(listed, { color: '#ffd84a', bold: true })).toEqual(listed);
   });
 
-  it('is bold when either side asks for it', () => {
+  it('leaves a listed clan exactly as the list has it', () => {
+    const listed = highlightFor('someone', 'YBG', FRIENDS, CLANS);
+    expect(withOwnName(listed, { color: '#ffd84a', bold: true })).toEqual(listed);
+  });
+
+  it('is bold when you ask for it', () => {
     expect(withOwnName(null, { ...own, bold: true }).bold).toBe(true);
-    expect(withOwnName(highlightFor('bolded_pal', null, FRIENDS, CLANS), own).bold).toBe(true);
   });
 });
