@@ -89,6 +89,15 @@ export const KRUNKER_NAMES = {
    */
   boardNameSelector:
     '.leaderName, .leaderNameM, .leaderNameF, .newLeaderName, .newLeaderNameM, .newLeaderNameF, .endTableN',
+  /**
+   * Your own name, on the two boards that mark it.
+   *
+   * Read out of game.js rather than inferred from the white: both boards add
+   * the `M` when the row's player id is the local player's, and for no other
+   * reason, so it holds in streamer mode and in modes with fake names too.
+   * The end-of-match table has no such class; it colours you white inline.
+   */
+  ownNameSelector: '.leaderNameM, .newLeaderNameM',
 } as const;
 
 /**

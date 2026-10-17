@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   highlightFor,
   parsePlayerName,
+  withOwnName,
   type ClanHighlight,
   type FriendHighlight,
 } from './highlights';
@@ -86,5 +87,23 @@ describe('highlightFor', () => {
     // "illegal" must not light up "illegally" or "notillegal".
     expect(of('illegally')).toBeNull();
     expect(of('notillegal')).toBeNull();
+  });
+});
+
+describe('withOwnName', () => {
+  const own = { color: '#ffd84a', bold: false };
+
+  it('colours you when no list mentions you', () => {
+    expect(withOwnName(null, own)).toEqual({ nameColor: '#ffd84a', clanColor: null, bold: false });
+  });
+
+  it('beats a list colour on your name, and keeps your clan tag the clan colour', () => {
+    const listed = highlightFor('illegal', 'Fame', FRIENDS, CLANS);
+    expect(withOwnName(listed, own)).toEqual({ nameColor: '#ffd84a', clanColor: '#e4552e', bold: true });
+  });
+
+  it('is bold when either side asks for it', () => {
+    expect(withOwnName(null, { ...own, bold: true }).bold).toBe(true);
+    expect(withOwnName(highlightFor('bolded_pal', null, FRIENDS, CLANS), own).bold).toBe(true);
   });
 });

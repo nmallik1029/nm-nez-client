@@ -28,7 +28,7 @@ import { installChatPlacement } from './chat-place';
 import { setAccuracyCounter, setAccuracyPlacement } from './hud/accuracy';
 import { setHardpointCounter } from './hud/hardpoint-counter';
 import { installBadges } from './badges';
-import { installNameHighlights, repaintBoards } from './name-highlights';
+import { installNameHighlights, repaintBoards, setOwnName } from './name-highlights';
 import { installProtocolHost } from './protocol/host';
 import { installQol } from './qol/panel';
 import { installRankedPanel } from './ranked/panel';
@@ -174,6 +174,8 @@ async function bootstrap(): Promise<void> {
     setAccuracyPlacement(cfg.features.accuracyPlacement);
     setAccuracyCounter(cfg.features.accuracyCounter);
 
+    // Before the first pass, so your name is right on the first board drawn.
+    setOwnName(cfg.visuals.ownName);
     installNameHighlights();
 
     // The badge pictures come from main, so they land after that first pass
@@ -360,6 +362,10 @@ function patchVisuals(cfg: AppConfig, partial: Partial<VisualsConfig>): void {
   if (partial.sky) {
     setSky(next.sky);
     dirtyVisuals.sky = next.sky;
+  }
+  if (partial.ownName) {
+    setOwnName(next.ownName);
+    dirtyVisuals.ownName = next.ownName;
   }
   if (partial.crosshair) {
     setCrosshair(next.crosshair);

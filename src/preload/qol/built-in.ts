@@ -4,6 +4,7 @@ import { accuracyEditor } from './accuracy-editor';
 import type { PanelView, TabContext } from './context';
 import { crosshairEditor } from './crosshair-editor';
 import { hitmarkerEditor } from './hitmarker-editor';
+import { ownNameEditor } from './own-name-editor';
 import { soundpacksEditor, toggleSoundpacks } from './soundpacks-editor';
 import { featureRow } from './row';
 import { showToast } from '../toast';
@@ -125,6 +126,15 @@ export function renderBuiltIn(body: HTMLElement, ctx: TabContext): void {
         ctx.deps.patchFeatures({ boardRankIcons: !ctx.deps.getFeatures().boardRankIcons });
         ctx.refresh();
       },
+    }),
+    openable({
+      icon: 'person',
+      name: 'Your name colour',
+      sub: 'Your own name in a colour you pick, on the corner leaderboard and the Tab scoreboard. Only you see it.',
+      on: visuals.ownName.on,
+      toggle: () =>
+        ctx.deps.patchVisuals({ ownName: { ...visuals.ownName, on: !visuals.ownName.on } }),
+      editor: ownNameEditor,
     }),
   );
 

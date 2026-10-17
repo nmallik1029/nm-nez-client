@@ -330,3 +330,29 @@ describe('normaliseVisuals: soundpacks', () => {
     expect(f.guns['1']).toBe(DEFAULT_FORTNITE.guns['1']);
   });
 });
+
+describe('normaliseVisuals: ownName', () => {
+  it('starts off, in the start colour, not bold', () => {
+    expect(normaliseVisuals({}).ownName).toEqual(DEFAULT_VISUALS.ownName);
+    expect(DEFAULT_VISUALS.ownName.on).toBe(false);
+  });
+
+  it('keeps a real pick', () => {
+    expect(normaliseVisuals({ ownName: { on: true, color: '#48eaff', bold: true } }).ownName).toEqual({
+      on: true,
+      color: '#48eaff',
+      bold: true,
+    });
+  });
+
+  it('throws out anything that is not a hex colour or a real true', () => {
+    const junk = normaliseVisuals({ ownName: { on: 'yes', color: 'red; background:url(x)', bold: 1 } });
+    expect(junk.ownName).toEqual(DEFAULT_VISUALS.ownName);
+  });
+
+  it('fills it in for a config saved before it existed', () => {
+    const before = normaliseVisuals({ sky: { on: true, color: '#112233' } });
+    expect(before.ownName).toEqual(DEFAULT_VISUALS.ownName);
+    expect(before.sky).toEqual({ on: true, color: '#112233' });
+  });
+});
