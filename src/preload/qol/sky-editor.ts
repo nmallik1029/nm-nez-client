@@ -1,6 +1,6 @@
-import { SKY_PRESETS, type SkyConfig } from '../../shared/visuals';
+import type { SkyConfig } from '../../shared/visuals';
+import { colorWheel } from './color-wheel';
 import type { PanelView, TabContext } from './context';
-import { colorRow } from './controls';
 import { featureRow, pendingStrip } from './row';
 import { skyStage } from './sky-stage';
 
@@ -45,10 +45,9 @@ function render(body: HTMLElement, ctx: TabContext): void {
       onToggle: () => commit({ ...config, on: !config.on }, true),
     }),
     stage.root,
-    colorRow({
+    colorWheel({
       label: 'Colour',
       value: config.color,
-      presets: SKY_PRESETS,
       onPick: (color) => {
         stage.setColor(color);
         commit({ ...config, color }, false);

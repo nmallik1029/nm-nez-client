@@ -475,6 +475,24 @@ const qolPanel = `
   font-size:var(--nm-fs-md);background:var(--nm-game-input-bg);color:var(--nm-game-text);
   border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none}
 #${UI_IDS.qolPanel} .ctl .line:focus{border-color:var(--nm-game-input-focus)}
+/* The colour wheel. The label sits at the top of it rather than centred on a
+   168px disc, where it would float in the middle of nothing. */
+#${UI_IDS.qolPanel} .wheel-row{align-items:flex-start}
+#${UI_IDS.qolPanel} .wheel{display:flex;flex-direction:column;gap:8px;width:168px}
+#${UI_IDS.qolPanel} .wheel-disc{position:relative;width:168px;height:168px;cursor:crosshair;
+  touch-action:none}
+#${UI_IDS.qolPanel} .wheel-disc canvas{display:block;width:100%;height:100%}
+#${UI_IDS.qolPanel} .wheel-mark{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;
+  box-sizing:border-box;border-radius:50%;border:var(--nm-bw-thick) solid var(--nm-text-hi);
+  box-shadow:0 0 0 var(--nm-bw) var(--nm-game-scrim);pointer-events:none}
+#${UI_IDS.qolPanel} .wheel-val{width:100%;height:12px;margin:0;-webkit-appearance:none;
+  appearance:none;border:var(--nm-bw) solid var(--nm-game-border);cursor:pointer}
+#${UI_IDS.qolPanel} .wheel-val::-webkit-slider-thumb{-webkit-appearance:none;width:8px;
+  height:18px;background:var(--nm-text-hi);border:var(--nm-bw) solid var(--nm-game-scrim);
+  cursor:pointer}
+#${UI_IDS.qolPanel} .wheel-hex{display:flex;align-items:center;gap:8px}
+#${UI_IDS.qolPanel} .wheel-now{flex:0 0 26px;height:26px;box-sizing:border-box;
+  border:var(--nm-bw) solid var(--nm-game-border)}
 #${UI_IDS.qolPanel} .ctl .play{flex:0 0 auto;padding:3px 6px;font-size:var(--nm-fs-xl);line-height:1}
 /*
  * Soundpacks' Fortnite picks: 24 dropdowns, laid across the wide panel
