@@ -437,6 +437,29 @@ export const SKY_PRESETS: readonly string[] = [
 ];
 
 /**
+ * Where your own name's colour starts: a warm gold.
+ *
+ * Krunker already draws you in white, your team dimmed and everyone else in
+ * red, so the starting point is a colour none of those is.
+ */
+export const OWN_NAME_START_COLOR = '#ffd84a';
+
+/**
+ * The swatches for your own name. Picked to read on Krunker's dark, see-through
+ * boards, and to stay clear of the red it draws the other team in.
+ */
+export const OWN_NAME_PRESETS: readonly string[] = [
+  '#ffd84a',
+  '#48eaff',
+  '#4ade80',
+  '#fa50ae',
+  '#b447ff',
+  '#ff8a3d',
+  '#ccccff',
+  '#a8ffec',
+];
+
+/**
  * The standalone ranked queue window, which is a separate document with a
  * deliberately quieter palette: it is a small always-on-top panel you leave
  * running with the game closed, not something layered over gameplay.

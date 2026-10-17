@@ -1,5 +1,6 @@
 import { KRUNKER_NAMES, PLAYER_LIST_WINDOW_INDEX } from '../krunker/constants';
-import { highlightFor, type Highlight } from '../shared/highlights';
+import { highlightFor, withOwnName, type Highlight } from '../shared/highlights';
+import { DEFAULT_VISUALS, type OwnNameConfig } from '../shared/visuals';
 import { applyBadges } from './badges';
 
 /**
@@ -27,6 +28,39 @@ import { applyBadges } from './badges';
 
 /** Marks what we have already touched, so a re-run is cheap and idempotent. */
 const DONE_ATTR = 'data-nm-highlight';
+
+/** The QoL panel's own-name setting, as last handed to `setOwnName`. */
+let ownName: OwnNameConfig = DEFAULT_VISUALS.ownName;
+
+/**
+ * Your name as the boards last showed it.
+ *
+ * The end-of-match table and the player list mark nobody as you, so on those
+ * you are found by name instead. The match boards always come first, which is
+ * where this is picked up.
+ */
+let ownDisplayName: string | null = null;
+
+/**
+ * The `style` attribute an element had before we first painted it.
+ *
+ * So switching a colour off puts back what Krunker drew rather than nothing:
+ * the end-of-match table colours you white inline, and the clan span carries
+ * the clan's colour the same way. Null for an element that had none.
+ */
+const unpainted = new WeakMap<HTMLElement, string | null>();
+
+function keepOriginal(el: HTMLElement): void {
+  if (!unpainted.has(el)) unpainted.set(el, el.getAttribute('style'));
+}
+
+function restoreOriginal(el: HTMLElement): void {
+  const original = unpainted.get(el);
+  if (original === undefined) return;
+  if (original === null) el.removeAttribute('style');
+  else el.setAttribute('style', original);
+  unpainted.delete(el);
+}
 
 /**
  * Pull the player's name and clan out of one name element.
@@ -59,6 +93,7 @@ export function nameAndClan(el: Element): { name: string; clan: string | null } 
  * assignment would be fighting on equal terms.
  */
 function paint(el: HTMLElement, highlight: Highlight): void {
+  keepOriginal(el);
   if (highlight.nameColor !== null) {
     el.style.setProperty('color', highlight.nameColor, 'important');
   }
@@ -66,6 +101,7 @@ function paint(el: HTMLElement, highlight: Highlight): void {
 
   const span = el.querySelector('span');
   if (span instanceof HTMLElement && highlight.clanColor !== null) {
+    keepOriginal(span);
     span.style.setProperty('color', highlight.clanColor, 'important');
   }
 }
@@ -89,7 +125,12 @@ function paintNames(root: ParentNode, selector: string, badges = false): void {
     const { name, clan } = nameAndClan(el);
     if (name === '') continue;
 
-    const highlight = highlightFor(name, clan);
+    const isOwn = el.matches(KRUNKER_NAMES.ownNameSelector);
+    if (isOwn) ownDisplayName = name;
+
+    const listed = highlightFor(name, clan);
+    const highlight =
+      ownName.on && (isOwn || name === ownDisplayName) ? withOwnName(listed, ownName) : listed;
     if (highlight) paint(el, highlight);
     if (badges) applyBadges(el, name, clan);
   }
@@ -146,9 +187,28 @@ function watchBoards(): boolean {
  */
 export function repaintBoards(): void {
   for (const board of boards()) {
-    for (const el of board.querySelectorAll(`[${DONE_ATTR}]`)) el.removeAttribute(DONE_ATTR);
+    for (const el of board.querySelectorAll<HTMLElement>(`[${DONE_ATTR}]`)) {
+      // Back to Krunker's own first, so a colour that is no longer wanted
+      // goes rather than staying under the next pass.
+      restoreOriginal(el);
+      const span = el.querySelector('span');
+      if (span instanceof HTMLElement) restoreOriginal(span);
+      el.removeAttribute(DONE_ATTR);
+    }
     paintBoard(board);
   }
+}
+
+/**
+ * Take the own-name setting and redo the boards with it.
+ *
+ * Live, so picking a colour in the QoL panel shows on the board behind it as
+ * you pick. The player list is built fresh each time it opens, so it picks
+ * the setting up then.
+ */
+export function setOwnName(next: OwnNameConfig): void {
+  ownName = next;
+  repaintBoards();
 }
 
 // ── player list ──────────────────────────────────────────────────────────

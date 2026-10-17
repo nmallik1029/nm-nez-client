@@ -2,6 +2,8 @@ import {
   HITMARKER_START_COLOR,
   MARKER_PRESETS,
   MARKER_START_COLOR,
+  OWN_NAME_PRESETS,
+  OWN_NAME_START_COLOR,
   SKY_PRESETS,
   SKY_START_COLOR,
 } from './ui/tokens';
@@ -84,6 +86,21 @@ export interface SkyConfig {
 }
 
 /**
+ * Your own name on the leaderboards, in a colour you pick.
+ *
+ * The same thing `shared/highlights.ts` does for the names written into the
+ * client, but set from the QoL panel by whoever is playing, and only ever
+ * about themselves. Nobody else sees it: it is painted on your copy of the
+ * boards and goes nowhere.
+ */
+export interface OwnNameConfig {
+  readonly on: boolean;
+  /** '#rrggbb'. */
+  readonly color: string;
+  readonly bold: boolean;
+}
+
+/**
  * Kill streak sounds.
  *
  * Not drawn over Krunker's art like the other three, but it is a banner as
@@ -116,6 +133,7 @@ export interface SoundpacksConfig {
 
 export interface VisualsConfig {
   readonly sky: SkyConfig;
+  readonly ownName: OwnNameConfig;
   readonly crosshair: CrosshairConfig;
   readonly hitmarker: HitmarkerConfig;
   /** Valorant's tab: kill streak announcers. */
@@ -221,6 +239,7 @@ export function normaliseMarker(value: unknown, fallback: MarkerSpec): MarkerSpe
 export function normaliseVisuals(value: unknown): VisualsConfig {
   const raw = (value ?? {}) as Partial<VisualsConfig>;
   const sky = (raw.sky ?? {}) as Partial<SkyConfig>;
+  const ownName = (raw.ownName ?? {}) as Partial<OwnNameConfig>;
   const crosshair = (raw.crosshair ?? {}) as Partial<CrosshairConfig>;
   const hitmarker = (raw.hitmarker ?? {}) as Partial<HitmarkerConfig>;
   const killStreak = (raw.killStreak ?? {}) as Partial<KillStreakConfig>;
@@ -235,6 +254,11 @@ export function normaliseVisuals(value: unknown): VisualsConfig {
     sky: {
       on: sky.on === true,
       color: color(sky.color, DEFAULT_VISUALS.sky.color),
+    },
+    ownName: {
+      on: ownName.on === true,
+      color: color(ownName.color, DEFAULT_VISUALS.ownName.color),
+      bold: ownName.bold === true,
     },
     crosshair: {
       on: crosshair.on === true,
@@ -327,6 +351,7 @@ function normaliseVariants(value: unknown): Record<string, number> {
 
 export const DEFAULT_VISUALS: VisualsConfig = {
   sky: { on: false, color: SKY_START_COLOR },
+  ownName: { on: false, color: OWN_NAME_START_COLOR, bold: false },
   crosshair: {
     on: false,
     image: '',
@@ -364,7 +389,7 @@ export const DEFAULT_VISUALS: VisualsConfig = {
   fortnite: DEFAULT_FORTNITE,
 };
 
-export { MARKER_PRESETS, SKY_PRESETS };
+export { MARKER_PRESETS, OWN_NAME_PRESETS, SKY_PRESETS };
 
 /** One arm, as a line the painter strokes at `thickness`. */
 export interface MarkerLine {
