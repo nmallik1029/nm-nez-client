@@ -1,4 +1,4 @@
-import type { FixConfig } from '../shared/config';
+import { rawInputRefusalIsFinal, type FixConfig } from '../shared/config';
 import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { toggleStyle } from './style';
 
@@ -78,11 +78,14 @@ export function installEscapePointerLockFix(): void {
 
 let rawInputEnabled = false;
 /**
- * The platform said it has no raw input. Linux, where Chromium implements
- * unadjusted movement only for Windows and ChromeOS: every lock there would
- * otherwise cost a refused request before the real one.
+ * The platform said it has no raw input, and on this platform that answer is
+ * final. Linux, where Chromium implements unadjusted movement only for
+ * Windows and ChromeOS: every lock there would otherwise cost a refused
+ * request before the real one. See rawInputRefusalIsFinal for why Windows
+ * keeps asking.
  */
 let rawInputUnsupported = false;
+let refusalIsFinal = false;
 
 /**
  * Ask pointer lock for raw, unaccelerated mouse deltas.
@@ -101,8 +104,9 @@ let rawInputUnsupported = false;
  * to HTMLCanvasElement.prototype shadows the inherited Element method for
  * canvases only, which is all Krunker ever locks.
  */
-export function installRawInputHook(enabled: boolean): void {
+export function installRawInputHook(enabled: boolean, platform: string): void {
   rawInputEnabled = enabled;
+  refusalIsFinal = rawInputRefusalIsFinal(platform);
 
   // unbound-method fires on detaching a prototype method from its object,
   // which is exactly what wrapping one involves. Every call below goes through
@@ -130,7 +134,7 @@ export function installRawInputHook(enabled: boolean): void {
         // into "too many pointer lock requests" and kept you locked out
         // longer the harder you clicked.
         if ((err as { name?: unknown } | null)?.name === 'NotSupportedError') {
-          rawInputUnsupported = true;
+          if (refusalIsFinal) rawInputUnsupported = true;
           return original.call(this, options);
         }
         return Promise.reject(err instanceof Error ? err : new Error(String(err)));
@@ -427,6 +431,7 @@ export function installFixes(
   fixes: FixConfig,
   hideAdContainers: boolean,
   hideMenuPromos: boolean,
+  platform: string,
 ): void {
   if (fixes.scrollFramePacing) installScrollFramePacingFix();
   // Not a setting. Escape leaving the game instantly is how it should work,
@@ -434,7 +439,7 @@ export function installFixes(
   installEscapePointerLockFix();
   // Always installed so the toggle works without a reload. While it's off the
   // wrapper is a straight passthrough.
-  installRawInputHook(fixes.rawInput);
+  installRawInputHook(fixes.rawInput, platform);
   setAdContainerHiding(hideAdContainers);
   setMenuPromoHiding(hideMenuPromos);
   installPlayRowFix();
