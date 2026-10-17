@@ -109,22 +109,17 @@ export function highlightFor(
 }
 
 /**
- * Your own colour, laid over whatever the lists say about you.
+ * Your own colour, for when the lists below have nothing to say about you.
  *
- * The one you picked wins on the name: it is a choice about yourself, made
- * in the client, and the lists are somebody else's choice made in the source.
- * Your clan tag keeps its list colour, if it has one, for the same reason a
- * friend's does in `highlightFor`. Bold is an or, as it is there.
+ * The lists win outright. A name or clan written in here keeps exactly the
+ * colour and weight it was given, so the setting only ever reaches a name
+ * the source left alone.
  */
 export function withOwnName(
   listed: Highlight | null,
   own: { readonly color: string; readonly bold: boolean },
 ): Highlight {
-  return {
-    nameColor: own.color,
-    clanColor: listed?.clanColor ?? null,
-    bold: own.bold || (listed?.bold ?? false),
-  };
+  return listed ?? { nameColor: own.color, clanColor: null, bold: own.bold };
 }
 
 // ── the lists ────────────────────────────────────────────────────────────

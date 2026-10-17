@@ -45,6 +45,8 @@ function render(body: HTMLElement, ctx: TabContext): void {
       on: config.bold,
       onToggle: () => commit({ bold: !current().bold }, true),
     }),
-    hint("Only you see this. It changes your copy of the boards and nobody else's."),
+    hint(
+      "Only you see this. It changes your copy of the boards and nobody else's. A name the client already colours keeps that colour.",
+    ),
   );
 }
