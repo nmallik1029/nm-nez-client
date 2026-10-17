@@ -210,6 +210,48 @@ export function colorRow(spec: ColorSpec): HTMLElement {
   return row;
 }
 
+export interface TextSpec {
+  readonly label: string;
+  readonly value: string;
+  readonly placeholder: string;
+  readonly maxLength: number;
+  readonly onChange: (value: string) => void;
+}
+
+/**
+ * One line of text, saved as you type.
+ *
+ * Keys are kept from reaching the game while it has focus. Krunker listens on
+ * the window for its binds, so without that typing a name would also be
+ * pressing whatever each letter is bound to.
+ */
+export function textRow(spec: TextSpec): HTMLElement {
+  const row = document.createElement('div');
+  row.className = 'ctl';
+
+  const label = document.createElement('span');
+  label.className = 'lbl';
+  label.textContent = spec.label;
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'line';
+  input.value = spec.value;
+  input.placeholder = spec.placeholder;
+  input.maxLength = spec.maxLength;
+  input.spellcheck = false;
+  input.autocomplete = 'off';
+  for (const type of ['keydown', 'keyup', 'keypress'] as const) {
+    // Escape still closes the panel: the panel catches it on the way down,
+    // before it ever reaches here.
+    input.addEventListener(type, (event) => event.stopPropagation());
+  }
+  input.addEventListener('input', () => spec.onChange(input.value));
+
+  row.append(label, input);
+  return row;
+}
+
 /** A line of small print under a control, for something worth saying once. */
 export function hint(text: string): HTMLElement {
   const el = document.createElement('div');

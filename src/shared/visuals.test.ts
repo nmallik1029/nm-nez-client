@@ -4,6 +4,8 @@ import {
   colorToInt,
   DEFAULT_VISUALS,
   MARKER_LIMITS,
+  normaliseAlias,
+  OWN_ALIAS_MAX,
   MAX_IMAGE_CHARS,
   markerGeometry,
   normaliseMarker,
@@ -338,15 +340,15 @@ describe('normaliseVisuals: ownName', () => {
   });
 
   it('keeps a real pick', () => {
-    expect(normaliseVisuals({ ownName: { on: true, color: '#48eaff', bold: true } }).ownName).toEqual({
-      on: true,
-      color: '#48eaff',
-      bold: true,
-    });
+    expect(
+      normaliseVisuals({ ownName: { on: true, color: '#48eaff', bold: true, alias: 'Someone' } }).ownName,
+    ).toEqual({ on: true, color: '#48eaff', bold: true, alias: 'Someone' });
   });
 
   it('throws out anything that is not a hex colour or a real true', () => {
-    const junk = normaliseVisuals({ ownName: { on: 'yes', color: 'red; background:url(x)', bold: 1 } });
+    const junk = normaliseVisuals({
+      ownName: { on: 'yes', color: 'red; background:url(x)', bold: 1, alias: 42 },
+    });
     expect(junk.ownName).toEqual(DEFAULT_VISUALS.ownName);
   });
 
@@ -354,5 +356,24 @@ describe('normaliseVisuals: ownName', () => {
     const before = normaliseVisuals({ sky: { on: true, color: '#112233' } });
     expect(before.ownName).toEqual(DEFAULT_VISUALS.ownName);
     expect(before.sky).toEqual({ on: true, color: '#112233' });
+  });
+});
+
+describe('normaliseAlias', () => {
+  it('trims, and keeps an ordinary name as it is', () => {
+    expect(normaliseAlias('  Some Name  ')).toBe('Some Name');
+  });
+
+  it('takes out line breaks, tabs and other control characters', () => {
+    expect(normaliseAlias('a\nb\tc\u0000d')).toBe('abcd');
+  });
+
+  it('caps the length, and does not leave a space dangling at the cut', () => {
+    expect(normaliseAlias('x'.repeat(OWN_ALIAS_MAX + 10))).toHaveLength(OWN_ALIAS_MAX);
+    expect(normaliseAlias('y'.repeat(OWN_ALIAS_MAX - 1) + ' z')).toBe('y'.repeat(OWN_ALIAS_MAX - 1));
+  });
+
+  it('is empty for anything that is not a string', () => {
+    for (const junk of [null, undefined, 7, {}, ['a']]) expect(normaliseAlias(junk)).toBe('');
   });
 });

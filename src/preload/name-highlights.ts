@@ -63,6 +63,41 @@ function restoreOriginal(el: HTMLElement): void {
 }
 
 /**
+ * Your real name, kept on an element we have written your alias into.
+ *
+ * Everything that matches names reads this rather than the text: the lists in
+ * `shared/highlights.ts`, the rank icons, and finding you again on the end of
+ * match table all want the name Krunker knows you by, not the one you picked.
+ */
+const REAL_NAME_ATTR = 'data-nm-real-name';
+
+/** The name's own text nodes, which are what an alias replaces. */
+function ownTextNodes(el: Element): Text[] {
+  return [...el.childNodes].filter((node): node is Text => node.nodeType === Node.TEXT_NODE);
+}
+
+/**
+ * Show `alias` in place of the name. The clan span, badges and rank icon are
+ * elements beside the text, so they stay where they are.
+ */
+function writeAlias(el: HTMLElement, realName: string, alias: string): void {
+  const [first, ...rest] = ownTextNodes(el);
+  if (!first) return;
+  el.setAttribute(REAL_NAME_ATTR, realName);
+  first.data = alias;
+  for (const node of rest) node.data = '';
+}
+
+function restoreName(el: HTMLElement): void {
+  const realName = el.getAttribute(REAL_NAME_ATTR);
+  if (realName === null) return;
+  const [first, ...rest] = ownTextNodes(el);
+  if (first) first.data = realName;
+  for (const node of rest) node.data = '';
+  el.removeAttribute(REAL_NAME_ATTR);
+}
+
+/**
  * Pull the player's name and clan out of one name element.
  *
  * The name is the element's own text; the clan, when there is one, is a
@@ -73,9 +108,9 @@ function restoreOriginal(el: HTMLElement): void {
  * the same name on another and should read it exactly the way this does.
  */
 export function nameAndClan(el: Element): { name: string; clan: string | null } {
-  let name = '';
-  for (const node of el.childNodes) {
-    if (node.nodeType === Node.TEXT_NODE) name += node.textContent ?? '';
+  let name = el.getAttribute(REAL_NAME_ATTR) ?? '';
+  if (name === '') {
+    for (const node of ownTextNodes(el)) name += node.data;
   }
 
   const span = el.querySelector('span');
@@ -128,10 +163,11 @@ function paintNames(root: ParentNode, selector: string, badges = false): void {
     const isOwn = el.matches(KRUNKER_NAMES.ownNameSelector);
     if (isOwn) ownDisplayName = name;
 
+    const isYou = isOwn || name === ownDisplayName;
     const listed = highlightFor(name, clan);
-    const highlight =
-      ownName.on && (isOwn || name === ownDisplayName) ? withOwnName(listed, ownName) : listed;
+    const highlight = ownName.on && isYou ? withOwnName(listed, ownName) : listed;
     if (highlight) paint(el, highlight);
+    if (isYou && ownName.alias !== '') writeAlias(el, name, ownName.alias);
     if (badges) applyBadges(el, name, clan);
   }
 }
@@ -191,6 +227,7 @@ export function repaintBoards(): void {
       // Back to Krunker's own first, so a colour that is no longer wanted
       // goes rather than staying under the next pass.
       restoreOriginal(el);
+      restoreName(el);
       const span = el.querySelector('span');
       if (span instanceof HTMLElement) restoreOriginal(span);
       el.removeAttribute(DONE_ATTR);

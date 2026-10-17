@@ -471,6 +471,10 @@ const qolPanel = `
   font-size:var(--nm-fs-md);background:var(--nm-game-input-bg);color:var(--nm-game-text);
   border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none;cursor:pointer}
 #${UI_IDS.qolPanel} .ctl .sel:focus{border-color:var(--nm-game-input-focus)}
+#${UI_IDS.qolPanel} .ctl .line{flex:1;min-width:0;padding:5px 7px;font-family:inherit;
+  font-size:var(--nm-fs-md);background:var(--nm-game-input-bg);color:var(--nm-game-text);
+  border:var(--nm-bw-thick) solid var(--nm-game-border);outline:none}
+#${UI_IDS.qolPanel} .ctl .line:focus{border-color:var(--nm-game-input-focus)}
 #${UI_IDS.qolPanel} .ctl .play{flex:0 0 auto;padding:3px 6px;font-size:var(--nm-fs-xl);line-height:1}
 /*
  * Soundpacks' Fortnite picks: 24 dropdowns, laid across the wide panel
