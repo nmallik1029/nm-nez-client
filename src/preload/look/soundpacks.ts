@@ -36,12 +36,17 @@ export async function listSoundpacks(): Promise<readonly SoundpackStatus[]> {
   }
 }
 
-/** True once it is on disk and checked; main logs why when not. */
-export async function installSoundpack(id: string): Promise<boolean> {
+/**
+ * True once it is on disk and checked. Otherwise a few words on why, as main
+ * put it; the whole error is in main's log.
+ */
+export async function installSoundpack(id: string): Promise<true | string> {
   try {
-    return (await ipcRenderer.invoke(IPC.soundpacksInstall, id)) === true;
+    const answer: unknown = await ipcRenderer.invoke(IPC.soundpacksInstall, id);
+    if (answer === true) return true;
+    return typeof answer === 'string' ? answer : 'Check your connection and try again';
   } catch {
-    return false;
+    return 'Check your connection and try again';
   }
 }
 

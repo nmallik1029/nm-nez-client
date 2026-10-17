@@ -118,6 +118,14 @@ function changed(): void {
  * Download one pack from the catalog. Resolves true once it is on disk,
  * checked and in the list, false if anything stopped it; main logs why.
  */
+/** Why each pack's last install did not work, as main put it, for the toast. */
+const failedBecause = new Map<string, string>();
+
+/** Main's few words on why this pack did not install, or a fallback. */
+export function installFailure(id: string): string {
+  return failedBecause.get(id) ?? 'Check your connection and try again';
+}
+
 export async function installKillPack(id: string): Promise<boolean> {
   if (installing.has(id)) return false;
   installing.add(id);
@@ -125,7 +133,10 @@ export async function installKillPack(id: string): Promise<boolean> {
   changed();
   let ok = false;
   try {
-    ok = (await ipcRenderer.invoke(IPC.killPacksInstall, id)) === true;
+    const answer: unknown = await ipcRenderer.invoke(IPC.killPacksInstall, id);
+    ok = answer === true;
+    if (typeof answer === 'string') failedBecause.set(id, answer);
+    else failedBecause.delete(id);
   } catch {
     // The channel itself failing is the same answer: not installed.
   }
@@ -236,7 +247,12 @@ function fetchWanted(picked: string, nothingToPlay: boolean): void {
   void installKillPack(want.id).then((ok) => {
     // The editor says so when its own Install fails. This one nobody pressed,
     // so without a word it is just a switch that is on and silent.
-    if (!ok) showToast(`Could not download the ${want.name} kill streak pack. Press Edit on Kill streak sounds to try again.`, 4000);
+    if (!ok) {
+      showToast(
+        `Could not download the ${want.name} kill streak pack: ${installFailure(want.id)}. Press Edit on Kill streak sounds to try again.`,
+        6000,
+      );
+    }
   });
 }
 
