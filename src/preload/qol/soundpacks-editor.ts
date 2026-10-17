@@ -122,8 +122,8 @@ function renderInstall(slot: HTMLElement, pack: SoundpackStatus, ctx: TabContext
           button.textContent = 'Installing...';
           button.disabled = true;
         }
-        void installSoundpack(pack.id).then((ok) => {
-          if (!ok) showToast('Could not download the Fortnite sounds. Check your connection and try again.', 3600);
+        void installSoundpack(pack.id).then((result) => {
+          if (result !== true) showToast(`Could not download the Fortnite sounds: ${result}.`, 6000);
           // Every picked sound goes from Krunker's own to Fortnite's.
           else reloadPickedSounds(ctx.deps.getVisuals());
           if (ctx.live()) ctx.refresh();

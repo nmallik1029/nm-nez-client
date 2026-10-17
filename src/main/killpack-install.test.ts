@@ -4,7 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  describeInstallFailure,
   installKillPack,
+  KILL_CATALOG,
+  packSources,
   listKillPackEntries,
   outdatedKillPacks,
   refreshKillPacks,
@@ -444,5 +447,90 @@ describe('bringing installed packs up to date', () => {
     expect(readFileSync(join(installed, 'ion', 'ion_2.mp3'), 'utf8')).toBe('second');
     expect(outdatedKillPacks(installed, fixed)).toEqual(['ion']);
     expect(log).toHaveBeenCalledWith(expect.stringContaining('ion not brought up to date'));
+  });
+});
+
+describe('packSources', () => {
+  const COMMIT = '18437d513b1a47702bd8909560330b20be0c9f5f';
+
+  it("adds jsDelivr's copy of the same pinned commit after GitHub's own", () => {
+    expect(packSources(`https://raw.githubusercontent.com/nmallik1029/nm-nez-client/${COMMIT}/assets/killstreak/`)).toEqual([
+      `https://raw.githubusercontent.com/nmallik1029/nm-nez-client/${COMMIT}/assets/killstreak/`,
+      `https://cdn.jsdelivr.net/gh/nmallik1029/nm-nez-client@${COMMIT}/assets/killstreak/`,
+    ]);
+  });
+
+  it('leaves anything that is not a pinned raw GitHub address as the only source', () => {
+    // A branch moves, and a mirror of a moving branch can lag what GitHub has.
+    expect(packSources('https://raw.githubusercontent.com/o/r/main/assets/')).toHaveLength(1);
+    expect(packSources(SOURCE)).toEqual([SOURCE]);
+  });
+
+  it('mirrors what the shipped catalogs actually point at', () => {
+    expect(packSources(KILL_CATALOG.source)).toHaveLength(2);
+  });
+});
+
+describe('installKillPack: when GitHub cannot be reached', () => {
+  const COMMIT = 'a'.repeat(40);
+  const RAW = `https://raw.githubusercontent.com/o/r/${COMMIT}/packs/`;
+  const MIRROR = `https://cdn.jsdelivr.net/gh/o/r@${COMMIT}/packs/`;
+  // Served from the mirror only: every request to RAW fails, as on a network
+  // that blocks it.
+  const BLOCKED: KillCatalog = {
+    source: RAW,
+    packs: [
+      {
+        id: 'reaver',
+        name: 'Reaver',
+        files: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => file('reaver', `reaver_${n}.mp3`, `kill ${n}`, MIRROR)),
+      },
+    ],
+  };
+
+  it('installs the whole pack from the mirror, every file checked', async () => {
+    await installKillPack('reaver', installed, serve, BLOCKED);
+    expect(readdirSync(join(installed, 'reaver'))).toHaveLength(11);
+  });
+
+  it('stops asking GitHub once it has failed, rather than once per file', async () => {
+    const fetchFile = vi.fn(serve);
+    await installKillPack('reaver', installed, fetchFile, BLOCKED);
+    const toGitHub = fetchFile.mock.calls.filter(([url]) => url.startsWith(RAW)).length;
+    // Only the files already on their way when the first one failed.
+    expect(toGitHub).toBeLessThanOrEqual(4);
+    expect(fetchFile.mock.calls.filter(([url]) => url.startsWith(MIRROR))).toHaveLength(10);
+  });
+
+  it('takes a file from the mirror that GitHub sent wrong', async () => {
+    const wrong: FetchFile = (url, size) =>
+      url.startsWith(RAW) ? Promise.resolve(new Uint8Array(size)) : serve(url, size);
+    await installKillPack('reaver', installed, wrong, BLOCKED);
+    expect(readFileSync(join(installed, 'reaver', 'reaver_3.mp3'), 'utf8')).toBe('kill 3');
+  });
+
+  it('keeps nothing when neither can be reached', async () => {
+    const offline: FetchFile = () => Promise.reject(new Error('getaddrinfo ENOTFOUND'));
+    await expect(installKillPack('reaver', installed, offline, BLOCKED)).rejects.toThrow('ENOTFOUND');
+    expect(readdirSync(installed)).toEqual([]);
+  });
+});
+
+describe('describeInstallFailure', () => {
+  const errno = (code: string): Error => Object.assign(new Error(code), { code });
+
+  it('names an antivirus for the Windows in-use errors, not the connection', () => {
+    for (const code of ['EPERM', 'EBUSY', 'EACCES']) {
+      expect(describeInstallFailure(errno(code))).toMatch(/antivirus/);
+    }
+  });
+
+  it('tells a full disk, a stall and a wrong file apart from no connection', () => {
+    expect(describeInstallFailure(errno('ENOSPC'))).toMatch(/full/);
+    expect(describeInstallFailure(new Error('nothing from https://x for 30s'))).toMatch(/stalled/);
+    expect(describeInstallFailure(new Error('reaver/reaver_1.mp3 is not the file this client was built with'))).toMatch(
+      /different/,
+    );
+    expect(describeInstallFailure(new Error('fetch failed'))).toMatch(/could be reached/);
   });
 });

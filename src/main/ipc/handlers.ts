@@ -29,7 +29,12 @@ import {
   saveUserscript,
   type SaveProblem,
 } from '../assets';
-import { installKillPack, listKillPackEntries, removeKillPack } from '../killpack-install';
+import {
+  describeInstallFailure,
+  installKillPack,
+  listKillPackEntries,
+  removeKillPack,
+} from '../killpack-install';
 import { SOUNDPACK_CATALOG, soundpackStatus } from '../soundpacks';
 import { isPackId } from '../../shared/killstreak';
 import { loadThemes } from '../themes';
@@ -228,8 +233,8 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
     listKillPackEntries(killPackDirs(paths), paths.installedKillPacks),
   );
 
-  // A boolean rather than a throw, since all the page does with a failure is
-  // say it did not work. Why it did not goes in the log.
+  // True, or a few words on why not for the page to show. Never a throw: the
+  // whole error goes in the log, and only the gist goes to the toast.
   registry.handle(IPC.killPacksInstall, async (_e, id: unknown) => {
     if (!isPackId(id)) return false;
     try {
@@ -238,7 +243,7 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
       return true;
     } catch (err) {
       console.warn(BRANDING.logPrefix, `kill streak pack ${id} not installed:`, err);
-      return false;
+      return describeInstallFailure(err);
     }
   });
 
@@ -255,7 +260,7 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
       return true;
     } catch (err) {
       console.warn(BRANDING.logPrefix, `soundpack ${id} not installed:`, err);
-      return false;
+      return describeInstallFailure(err);
     } finally {
       deps.refreshRequestFilter();
     }

@@ -71,6 +71,47 @@ export type FetchFile = (url: string, size: number) => Promise<Uint8Array>;
  */
 const STALL_MS = 30_000;
 
+/**
+ * Every address a catalog's files can be fetched from, in the order to try.
+ *
+ * GitHub's raw server first, then jsDelivr's copy of the same commit. Some
+ * networks cannot reach raw.githubusercontent.com at all (whole ISPs block
+ * it, and so do school and office filters), and for them every Install used
+ * to fail with nothing to say why. The commit is pinned, so both serve the
+ * same bytes, and every file is checked against the catalog's hash whichever
+ * one it came from: the mirror can be slow or missing, never wrong.
+ */
+export function packSources(source: string): string[] {
+  const raw = /^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([0-9a-f]{40})\/(.*)$/.exec(source);
+  if (!raw) return [source];
+  const [, owner, repo, commit, path] = raw;
+  return [source, `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${commit}/${path}`];
+}
+
+/** Errors that mean another process has the files for a moment, not that the disk refused. */
+const BUSY_CODES = new Set(['EPERM', 'EBUSY', 'EACCES']);
+
+/**
+ * What to tell the player when a pack did not install, in a few words.
+ *
+ * The toast used to say "check your connection" whatever happened, which was
+ * wrong as often as right: on Windows the usual other cause is an antivirus
+ * holding the files the client has just written.
+ */
+export function describeInstallFailure(err: unknown): string {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (typeof code === 'string' && BUSY_CODES.has(code)) {
+    return 'Windows would not let the client move the files into place. An antivirus scanning them is the usual reason';
+  }
+  if (code === 'ENOSPC') return 'The disk is full';
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes('is not the file this client was built with')) {
+    return 'A file arrived different from the one this client expects';
+  }
+  if (message.startsWith('nothing from')) return 'The download stalled';
+  return 'Neither GitHub nor its mirror could be reached from this network';
+}
+
 const fetchFromGitHub: FetchFile = async (url, size) => {
   const abort = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -226,9 +267,8 @@ export function installKillPack(
   const already = running.get(key);
   if (already) return already;
 
-  const job = download(pack, dir, `${catalog.source}${pack.id}/`, fetchFile).finally(() =>
-    running.delete(key),
-  );
+  const froms = packSources(catalog.source).map((source) => `${source}${pack.id}/`);
+  const job = download(pack, dir, froms, fetchFile).finally(() => running.delete(key));
   running.set(key, job);
   return job;
 }
@@ -236,7 +276,7 @@ export function installKillPack(
 async function download(
   pack: CatalogPack,
   dir: string,
-  from: string,
+  froms: readonly string[],
   fetchFile: FetchFile,
 ): Promise<void> {
   const staging = join(dir, `${pack.id}.download`);
@@ -248,16 +288,34 @@ async function download(
   // has emptied it. After a failure no new file is started: the pack is not
   // going in anyway.
   const failures: unknown[] = [];
+  // Where each file starts. Moves on for good once a source has failed a
+  // file, so a network that blocks GitHub pays one stall for the pack rather
+  // than one per file.
+  let first = 0;
+
+  const fetchChecked = async (file: CatalogFile): Promise<Uint8Array> => {
+    let last: unknown = new Error(`no source for ${pack.id}/${file.name}`);
+    for (let k = first; k < froms.length; k++) {
+      try {
+        const data = await fetchFile(`${froms[k]}${file.name}`, file.size);
+        if (data.length !== file.size || sha512(data) !== file.sha512) {
+          throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
+        }
+        return data;
+      } catch (reason) {
+        last = reason;
+        if (k + 1 < froms.length) first = Math.max(first, k + 1);
+      }
+    }
+    throw last;
+  };
+
   await Promise.all(
     pack.files.map((file) =>
       inSlot(async () => {
         if (failures.length > 0) return;
         try {
-          const data = await fetchFile(`${from}${file.name}`, file.size);
-          if (data.length !== file.size || sha512(data) !== file.sha512) {
-            throw new Error(`${pack.id}/${file.name} is not the file this client was built with`);
-          }
-          writeFileSync(join(staging, file.name), data);
+          writeFileSync(join(staging, file.name), await fetchChecked(file));
         } catch (reason) {
           failures.push(reason);
         }
@@ -275,14 +333,39 @@ async function download(
       join(staging, 'pack.json'),
       JSON.stringify({ name: pack.name, stamp: packStamp(pack) }),
     );
-    const target = join(dir, pack.id);
-    rmSync(target, { recursive: true, force: true });
-    renameSync(staging, target);
+    await moveIntoPlace(staging, join(dir, pack.id));
   } catch (err) {
     rmSync(staging, { recursive: true, force: true });
     throw err;
   }
 }
+
+/**
+ * Swap the finished download in for whatever was there.
+ *
+ * Retried for a few seconds on Windows' "in use" errors. An antivirus opens
+ * every file the moment it is written, and renaming a folder while anything
+ * inside it is open fails; a moment later it goes through. Without this, a
+ * pack whose every file had arrived and checked out was thrown away at the
+ * last step.
+ */
+async function moveIntoPlace(staging: string, target: string): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      rmSync(target, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      renameSync(staging, target);
+      return;
+    } catch (err) {
+      const code = (err as { code?: unknown } | null)?.code;
+      if (attempt >= MOVE_RETRIES || typeof code !== 'string' || !BUSY_CODES.has(code)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, MOVE_RETRY_MS * 2 ** attempt));
+    }
+  }
+}
+
+/** 150, 300, 600, 1200 and 2400 ms: under five seconds in all. */
+const MOVE_RETRIES = 5;
+const MOVE_RETRY_MS = 150;
 
 /**
  * Which version of a catalog pack a download is, written into its pack.json.

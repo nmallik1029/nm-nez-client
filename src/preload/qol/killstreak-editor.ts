@@ -9,6 +9,7 @@ import {
 import { SHEETS, STYLE_IDS } from '../../shared/ui';
 import type { KillStreakConfig } from '../../shared/visuals';
 import {
+  installFailure,
   installKillPack,
   isInstalling,
   isRemoving,
@@ -140,7 +141,7 @@ export function renderKillStreak(body: HTMLElement, ctx: TabContext): void {
       if (!ok) {
         // Off this pick, unless something else has been picked since.
         if (current().pack === pack.id) commit(fallback(before), false);
-        showToast(`Could not download ${pack.name}. Check your connection and try again.`, 3600);
+        showToast(`Could not download ${pack.name}: ${installFailure(pack.id)}.`, 6000);
         return;
       }
       if (!ctx.live()) return;
