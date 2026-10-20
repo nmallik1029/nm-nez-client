@@ -103,6 +103,44 @@ export function restoreAnchor<T>(
   return first;
 }
 
+/**
+ * How long after a wheel turn or a press on the list its scroll events still
+ * count as yours.
+ *
+ * A wheel notch scrolls smoothly over a couple of hundred milliseconds, and a
+ * touchpad keeps sending wheel events while it coasts, so the scroll events a
+ * gesture causes trail the input that caused them. A second covers that with
+ * room to spare.
+ */
+export const USER_SCROLL_MS = 1000;
+
+/**
+ * What a scroll event means for following along:
+ *
+ *   follow  at the bottom, so follow new messages
+ *   hold    stay where you are
+ *   repin   something other than you moved chat off the bottom; go back
+ *
+ * Only a scroll you made can stop chat following. A scroll event is handed
+ * over on the next frame, and the position it is judged by is read then, not
+ * when the scroll happened. Anything that shrinks chat in between reads as you
+ * having scrolled up. Dying does exactly that: the line saying who killed you
+ * arrives, chat scrolls down to it, and the death screen cuts chat to 165px
+ * before the event is delivered. Following stopped, and from then on every new
+ * message was pinned back to the held position. Mid-game the pointer is locked
+ * and there is no way to scroll chat free, so it sat frozen.
+ *
+ * Once paused, any scroll keeps the pause and records where it landed, since
+ * that is the browser keeping your place.
+ */
+export type ScrollOutcome = 'follow' | 'hold' | 'repin';
+
+export function judgeScroll(atBottom: boolean, byUser: boolean, paused: boolean): ScrollOutcome {
+  if (atBottom) return 'follow';
+  if (byUser || paused) return 'hold';
+  return 'repin';
+}
+
 /** True when a scroll position is close enough to the bottom to keep following. */
 export function isNearBottom(
   scrollTop: number,

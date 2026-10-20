@@ -97,10 +97,10 @@ describe('withShots / withHit', () => {
     expect([s.shots, s.landed]).toEqual([1, 1]);
   });
 
-  it('counts a headshot once, though it plays two sounds', () => {
+  it('counts a shell once when its pellets play both hit sounds', () => {
     let s = fire(fire(EMPTY_ACCURACY, 0), 100);
-    s = withHit(s, 150); // hit_0
-    s = withHit(s, 150); // headshot_0, same frame
+    s = withHit(s, 150); // hit_0, a pellet in the body
+    s = withHit(s, 150); // crit_0, one in the head, same frame
     expect(s.landed).toBe(1);
   });
 

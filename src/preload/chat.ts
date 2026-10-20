@@ -4,8 +4,10 @@ import {
   isChatNoise,
   isNearBottom,
   isTeamMode,
+  judgeScroll,
   overflowCount,
   restoreAnchor,
+  USER_SCROLL_MS,
 } from '../shared/chat';
 import { SHEETS, STYLE_IDS } from '../shared/ui';
 import { defineStyle, toggleStyle } from './style';
@@ -24,7 +26,9 @@ import { defineStyle, toggleStyle } from './style';
  *  3. Krunker force-scrolls to the bottom on a new message, which yanks you
  *     down mid-read. If you've scrolled up, that scroll gets undone and your
  *     position held. It only does that during a round, though, so following
- *     along is ours to do everywhere else.
+ *     along is ours to do everywhere else. Only your own wheel or mouse can
+ *     stop it following (see judgeScroll), and going back into the game
+ *     always starts it again.
  */
 
 export interface ChatOptions {
@@ -50,6 +54,11 @@ let reinserting = false;
 let scrollPaused = false;
 let savedScrollTop = 0;
 let resizeObserver: ResizeObserver | null = null;
+
+/** Until when a scroll event is put down to you; see USER_SCROLL_MS. */
+let userScrollUntil = 0;
+/** A button held on the list: dragging its scrollbar, or selecting text. */
+let pointerHeld = false;
 
 function isMessage(node: Node): node is HTMLElement {
   return (
@@ -109,39 +118,44 @@ function reinsertRemoved(mutations: MutationRecord[]): void {
   // Detach first. Re-inserting fires the observer again and we'd loop.
   observer.disconnect();
 
-  // Newest record first, so each removal finds the neighbour it was recorded
-  // against already back in place. See restoreAnchor.
-  for (const mutation of [...mutations].reverse()) {
-    const anchor = restoreAnchor<Node>(
-      mutation.previousSibling,
-      mutation.nextSibling,
-      (node) => node.parentNode === list,
-      (node) => node.nextSibling,
-      list.firstChild,
-    );
-    for (const node of mutation.removedNodes) {
-      if (isMessage(node) && !selfRemoved.has(node)) list.insertBefore(node, anchor);
+  try {
+    // Newest record first, so each removal finds the neighbour it was recorded
+    // against already back in place. See restoreAnchor.
+    for (const mutation of [...mutations].reverse()) {
+      const anchor = restoreAnchor<Node>(
+        mutation.previousSibling,
+        mutation.nextSibling,
+        (node) => node.parentNode === list,
+        (node) => node.nextSibling,
+        list.firstChild,
+      );
+      for (const node of mutation.removedNodes) {
+        if (isMessage(node) && !selfRemoved.has(node)) list.insertBefore(node, anchor);
+      }
     }
+
+    // Reading scrollHeight forces layout, so only when we actually need it to
+    // fix up the scroll anchor.
+    const heightBeforeTrim = scrollPaused ? list.scrollHeight : 0;
+
+    let toTrim = overflowCount(list.children.length, options.historyLimit);
+    while (toTrim > 0 && list.firstChild) {
+      selfRemoved.add(list.firstChild);
+      list.removeChild(list.firstChild);
+      toTrim -= 1;
+    }
+
+    if (scrollPaused) {
+      // Trimming from the top shifts everything up by exactly the height lost.
+      savedScrollTop = Math.max(0, savedScrollTop - (heightBeforeTrim - list.scrollHeight));
+    }
+  } finally {
+    // Whatever happened above, watch again. Left detached with `reinserting`
+    // still set, history and following would both stop for the rest of the
+    // session, and nothing would say why.
+    observer.observe(list, { childList: true });
+    reinserting = false;
   }
-
-  // Reading scrollHeight forces layout, so only when we actually need it to
-  // fix up the scroll anchor.
-  const heightBeforeTrim = scrollPaused ? chatList.scrollHeight : 0;
-
-  let toTrim = overflowCount(chatList.children.length, options.historyLimit);
-  while (toTrim > 0 && chatList.firstChild) {
-    selfRemoved.add(chatList.firstChild);
-    chatList.removeChild(chatList.firstChild);
-    toTrim -= 1;
-  }
-
-  if (scrollPaused) {
-    // Trimming from the top shifts everything up by exactly the height lost.
-    savedScrollTop = Math.max(0, savedScrollTop - (heightBeforeTrim - chatList.scrollHeight));
-  }
-
-  observer.observe(chatList, { childList: true });
-  reinserting = false;
 }
 
 function handleMutations(mutations: MutationRecord[]): void {
@@ -200,10 +214,68 @@ function handleScroll(): void {
   if (!chatList || reinserting) return;
 
   const atBottom = isNearBottom(chatList.scrollTop, chatList.scrollHeight, chatList.clientHeight);
-  scrollPaused = !atBottom;
-  // Recorded on every scroll, so the next forced scroll-to-bottom can be put
-  // back exactly where you were.
-  if (scrollPaused) savedScrollTop = chatList.scrollTop;
+  switch (judgeScroll(atBottom, scrolledByUser(), scrollPaused)) {
+    case 'follow':
+      scrollPaused = false;
+      break;
+    case 'hold':
+      scrollPaused = true;
+      // Recorded on every scroll, so the next forced scroll-to-bottom can be
+      // put back exactly where you were.
+      savedScrollTop = chatList.scrollTop;
+      break;
+    case 'repin':
+      chatList.scrollTop = chatList.scrollHeight;
+      break;
+  }
+}
+
+function scrolledByUser(): boolean {
+  return pointerHeld || performance.now() <= userScrollUntil;
+}
+
+function noteUserScroll(): void {
+  userScrollUntil = performance.now() + USER_SCROLL_MS;
+}
+
+function pressList(): void {
+  pointerHeld = true;
+  noteUserScroll();
+}
+
+function releasePointer(): void {
+  if (!pointerHeld) return;
+  pointerHeld = false;
+  // The drag's last scroll event comes after the button is let go.
+  noteUserScroll();
+}
+
+/**
+ * Back in the game, follow again.
+ *
+ * With the pointer locked chat cannot be scrolled at all, so a pause carried
+ * in from the menu or the death screen would otherwise hold it for the whole
+ * of the next life, with messages arriving out of sight below it.
+ */
+function resumeOnPlay(): void {
+  if (!document.pointerLockElement) return;
+  pointerHeld = false;
+  scrollPaused = false;
+  followToBottom();
+}
+
+let pageListenersInstalled = false;
+
+/** The listeners that are not on the list itself, once for the page. */
+function installPageListeners(): void {
+  if (pageListenersInstalled) return;
+  pageListenersInstalled = true;
+
+  // On window and in the capture phase, so a release anywhere is heard, even
+  // off the list and even if the game stops the event on its way down.
+  window.addEventListener('pointerup', releasePointer, { capture: true });
+  window.addEventListener('pointercancel', releasePointer, { capture: true });
+  document.addEventListener('pointerlockchange', resumeOnPlay);
 }
 
 /** Flip the outgoing channel, as if the globe button were clicked. */
@@ -267,6 +339,11 @@ export function attachChat(): boolean {
   observer = new MutationObserver(handleMutations);
   observer.observe(chatList, { childList: true });
   chatList.addEventListener('scroll', handleScroll, { passive: true });
+  // What makes a scroll yours. A press covers the scrollbar, which takes no
+  // wheel; the list is not focusable, so there is no keyboard scrolling.
+  chatList.addEventListener('wheel', noteUserScroll, { passive: true });
+  chatList.addEventListener('pointerdown', pressList, { passive: true });
+  installPageListeners();
   resizeObserver?.disconnect();
   resizeObserver = new ResizeObserver(followToBottom);
   resizeObserver.observe(chatList);
