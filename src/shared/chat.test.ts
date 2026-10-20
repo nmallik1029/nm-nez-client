@@ -6,6 +6,7 @@ import {
   isChatNoise,
   isNearBottom,
   isTeamMode,
+  judgeScroll,
   overflowCount,
   restoreAnchor,
 } from './chat';
@@ -118,6 +119,29 @@ describe('isNearBottom', () => {
 
   it('follows when the list is shorter than the viewport', () => {
     expect(isNearBottom(0, 100, 200)).toBe(true);
+  });
+});
+
+describe('judgeScroll', () => {
+  it('follows whenever chat is at the bottom, whoever put it there', () => {
+    expect(judgeScroll(true, true, true)).toBe('follow');
+    expect(judgeScroll(true, false, true)).toBe('follow');
+    expect(judgeScroll(true, false, false)).toBe('follow');
+  });
+
+  it('holds your place when you scroll up', () => {
+    expect(judgeScroll(false, true, false)).toBe('hold');
+  });
+
+  it('goes back to the bottom when chat shrank under it while following', () => {
+    // The death screen: the killfeed line lands, chat scrolls to it, then
+    // gets cut to 165px before the scroll event is delivered. Holding here
+    // froze chat for the rest of the life.
+    expect(judgeScroll(false, false, false)).toBe('repin');
+  });
+
+  it('stays paused through scrolls you did not make', () => {
+    expect(judgeScroll(false, false, true)).toBe('hold');
   });
 });
 

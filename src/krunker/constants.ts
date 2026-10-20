@@ -507,7 +507,8 @@ export const KRUNKER_HOST = {
  * "unknown", not "dead". What is certain is `window.SOUND`, the game's own
  * audio manager, whose `soundCats` lists `hit_0`, `headshot_0` and
  * `instantkill_0`, and whose `play(name)` the built-in headshot script has
- * hooked for months. A shot landing plays `hit_0`. That is the signal the
+ * hooked for months. A shot landing plays `hit_0`, or `crit_0` when it lands
+ * on the head; the other two are not hits (see HIT_SOUNDS). That is the signal the
  * client's hitmarker runs on: it fires on the frame the game decides you
  * connected, and it cannot drift from what you hear.
  */

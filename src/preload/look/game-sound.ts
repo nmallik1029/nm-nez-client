@@ -19,8 +19,18 @@
  * the built-in headshot script's.
  */
 
-/** The sounds Krunker plays when a shot of yours lands. */
-export const HIT_SOUNDS: ReadonlySet<string> = new Set(['hit_0', 'headshot_0', 'instantkill_0']);
+/**
+ * The sounds Krunker plays when a shot of yours lands: one per hit, from the
+ * game's DO_DAMAGE handler, which plays `crit_0` in place of `hit_0` when the
+ * hit is to the head.
+ *
+ * Two names that look as though they belong are deliberately left out.
+ * `headshot_0` is the kill sound for a headshot kill, which comes after the
+ * `crit_0` of the shot that did it. `instantkill_0` is the Insta-Kill power-up
+ * starting. Neither is a hit, and counting them put hits where there were
+ * none, while leaving out `crit_0` lost every headshot that did not kill.
+ */
+export const HIT_SOUNDS: ReadonlySet<string> = new Set(['hit_0', 'crit_0']);
 
 /** The sound manager only exists once the game has booted. */
 const HOOK_RETRY_MS = 2000;

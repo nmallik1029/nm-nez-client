@@ -10,16 +10,17 @@
  *    for reasons that are not shooting, and those are the whole difficulty:
  *    a reload sends it up, and a weapon swap sends it anywhere, including
  *    down by 24 when a full 30-round gun gives way to a 6-round one.
- *  - HITS come off the hit sound. Krunker's own sound manager plays `hit_0`
- *    on the frame the game decides a shot of yours connected, which is the
- *    signal the custom hitmarker settled on after the #hitmarker element
- *    turned out never to be touched in a live match.
+ *  - HITS come off the hit sound. Krunker's own sound manager plays `hit_0`,
+ *    or `crit_0` for the head, on the frame the game decides a shot of yours
+ *    connected, which is the signal the custom hitmarker settled on after the
+ *    #hitmarker element turned out never to be touched in a live match. The
+ *    exact set, and what was wrongly in it, is HIT_SOUNDS in
+ *    preload/look/game-sound.ts.
  *
  * What is counted is shots that landed, not bullets that did. A shotgun
- * shell plays a hit for every pellet and a headshot plays `hit_0` and
- * `headshot_0` together; counting sounds would put both over 100%. So a hit
- * claims one waiting shot, sounds on the same frame are one hit, and a hit
- * with no shot waiting -- a knife -- claims nothing.
+ * shell plays a hit for every pellet; counting sounds would put it over
+ * 100%. So a hit claims one waiting shot, sounds on the same frame are one
+ * hit, and a hit with no shot waiting -- a knife -- claims nothing.
  *
  * Pure, so the arithmetic is testable without being in a match.
  */
@@ -54,8 +55,8 @@ export const HIT_WINDOW_MS = 1200;
 /**
  * Hit sounds this close together are one shot landing.
  *
- * Every pellet of a shotgun shell, or `hit_0` beside `headshot_0`, arrive on
- * the same frame. The fastest weapons Krunker has fire far slower than this,
+ * Every pellet of a shotgun shell arrives on the same frame, each in its own
+ * message straight after the last. The fastest weapons Krunker has fire far slower than this,
  * so two genuinely separate hits are never merged.
  */
 export const HIT_MERGE_MS = 30;

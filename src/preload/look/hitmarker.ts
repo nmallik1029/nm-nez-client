@@ -19,7 +19,8 @@ import { paintMarker } from './paint';
  * its own audio manager, `SOUND.soundCats` lists `hit_0`, `headshot_0` and
  * `instantkill_0` among the names, and the built-in headshot script has
  * relied on that same function for months. So the hit signal is the hit
- * sound: it fires on the frame the game decides you connected, it cannot
+ * sound, `hit_0` or `crit_0` (HIT_SOUNDS says why only those two): it fires
+ * on the frame the game decides you connected, it cannot
  * drift from what you hear, and it survives any amount of HUD rewriting.
  *
  * Everything after that is ours: our element, our size, our offset, and a
