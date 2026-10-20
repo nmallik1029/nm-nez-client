@@ -16,6 +16,14 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.1.76',
+    date: '2026-10-19',
+    changes: [
+      { kind: 'fixed', text: "Chat and the killfeed in it could stop following and sit at the same spot, usually from a death on, with new lines arriving out of sight below. The death screen shrinking chat looked like you had scrolled up. Now only your own scrolling pauses chat, and going back into the game always picks it up again." },
+      { kind: 'fixed', text: "Live accuracy missed every headshot that did not kill, so it read low for anyone hitting heads. It also counted a headshot kill's sound and the Insta-Kill power-up as hits. The hitmarker had the same gaps and now shows on every headshot." },
+    ],
+  },
+  {
     version: '0.1.75',
     date: '2026-10-17',
     changes: [
