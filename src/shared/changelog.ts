@@ -16,6 +16,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
+    version: '0.2.0',
+    date: '2026-10-29',
+    changes: [
+      { kind: 'added', text: "Added settings library for pro player settings for players to swap between in-game." },
+      { kind: 'added', text: "Added sens, sounds, and keybind toggles when importing settings." },
+      { kind: 'added', text: "Added badges for Content Creators and Beta Users." }
+    ],
+  },
+  {
     version: '0.1.76',
     date: '2026-10-19',
     changes: [
