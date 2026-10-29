@@ -58,6 +58,10 @@ function sameName(a: string, b: string): boolean {
  * more specific of the two and should sit closest to their name. Duplicates
  * are dropped, so a clan badge someone also has individually appears once.
  *
+ * Every entry for them counts, not just the first. The lists are the ones
+ * below plus the team's content file (shared/client-content.ts), and someone
+ * can be in both: owner here, content creator there.
+ *
  * The lists are arguments so the rules can be tested without putting real
  * people in them; callers pass nothing and get the lists below.
  */
@@ -67,8 +71,9 @@ export function badgesFor(
   players: readonly PlayerBadges[] = PLAYER_BADGES,
   clans: readonly ClanBadges[] = CLAN_BADGES,
 ): readonly string[] {
-  const mine = players.find((entry) => sameName(entry.name, name))?.badges ?? [];
-  const theirs = clan === null ? [] : (clans.find((entry) => sameId(entry.tag, clan))?.badges ?? []);
+  const mine = players.filter((entry) => sameName(entry.name, name)).flatMap((entry) => entry.badges);
+  const theirs =
+    clan === null ? [] : clans.filter((entry) => sameId(entry.tag, clan)).flatMap((entry) => entry.badges);
 
   const out: string[] = [];
   for (const id of [...mine, ...theirs]) {
@@ -83,10 +88,15 @@ export function badgesFor(
 // ── the lists ────────────────────────────────────────────────────────────
 // Add people here. The name is exactly as Krunker shows it, and each badge
 // id is the name of a file in `assets/badges/`, without the `.png`.
+//
+// These ship with a release. For anyone you want to add without one (content
+// creators, beta users), use `assets/content/client.json` instead: clients
+// read it from the repo at startup. See assets/content/README.md.
 
 /** Badges given to a person. */
 export const PLAYER_BADGES: readonly PlayerBadges[] = [
   // { name: 'PvlseFN', badges: ['owner'] },
+  { name: 'iliegai', badges: ['beta', 'cc'] }
 ];
 
 /** Badges given to everyone in a clan. */

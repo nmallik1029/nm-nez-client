@@ -66,6 +66,11 @@ files:
   - '!assets/killstreak{,/**/*}'
   # And the soundpacks, for the same reason: see src/main/soundpacks.ts.
   - '!assets/soundpacks{,/**/*}'
+  # And the settings library's screenshots, which a client fetches from the
+  # repo the first time a pick is opened: there are a lot of them, most people
+  # open few, and a new pick should not wait on a release for its picture.
+  # See src/main/client-content.ts.
+  - '!assets/content/screenshots{,/**/*}'
 
 asar: true
 

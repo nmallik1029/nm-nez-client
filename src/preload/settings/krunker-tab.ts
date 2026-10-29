@@ -79,6 +79,8 @@ export interface SettingsTabDeps {
   readonly onThemeSelect: (name: string) => void;
   /** Re-open the first-run walkthrough. */
   readonly openSetup: () => void;
+  /** Open the Settings Library panel, from the pointer to it in the Presets tab. */
+  readonly openSettingsLibrary: () => void;
 }
 
 interface ToggleSpec {
@@ -466,16 +468,24 @@ export function hookKrunkerSettings(deps: SettingsTabDeps): SettingsTab {
   }
 
   function buildPresets(): HTMLElement[] {
-    return buildPresetBlocks(
-      { category, actionRow, gameButton, staticNote },
-      {
+    const kit = { category, actionRow, gameButton, staticNote };
+    // A microtask, like the Menu style row: the button that asked for this is
+    // inside what gets replaced.
+    const refresh = (): void => queueMicrotask(rerender);
+    return [
+      ...buildPresetBlocks(kit, {
         getPresets: () => deps.config.presets.saved,
         savePresets: (next) => deps.onChange('presets', 'saved', next),
-        // A microtask, like the Menu style row: the button that asked for
-        // this is inside what gets replaced.
-        refresh: () => queueMicrotask(rerender),
-      },
-    );
+        refresh,
+      }),
+      // Whole sets of settings live in the Settings Library, on the main
+      // menu. This is the way there for anyone who looks for them here.
+      ...category('Settings library', [
+        actionRow('Whole sets of settings to switch between', [
+          gameButton('Open Settings Library', deps.openSettingsLibrary),
+        ]),
+      ]),
+    ];
   }
 
   function matches(row: HTMLElement, filter: string): boolean {

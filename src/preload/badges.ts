@@ -1,8 +1,9 @@
 import { ipcRenderer } from 'electron';
-import { badgesFor } from '../shared/badges';
+import { badgesFor, CLAN_BADGES, PLAYER_BADGES, type ClanBadges, type PlayerBadges } from '../shared/badges';
 import { BRANDING } from '../shared/branding';
 import { IPC } from '../shared/ipc';
 import { SHEETS, STYLE_IDS, UI_CLASSES } from '../shared/ui';
+import { clientContent } from './client-content';
 import { defineStyle } from './style';
 
 /**
@@ -27,12 +28,20 @@ let images: Map<string, string> | null = null;
 const missing = new Set<string>();
 
 /**
- * Fetch the pictures, then tell the boards to redraw.
+ * Who wears what: the lists in shared/badges.ts, then the team's content
+ * file once it arrives. The shipped lists alone until then.
+ */
+let players: readonly PlayerBadges[] = PLAYER_BADGES;
+let clans: readonly ClanBadges[] = CLAN_BADGES;
+
+/**
+ * Fetch the pictures and the team's lists, then tell the boards to redraw.
  *
- * The fetch is one IPC round trip at startup and the boards are usually
- * already up by the time it lands, hence the callback: without it the first
- * scoreboard of a session would have no badges on it and nothing would put
- * them there until the rows happened to be rebuilt.
+ * Both are a round trip at startup and the boards are usually already up by
+ * the time either lands, hence the callback: without it the first scoreboard
+ * of a session would have no badges on it and nothing would put them there
+ * until the rows happened to be rebuilt. The lists can take longer, since
+ * they come from the repo, so each redraws on its own arrival.
  *
  * A client with no badges in it asks for nothing else. `images` ends up
  * empty, `applyBadges` returns immediately every time, and no stylesheet is
@@ -51,6 +60,22 @@ export function installBadges(repaint: () => void): void {
       // nothing else in the client cares.
       images = new Map();
     });
+
+  void clientContent().then((content) => {
+    if (content.players.length === 0 && content.clans.length === 0) return;
+    players = [...PLAYER_BADGES, ...content.players];
+    clans = [...CLAN_BADGES, ...content.clans];
+    if (images !== null && images.size > 0) repaint();
+  });
+}
+
+/**
+ * One badge's picture, as a data URL, or null when it has none or the
+ * pictures have not arrived yet. For anything else that draws a badge: the
+ * settings library marks its picks with the same pictures as the boards.
+ */
+export function badgeImage(id: string): string | null {
+  return images?.get(id) ?? null;
 }
 
 /**
@@ -67,7 +92,7 @@ export function installBadges(repaint: () => void): void {
 export function applyBadges(el: HTMLElement, name: string, clan: string | null): void {
   if (images === null || images.size === 0) return;
 
-  const wanted = badgesFor(name, clan);
+  const wanted = badgesFor(name, clan, players, clans);
   if (wanted.length === 0) return;
 
   defineStyle(STYLE_IDS.badges, SHEETS.badges);

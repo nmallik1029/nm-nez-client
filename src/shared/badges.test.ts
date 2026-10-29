@@ -50,4 +50,12 @@ describe('badgesFor', () => {
   it('throws away empty ids rather than asking for a file called nothing', () => {
     expect(badgesFor('blank', null, players, clans)).toEqual(['real']);
   });
+
+  it('counts every entry for someone, so the shipped lists and the content file add up', () => {
+    // Owner in the shipped list, content creator in the team's file.
+    const both: readonly PlayerBadges[] = [...players, { name: 'bonitto', badges: ['creator'] }];
+    expect(badgesFor('Bonitto', null, both, clans)).toEqual(['owner', 'dev', 'creator']);
+    const clansBoth: readonly ClanBadges[] = [...clans, { tag: 'BNTO', badges: ['partner'] }];
+    expect(badgesFor('Stranger', 'Bnto', players, clansBoth)).toEqual(['clan', 'partner']);
+  });
 });

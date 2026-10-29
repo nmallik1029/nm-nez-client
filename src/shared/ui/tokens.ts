@@ -274,19 +274,59 @@ const SCAN = `
  * glyphs. Their mark sits on the baseline, so ours does too: `--nm-badge-drop`
  * is an offset from it, and 0 is level with it.
  *
- * At 1.1em on the in-match board that comes out 20px tall sitting 1.5px below
- * the middle of the text, against their mark's 20px and 1.0px. Their own drop
- * of a pixel or so is the slightly-low look worth keeping.
+ * The size matches the rank icon's box, `--nm-rank-icon-size`, because that
+ * is the icon a badge most often sits beside. It was 1.1em, matched to their
+ * small verified-style marks, and a badge beside a Master icon read as
+ * noticeably smaller: 17 to 18px of ink against the icon's 19 by 21
+ * (2026-10-20). The bottom still sits on the baseline, so a bigger badge
+ * grows upward, the way the letters do.
+ *
+ * Except on the Tab scoreboard, which gets a size in pixels of its own. Its
+ * names are small, so 1.25em of them came out 16px of ink beside the 19px
+ * rank icon Krunker draws there (2026-10-20). That icon is a fixed 22px
+ * whatever the name size, so the badge beside it is fixed too, at the
+ * 20px that comes out the same height on screen. The end-of-match table
+ * measured right at 1.25em (22px against their 23px), so it keeps the em.
  *
  * The size is in em on purpose: the in-match board sets 18px and the one at
  * the end of a match sets 15px, so a badge in pixels would be right on one
  * of them and wrong on the other.
+ *
+ * The gaps are measured too, and for the same reason. Their stylesheet gives
+ * their marks `margin-right:3px`, which is what this first copied, and it sat
+ * a badge hard against the name. Their marks are glyphs, and a glyph carries
+ * side bearings that an image does not. Measured ink to ink on a row with
+ * three of their icons (2026-10-20): 5 to 6px between icons and about 9px
+ * from the last one to the name, on the 18px board. `--nm-badge-gap` is the
+ * first, between two of ours; `--nm-badge-name-gap` is the second, after the
+ * last.
  */
 const BADGE = `
-  --nm-badge-size:1.1em;
+  --nm-badge-size:1.25em;
+  --nm-badge-size-centre:20px;
   --nm-badge-max:2.5em;
-  --nm-badge-gap:3px;
+  --nm-badge-gap:0.3em;
+  --nm-badge-name-gap:0.5em;
   --nm-badge-drop:0px;
+`;
+
+/**
+ * The settings library's Pro picks, coloured by where the player placed:
+ * gold for a tournament win, silver for second, bronze for third.
+ *
+ * Two tones each. The bright one edges the card; the deep one fills it, all
+ * the way across. Deep because the name and everything under it are white,
+ * and white on the bright gold is unreadable: each fill keeps white text
+ * above 4:1. `--nm-place-text-soft` is the small print on any of them.
+ */
+const PLACE = `
+  --nm-place-gold:#e3bb45;
+  --nm-place-gold-bg:#94721a;
+  --nm-place-silver:#c9d0d6;
+  --nm-place-silver-bg:#6b737b;
+  --nm-place-bronze:#d0864a;
+  --nm-place-bronze-bg:#8a4f24;
+  --nm-place-text-soft:rgba(255,255,255,.74);
 `;
 
 /**
@@ -786,6 +826,7 @@ export const TOKENS_CSS = `:root{${[
   QUEUE_BUTTON,
   SCAN,
   BADGE,
+  PLACE,
   BOARD_RANK,
   RANK,
   UPDATE,

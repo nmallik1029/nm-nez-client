@@ -249,6 +249,11 @@ Two steps, and one of them is dropping a file in here.
 
    Three badges each at most, and a person's own come before their clan's.
 
+   Those lists ship with a release. To hand someone a badge without one,
+   content creators and beta users say, put them in `content/client.json`
+   instead, which clients read from the repo at startup: see
+   `content/README.md`. The picture still has to ship.
+
 Size them square and small. They are drawn at the height of the name they sit
 beside, about 20px on the in-match board and 17px at the end of a match, which
 is the same size as Krunker's own mark, so 64x64 is already more than enough:
@@ -261,3 +266,8 @@ in the console, so a typo in an id is quiet rather than broken.
 
 These are ours, not Krunker's: they show for everyone running this client and
 for nobody else.
+
+## content/
+
+`client.json`, what the team publishes to every client without a release:
+badges by name and the settings library. Its own README has the format.

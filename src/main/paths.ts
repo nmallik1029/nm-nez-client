@@ -35,6 +35,10 @@ export interface AppPaths {
   /** Installed soundpacks (other games' sounds), one folder each. See main/soundpacks.ts. */
   readonly soundpacks: string;
   readonly screenshots: string;
+  /** The last copy of the team's content file fetched: see main/client-content.ts. */
+  readonly clientContentCache: string;
+  /** The settings library's screenshots, kept once they have arrived. */
+  readonly contentImages: string;
 }
 
 let cached: AppPaths | null = null;
@@ -58,6 +62,8 @@ export function appPaths(): AppPaths {
     replacedKillPacks: join(userData, 'killstreak-replaced'),
     soundpacks: join(userData, 'soundpacks'),
     screenshots: join(app.getPath('pictures'), 'Krunker'),
+    clientContentCache: join(userData, 'client-content.json'),
+    contentImages: join(userData, 'content-images'),
   };
   return cached;
 }

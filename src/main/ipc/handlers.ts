@@ -17,6 +17,7 @@ import { appImageRestart, installKind } from '../platform/install-kind';
 import { createAccountStore } from '../accounts';
 import { canUpdate, currentUpdateState, type UpdaterControls } from '../updater';
 import type { Credentials } from '../../shared/accounts';
+import type { ClientContent } from '../../shared/client-content';
 import { fetchLobbies, fetchRegionPings } from '../matchmaker';
 import {
   listUserscripts,
@@ -60,6 +61,10 @@ export interface HandlerDeps {
    */
   readonly refreshRequestFilter: () => void;
   readonly updater: UpdaterControls;
+  /** The team's content file, once its fetch has settled; see main/client-content.ts. */
+  readonly clientContent: () => Promise<ClientContent>;
+  /** One settings library pick's screenshot, as a data URL, or null. */
+  readonly contentImage: (name: string) => Promise<string | null>;
 }
 
 /** Structural check on credentials arriving from the renderer. */
@@ -297,6 +302,13 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
   registry.handle(IPC.skyScenes, () => loadSkyScenes(join(app.getAppPath(), 'assets')));
 
   registry.handle(IPC.badges, () => loadBadges(join(app.getAppPath(), 'assets', 'badges')));
+
+  registry.handle(IPC.clientContent, () => deps.clientContent());
+
+  // The name is checked again where it becomes a path and an address.
+  registry.handle(IPC.contentImage, (_e, name: unknown) =>
+    typeof name === 'string' ? deps.contentImage(name) : null,
+  );
 
   registry.handle(IPC.swapperRescan, () => deps.rescanSwap());
 

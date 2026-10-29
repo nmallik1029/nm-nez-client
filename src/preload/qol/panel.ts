@@ -26,39 +26,76 @@ import { renderUserscripts } from './userscripts';
  *
  * Same shell as the alt manager and the changelog, and closed the same two
  * ways: click the backdrop or press Escape.
+ *
+ * The shell is shared with the settings library, which has a row of its own
+ * in the same menu (see settings-library.ts): a panel is a title and its
+ * tabs, and either opens in this one frame, so the two cannot drift apart in
+ * how they look or how they close. One is open at a time.
  */
 
 const PANEL_ID = UI_IDS.qolPanel;
 
-type TabId = 'userscripts' | 'builtin';
-
-interface Tab {
-  readonly id: TabId;
+export interface PanelTab {
+  readonly id: string;
   readonly label: string;
   readonly render: (body: HTMLElement, ctx: TabContext) => void;
 }
 
-/** Left to right, and the first one is what the panel opens on. */
-const TABS: readonly Tab[] = [
-  { id: 'builtin', label: 'Built-in', render: renderBuiltIn },
-  { id: 'userscripts', label: 'Userscripts', render: renderUserscripts },
-];
+export interface PanelSpec {
+  /** In the header, when no editor is open. */
+  readonly title: string;
+  /** Left to right, and the first one is what the panel first opens on. */
+  readonly tabs: readonly PanelTab[];
+  /**
+   * Wide and tall rather than the usual 620px that grows with its content:
+   * for a long list whose rows carry several buttons, or open up when
+   * hovered. A fixed height, so a row opening does not make the whole panel
+   * jump.
+   */
+  readonly large?: boolean;
+}
+
+const QOL: PanelSpec = {
+  title: 'QOL FEATURES',
+  tabs: [
+    { id: 'builtin', label: 'Built-in', render: renderBuiltIn },
+    { id: 'userscripts', label: 'Userscripts', render: renderUserscripts },
+  ],
+};
 
 let deps: QolDeps | null = null;
 let close: (() => void) | null = null;
-/** Kept across a close, so re-opening lands on the tab you were last on. */
-let current: TabId = TABS[0]?.id ?? 'builtin';
+/** Which panel is open, so pressing its own row again closes it rather than reopening it. */
+let openSpec: PanelSpec | null = null;
+/** Kept across a close, so re-opening lands on the tab you were last on. Per panel. */
+const lastTab = new Map<PanelSpec, string>();
 
 /** Open the panel, or close it if it is already open. */
 export function toggleQol(): void {
-  if (close) {
-    close();
-    return;
-  }
-  open();
+  togglePanel(QOL);
 }
 
-function open(): void {
+/**
+ * Open a panel, or close it if it is the one open. Another panel that is open
+ * closes first, so pressing one row and then the other swaps between them.
+ */
+export function togglePanel(spec: PanelSpec): void {
+  if (close) {
+    const same = openSpec === spec;
+    close();
+    if (same) return;
+  }
+  open(spec);
+}
+
+/** Open a panel, closing whatever is open. Does nothing to one already showing. */
+export function openPanel(spec: PanelSpec): void {
+  if (close && openSpec === spec) return;
+  close?.();
+  open(spec);
+}
+
+function open(spec: PanelSpec): void {
   const active = deps;
   if (!active) return;
 
@@ -86,15 +123,21 @@ function open(): void {
     document.removeEventListener('keydown', onKey, true);
     backdrop.remove();
     close = null;
+    openSpec = null;
   };
   document.addEventListener('keydown', onKey, true);
   document.body.appendChild(backdrop);
+  openSpec = spec;
 
-  render(panel, active);
+  render(panel, active, spec);
 }
 
-function render(panel: HTMLElement, active: QolDeps): void {
+function render(panel: HTMLElement, active: QolDeps, spec: PanelSpec): void {
   panel.replaceChildren();
+  panel.classList.toggle('large', spec.large === true);
+  const first = spec.tabs[0]?.id ?? '';
+  let current = lastTab.get(spec) ?? first;
+  if (!spec.tabs.some((tab) => tab.id === current)) current = first;
 
   /**
    * The editor on top of the tab, if one is open.
@@ -121,7 +164,7 @@ function render(panel: HTMLElement, active: QolDeps): void {
   const body = document.createElement('div');
   body.className = 'bd';
 
-  const buttons = new Map<TabId, HTMLButtonElement>();
+  const buttons = new Map<string, HTMLButtonElement>();
   /** Bumped on every draw, so an async tab can tell whether it is stale. */
   let drawing = 0;
 
@@ -140,7 +183,7 @@ function render(panel: HTMLElement, active: QolDeps): void {
     const mine = drawing;
 
     const editor = view;
-    title.textContent = editor ? editor.title : 'QOL FEATURES';
+    title.textContent = editor ? editor.title : spec.title;
     back.classList.toggle('on', editor !== null);
     strip.classList.toggle('gone', editor !== null);
     panel.classList.toggle('wide', editor?.wide === true);
@@ -153,7 +196,7 @@ function render(panel: HTMLElement, active: QolDeps): void {
     };
 
     if (editor) editor.render(body, ctx);
-    else TABS.find((entry) => entry.id === current)?.render(body, ctx);
+    else spec.tabs.find((entry) => entry.id === current)?.render(body, ctx);
 
     body.scrollTop = scroll;
   }
@@ -167,13 +210,14 @@ function render(panel: HTMLElement, active: QolDeps): void {
 
   back.addEventListener('click', () => navigate(null));
 
-  for (const tab of TABS) {
+  for (const tab of spec.tabs) {
     const button = document.createElement('button');
     button.className = 'tab';
     button.textContent = tab.label;
     button.addEventListener('click', () => {
       if (current === tab.id && view === null) return;
       current = tab.id;
+      lastTab.set(spec, current);
       navigate(null);
     });
     buttons.set(tab.id, button);
@@ -193,16 +237,18 @@ function render(panel: HTMLElement, active: QolDeps): void {
  * this a thing people will actually do, and missing one by an inch must not
  * cost anything.
  *
- * Capture phase on the window, and anything inside the panel is left alone
- * so the zone can handle its own drops. `dropEffect` is what makes the
- * cursor say so before the mouse button comes up.
+ * Capture phase on the window, and anything inside a drop zone is left alone
+ * so the zone can handle its own drops. Only the zone: the rest of the panel
+ * is guarded like the page, or a file that lands an inch off the box on the
+ * panel itself navigates the game away just the same. `dropEffect` is what
+ * makes the cursor say so before the mouse button comes up.
  */
 function installDropGuard(): void {
   const guard = (event: DragEvent): void => {
     const data = event.dataTransfer;
     if (!data || !data.types.includes('Files')) return;
     const target = event.target;
-    if (target instanceof Element && target.closest(`#${PANEL_ID}`)) return;
+    if (target instanceof Element && target.closest(`#${PANEL_ID} .drop`)) return;
     event.preventDefault();
     if (event.type === 'dragover') data.dropEffect = 'none';
   };
