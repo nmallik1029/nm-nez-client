@@ -1,4 +1,4 @@
-import { KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
+import { KRUNKER_BOARD_RANKS, KRUNKER_CHAT, KRUNKER_DOM_IDS, KRUNKER_MENU_CLASS } from '../../krunker/constants';
 import { UI_CLASSES, UI_IDS } from './ids';
 import hudMinimal from './hud-minimal.css?raw';
 import krunkerClassic from './krunker-classic.css?raw';
@@ -324,6 +324,12 @@ const qolPanel = `
 /* An editor that asked for room (see PanelView.wide): Soundpacks, whose
    Fortnite picks fit on one screen at this width and not at the one above. */
 #${UI_IDS.qolPanel}.wide{width:min(1300px,96vw);max-height:92vh}
+/* A long list, wide and tall (see PanelSpec.large): the settings library.
+   A fixed height, with the body taking whatever the header and tabs leave,
+   so a pick opening under the pointer scrolls the list rather than
+   stretching the panel. */
+#${UI_IDS.qolPanel}.large{width:min(1120px,95vw);height:min(880px,90vh);max-height:none}
+#${UI_IDS.qolPanel}.large .bd{flex:1;min-height:0}
 #${UI_IDS.qolPanel} .hd{display:flex;align-items:center;gap:10px;padding:14px 18px;
   border-bottom:var(--nm-bw-thick) solid var(--nm-game-border);
   background:var(--nm-game-bg-head)}
@@ -370,11 +376,82 @@ const qolPanel = `
 #${UI_IDS.qolPanel} .row .txt{flex:1;min-width:0}
 #${UI_IDS.qolPanel} .row .nm{font-size:var(--nm-fs-2xl);overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap}
+/* A name you can rename: the settings library's saved settings. A small
+   pencil beside it, and the name itself takes the click too. */
+#${UI_IDS.qolPanel} .row .nm-line{display:flex;align-items:center;gap:6px;min-width:0}
+#${UI_IDS.qolPanel} .row .nm.renamable{min-width:0;cursor:text}
+#${UI_IDS.qolPanel} .row .rename-btn{padding:0 2px;border:0;background:none;line-height:1;
+  font-size:var(--nm-fs-xl);color:var(--nm-game-text-dim)}
+#${UI_IDS.qolPanel} .row .rename-btn:hover{background:none;color:var(--nm-game-text)}
+#${UI_IDS.qolPanel} .row .rename{width:100%;box-sizing:border-box;padding:2px 6px;
+  font-family:inherit;font-size:var(--nm-fs-2xl);background:var(--nm-game-input-bg);
+  color:var(--nm-game-text);border:var(--nm-bw-thick) solid var(--nm-game-input-focus);outline:none}
 /* Wraps, unlike the name above it. These are sentences: cut one off at the
    panel edge and the half that says what the feature actually does is the
    half that goes. */
 #${UI_IDS.qolPanel} .row .sub{margin-top:2px;font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);
   line-height:var(--nm-lh)}
+
+/* ---- the settings library's Pro picks (preload/qol/pro-picks.ts) ---- */
+/*
+ * Rolled up to a name and its marks, in the colour of where it placed, and
+ * opened on hover or focus. The opening is a grid row going from 0fr to 1fr,
+ * which slides the rest down at its own height rather than a guessed one,
+ * and it waits a moment first, so sweeping the pointer down a long list does
+ * not open every pick on the way past. Closing does not wait.
+ */
+#${UI_IDS.qolPanel} .pp-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+#${UI_IDS.qolPanel} .pp-card{background:var(--nm-game-row-bg);outline:none;
+  border:var(--nm-bw-thick) solid var(--nm-game-border);border-left-width:4px;
+  transition:border-color var(--nm-fast)}
+#${UI_IDS.qolPanel} .pp-card:not([data-place]):hover,
+#${UI_IDS.qolPanel} .pp-card:not([data-place]):focus-within{
+  border-top-color:var(--nm-game-btn-border);border-right-color:var(--nm-game-btn-border);
+  border-bottom-color:var(--nm-game-btn-border)}
+/* A placed pick is its colour all the way across, edged in the bright tone
+   of it. The fill is the deep tone, so the name and the rest stay white and
+   readable on it: white on the bright gold itself is not. */
+#${UI_IDS.qolPanel} .pp-card[data-place="1"]{border-color:var(--nm-place-gold);background:var(--nm-place-gold-bg)}
+#${UI_IDS.qolPanel} .pp-card[data-place="2"]{border-color:var(--nm-place-silver);background:var(--nm-place-silver-bg)}
+#${UI_IDS.qolPanel} .pp-card[data-place="3"]{border-color:var(--nm-place-bronze);background:var(--nm-place-bronze-bg)}
+#${UI_IDS.qolPanel} .pp-head{display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:34px;
+  cursor:default}
+#${UI_IDS.qolPanel} .pp-name{min-width:0;font-size:var(--nm-fs-4xl);letter-spacing:var(--nm-track-xs);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The badges sit at the far end of the row, away from the name. */
+#${UI_IDS.qolPanel} .pp-marks{flex:0 0 auto;display:flex;align-items:center;gap:8px;margin-left:auto}
+#${UI_IDS.qolPanel} .pp-mark{display:block;height:34px;width:auto;max-width:80px;object-fit:contain}
+/* A mark whose picture has not shipped yet, as its name. */
+#${UI_IDS.qolPanel} .pp-tag{padding:3px 6px;font-size:var(--nm-fs-2xs);letter-spacing:var(--nm-track-lg);
+  color:var(--nm-game-text-body);background:var(--nm-game-bg);
+  border:var(--nm-bw) solid var(--nm-game-btn-border)}
+#${UI_IDS.qolPanel} .pp-more{display:grid;grid-template-rows:0fr;opacity:0;
+  transition:grid-template-rows var(--nm-slow) ease,opacity var(--nm-slow) ease}
+#${UI_IDS.qolPanel} .pp-card:hover .pp-more,#${UI_IDS.qolPanel} .pp-card:focus-within .pp-more{
+  grid-template-rows:1fr;opacity:1;transition-delay:.12s}
+#${UI_IDS.qolPanel} .pp-inner{min-height:0;overflow:hidden}
+#${UI_IDS.qolPanel} .pp-body{display:flex;gap:16px;padding:2px 14px 14px}
+/* 16:9, the shape of the game it is a picture of. */
+#${UI_IDS.qolPanel} .pp-shot{flex:0 0 min(400px,46%);aspect-ratio:16/9;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--nm-game-input-bg);border:var(--nm-bw-thick) solid var(--nm-game-border);
+  color:var(--nm-game-text-faint);font-size:var(--nm-fs-xs)}
+#${UI_IDS.qolPanel} .pp-shot img{display:block;width:100%;height:100%;object-fit:cover}
+#${UI_IDS.qolPanel} .pp-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+#${UI_IDS.qolPanel} .pp-line{font-size:var(--nm-fs-lg);color:var(--nm-game-text-body)}
+#${UI_IDS.qolPanel} .pp-event{font-size:var(--nm-fs-2xl)}
+#${UI_IDS.qolPanel} .pp-desc{font-size:var(--nm-fs-xs);color:var(--nm-game-text-dim);line-height:var(--nm-lh)}
+#${UI_IDS.qolPanel} .pp-count{font-size:var(--nm-fs-xs);color:var(--nm-game-text-faint)}
+/* On a placed pick's colour the panel's greys go muddy, so the small print
+   is white at part strength and the headline line is white outright. */
+#${UI_IDS.qolPanel} .pp-card[data-place] .pp-line{color:var(--nm-game-text)}
+#${UI_IDS.qolPanel} .pp-card[data-place] .pp-desc,
+#${UI_IDS.qolPanel} .pp-card[data-place] .pp-count{color:var(--nm-place-text-soft)}
+#${UI_IDS.qolPanel} .pp-actions{margin-top:auto;display:flex;gap:8px}
+@media (prefers-reduced-motion: reduce){
+  #${UI_IDS.qolPanel} .pp-more{transition:none}
+  #${UI_IDS.qolPanel} .pp-card:hover .pp-more,#${UI_IDS.qolPanel} .pp-card:focus-within .pp-more{transition-delay:0s}
+}
 
 /* ---- buttons ---- */
 /* The tab strip is buttons too, and wins on specificity: a class beats a
@@ -388,6 +465,9 @@ const qolPanel = `
 #${UI_IDS.qolPanel} .sw{min-width:58px}
 #${UI_IDS.qolPanel} .sw.on{border-color:var(--nm-ok-border);color:var(--nm-ok)}
 #${UI_IDS.qolPanel} .sw.on:hover{background:var(--nm-ok-bg-hover);color:var(--nm-ok-text-hi)}
+/* In use, where Apply would be: the switch's ON look, and not a button. */
+#${UI_IDS.qolPanel} .sw[disabled]{cursor:default}
+#${UI_IDS.qolPanel} .sw.on[disabled]:hover{background:var(--nm-game-btn-bg);color:var(--nm-ok)}
 #${UI_IDS.qolPanel} .del{padding:7px 11px;border-color:var(--nm-bad-border);color:var(--nm-bad-text)}
 #${UI_IDS.qolPanel} .del:hover,#${UI_IDS.qolPanel} .del.armed{background:var(--nm-bad-bg);
   color:var(--nm-bad-text-hi)}
@@ -682,6 +762,13 @@ const rankedPanel = `
  * width. And the boards are flex containers, so a badge that inherited
  * `flex-shrink` would be squashed by a long name instead of the name being
  * clipped, which is why it is pinned.
+ *
+ * The last badge gets the wider gap, the one before the name. Last of type
+ * is safe here: ours are the only images inside a name element, since the
+ * rank icon goes in front of the element rather than into it.
+ *
+ * The Tab scoreboard takes its size in pixels instead, to match the
+ * fixed-size rank icon Krunker draws beside it; see the tokens.
  */
 const badges = `
 .${UI_CLASSES.badge}{
@@ -690,6 +777,22 @@ const badges = `
   flex-shrink:0;object-fit:contain;image-rendering:auto;
   /* Nothing here is clickable, and the boards are drawn over the game. */
   pointer-events:none}
+.${UI_CLASSES.badge}:last-of-type{margin-right:var(--nm-badge-name-gap)}
+#${KRUNKER_BOARD_RANKS.centreId} .${UI_CLASSES.badge}{height:var(--nm-badge-size-centre)}
+`;
+
+/**
+ * The Keep switches under the text box in Krunker's Import popup. See
+ * preload/settings/import-keep.ts.
+ *
+ * Only the row is drawn here. The switches are the settings sheet's
+ * `.kc-chip`, which is in the page from load, so they read the same here as
+ * in the Presets tab.
+ */
+const importKeep = `
+.kc-import-keep{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+  gap:var(--nm-gap-sm);margin-top:10px}
+.kc-import-keep-label{color:var(--nm-text-dim);font-size:var(--nm-fs-lg)}
 `;
 
 /**
@@ -2244,6 +2347,7 @@ export const SHEETS = {
   rankedPanel,
   rankProgress,
   badges,
+  importKeep,
   boardRanks,
   hardpointCounter,
   setupWizard,

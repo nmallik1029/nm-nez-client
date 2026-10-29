@@ -2,6 +2,8 @@ import type { StoredAccount } from './accounts';
 import { DEFAULT_FILTER, type MatchmakerFilter } from './matchmaker';
 import type { SettingPreset } from './presets';
 import { RANKED_MAPS, RANKED_REGIONS } from './ranked';
+import { DEFAULT_IMPORT_KEEP, type ImportKeep } from './settings-import';
+import type { SettingsProfile } from './settings-profiles';
 import { DEFAULT_VISUALS, type VisualsConfig } from './visuals';
 
 export type { MatchmakerFilter } from './matchmaker';
@@ -253,6 +255,16 @@ export interface PresetsConfig {
    * Untrusted on the way in; see normalisePresets.
    */
   saved: readonly SettingPreset[];
+  /**
+   * Whole sets of Krunker settings under a name, the user's own library.
+   * Untrusted on the way in; see normaliseProfiles.
+   */
+  profiles: readonly SettingsProfile[];
+  /**
+   * What an import leaves as it is: Krunker's own Import button, and the
+   * library applying a profile, both. See shared/settings-import.ts.
+   */
+  importKeep: ImportKeep;
 }
 
 export interface WindowConfig {
@@ -396,6 +408,10 @@ export const DEFAULT_CONFIG: AppConfig = {
   visuals: DEFAULT_VISUALS,
   presets: {
     saved: [],
+    profiles: [],
+    // All kept: importing someone's settings is nearly always for their
+    // graphics or HUD, not to lose your own aim, volume and binds.
+    importKeep: DEFAULT_IMPORT_KEEP,
   },
   updates: {
     autoCheck: true,

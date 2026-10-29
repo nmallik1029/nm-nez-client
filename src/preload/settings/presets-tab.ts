@@ -47,6 +47,35 @@ export interface PresetsTabDeps {
 /** How long Overwrite and Delete wait for the second click. */
 const CONFIRM_MS = 3000;
 
+/**
+ * A text box in Krunker's own style that the game's key listeners leave alone.
+ *
+ * Krunker listens for keys across the whole page, and typing a name is not a
+ * keybind. Escape still goes through, so it closes the window as ever, and
+ * Enter runs `onEnter` when there is one.
+ */
+export function textInput(spec: {
+  placeholder: string;
+  maxLength: number;
+  className: string;
+  onEnter?: () => void;
+}): HTMLInputElement {
+  const input = document.createElement('input');
+  input.type = 'text';
+  // Krunker's own text field class, the one its custom-crosshair name uses.
+  input.className = `inputGrey2 ${spec.className}`;
+  input.placeholder = spec.placeholder;
+  input.maxLength = spec.maxLength;
+  input.spellcheck = false;
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') return;
+    e.stopPropagation();
+    if (e.key === 'Enter') spec.onEnter?.();
+  });
+  input.addEventListener('click', (e) => e.stopPropagation());
+  return input;
+}
+
 export function buildPresetBlocks(kit: PresetsTabKit, deps: PresetsTabDeps): HTMLElement[] {
   const stored = storedGameSettingIds();
   return PRESET_SCOPES.flatMap((scope) => kit.category(scope.label, scopeRows(kit, deps, scope, stored)));
@@ -77,13 +106,12 @@ function scopeRows(
 }
 
 function saveRow(kit: PresetsTabKit, deps: PresetsTabDeps, scope: PresetScope): HTMLElement {
-  const input = document.createElement('input');
-  input.type = 'text';
-  // Krunker's own text field class, the one its custom-crosshair name uses.
-  input.className = 'inputGrey2 kc-preset-name';
-  input.placeholder = 'Preset name';
-  input.maxLength = PRESET_NAME_MAX;
-  input.spellcheck = false;
+  const input = textInput({
+    placeholder: 'Preset name',
+    maxLength: PRESET_NAME_MAX,
+    className: 'kc-preset-name',
+    onEnter: () => save(),
+  });
 
   const save = (): void => {
     const all = deps.getPresets();
@@ -109,15 +137,6 @@ function saveRow(kit: PresetsTabKit, deps: PresetsTabDeps, scope: PresetScope): 
     showToast(`Saved "${name}"`);
     deps.refresh();
   };
-
-  // Krunker listens for keys across the whole page, and typing a name is not
-  // a keybind. Escape still goes through, so it closes the window as ever.
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') return;
-    e.stopPropagation();
-    if (e.key === 'Enter') save();
-  });
-  input.addEventListener('click', (e) => e.stopPropagation());
 
   const row = kit.actionRow('Save current as', [input, kit.gameButton('Save', save)]);
   tip(row, `Saves the ${scope.label.toLowerCase()} the game has right now. Leave the name empty for a numbered one.`);
@@ -182,7 +201,7 @@ function presetRow(
  * would do, but it is a window of its own over the game for a one-word
  * answer.
  */
-function twoStep(kit: PresetsTabKit, label: string, question: string, onConfirm: () => void): HTMLElement {
+export function twoStep(kit: PresetsTabKit, label: string, question: string, onConfirm: () => void): HTMLElement {
   let armed: ReturnType<typeof setTimeout> | null = null;
   const button = kit.gameButton(label, () => {
     if (armed === null) {
@@ -211,7 +230,7 @@ function unusedName(scope: PresetScope, mine: readonly SettingPreset[]): string 
 }
 
 /** Hang a hint off a row's title, the way every other row here carries one. */
-function tip(row: HTMLElement, text: string): void {
+export function tip(row: HTMLElement, text: string): void {
   const title = row.querySelector<HTMLElement>('.setting-title');
   if (title) attachTooltip(title, text);
 }

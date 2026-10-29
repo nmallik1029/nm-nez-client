@@ -1,5 +1,7 @@
+import { join } from 'node:path';
 import { app, BrowserWindow, globalShortcut, ipcMain, session, type WebContents } from 'electron';
 import * as clip from './clipboard';
+import { createClientContent } from './client-content';
 import { isKrunkerOrigin } from '../krunker/constants';
 import { gameFontBase64 } from './game-font';
 import { BRANDING } from '../shared/branding';
@@ -263,6 +265,20 @@ function start(): void {
 
   mainWindow = createMainWindow({ config });
 
+  // The team's badges and settings library. After the window, so it runs
+  // while the game loads rather than in front of it; the page asks for it
+  // once it is up and waits on the fetch if it has not settled yet.
+  const clientContent = createClientContent({
+    bundledPath: join(app.getAppPath(), 'assets', 'content', 'client.json'),
+    cachePath: paths.clientContentCache,
+    screenshotsDir: join(app.getAppPath(), 'assets', 'content', 'screenshots'),
+    imageCacheDir: paths.contentImages,
+    // Under `npm start` the bundled copy is the repo's file being edited.
+    preferBundled: !app.isPackaged,
+    log,
+  });
+  clientContent.start();
+
   // A cold start from a link carries it on our own command line rather than
   // through second-instance. Offered after attach, so it has somewhere to go.
   protocolInbox.attach(mainWindow);
@@ -277,6 +293,8 @@ function start(): void {
     rescanSwap,
     refreshRequestFilter: () => requestFilter?.refresh(),
     updater,
+    clientContent: () => clientContent.get(),
+    contentImage: (name) => clientContent.image(name),
   });
 
   installHotkeys(mainWindow.webContents);

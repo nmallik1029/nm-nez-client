@@ -76,6 +76,19 @@ export const IPC = {
    * ships none, which draws no badges rather than broken images.
    */
   badges: 'badges:list',
+  /**
+   * Renderer -> main. What the team publishes for every client: who wears
+   * which badge, and the settings library. A `ClientContent`, from the repo
+   * when it can be reached and the last copy otherwise. See
+   * main/client-content.ts.
+   */
+  clientContent: 'content:get',
+  /**
+   * Renderer -> main. One settings library pick's screenshot, by its file
+   * name, as a data URL or null. Fetched the first time it is asked for and
+   * kept on disk after.
+   */
+  contentImage: 'content:image',
 
   /*
    * Accounts get their own channels rather than riding on config:get and

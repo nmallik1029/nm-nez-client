@@ -53,6 +53,8 @@ export const UI_IDS = {
   setupWizard: 'kc-setup',
   /** QoL Features, at the bottom of Krunker's left menu. */
   qolItem: 'kc-qol-item',
+  /** Settings Library, just above it. It opens in the same panel. */
+  libraryItem: 'nm-library-item',
   /** The panel that row opens: userscripts, and our own features. */
   qolPanel: 'kc-qol-panel',
   /**
@@ -112,6 +114,7 @@ export const STYLE_IDS = {
   hudMinimal: 'kc-hud-minimal-css',
   setupWizard: 'kc-setup-css',
   qolPanel: 'kc-qol-panel-css',
+  importKeep: 'nm-import-keep-css',
   /*
    * The two sheets that size Krunker's own crosshair and hitmarker images.
    *

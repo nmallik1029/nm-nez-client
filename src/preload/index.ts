@@ -21,6 +21,8 @@ import { installSkyHook, setSky } from './look/sky';
 import { debounced } from './schedule';
 import { normaliseVisuals, type VisualsConfig } from '../shared/visuals';
 import { normalisePresets } from '../shared/presets';
+import { normaliseImportKeep, type ImportKeep } from '../shared/settings-import';
+import { normaliseProfiles } from '../shared/settings-profiles';
 import { createPerfHud, type PerfHud } from './hud/perf-hud';
 import { createMatchSearch, type MatchSearch } from './matchmaker/scan';
 import { installMenuButtons } from './accounts/menu-buttons';
@@ -31,6 +33,7 @@ import { installBadges } from './badges';
 import { installNameHighlights, repaintBoards, setOwnName } from './name-highlights';
 import { installProtocolHost } from './protocol/host';
 import { installQol } from './qol/panel';
+import { installSettingsLibrary, openSettingsLibrary } from './qol/settings-library';
 import { installRankedPanel } from './ranked/panel';
 import { setBoardRankIcons } from './ranked/board-icons';
 import { installRankProgress } from './ranked/rank-progress';
@@ -42,6 +45,7 @@ import { watchSessionEnd } from './accounts/login';
 import { installModsMenu } from './mods-menu';
 import { installRankedLaunchButton } from './ranked-button';
 import { installRealPing } from './ping';
+import { installImportKeep } from './settings/import-keep';
 import { hookKrunkerSettings, type SettingsTab } from './settings/krunker-tab';
 import { defineStyle, installTokens } from './style';
 import { SHEETS, STYLE_IDS } from '../shared/ui';
@@ -131,8 +135,14 @@ async function bootstrap(): Promise<void> {
   // objects missing from it.
   cfg.visuals = normaliseVisuals(cfg.visuals);
   // Same again, and more so: the store never looks inside a list at all, and
-  // what is in these ends up as arguments to the game's own setSetting.
-  cfg.presets = { ...cfg.presets, saved: normalisePresets(cfg.presets.saved) };
+  // what is in these ends up as arguments to the game's own setSetting, or
+  // for profiles, in the game's own import.
+  cfg.presets = {
+    ...cfg.presets,
+    saved: normalisePresets(cfg.presets.saved),
+    profiles: normaliseProfiles(cfg.presets.profiles),
+    importKeep: normaliseImportKeep(cfg.presets.importKeep),
+  };
   // Releases the map request the hook may already be holding.
   setSky(cfg.visuals.sky);
 
@@ -224,6 +234,7 @@ async function bootstrap(): Promise<void> {
       getThemes: knownThemes,
       getActiveTheme: activeTheme,
       openSetup: toggleSetup,
+      openSettingsLibrary,
       onThemeSelect: (name) => {
         // Backstop for the picker being switched off in krunker-tab.ts.
         // Worth having twice: the picker only covers the case where the
@@ -246,6 +257,16 @@ async function bootstrap(): Promise<void> {
       getFilter: () => cfg.matchmaker,
       onToast: showToast,
     });
+
+    // Krunker's own Import, keeping your sensitivity, sounds and keybinds
+    // unless told otherwise. The switches are in its popup and in the
+    // Settings Library, and both write the same setting.
+    const getKeep = (): ImportKeep => cfg.presets.importKeep;
+    const setKeep = (next: ImportKeep): void => {
+      cfg.presets.importKeep = next;
+      void ipcRenderer.invoke(IPC.configPatch, 'presets', { importKeep: next });
+    };
+    installImportKeep({ getKeep, setKeep });
 
     // Adds the launcher into Krunker's own ranked panel, beside FIND MATCH.
     installRankedLaunchButton();
@@ -274,8 +295,20 @@ async function bootstrap(): Promise<void> {
     // Adds a changelog row at the top of Krunker's own left menu.
     installChangelogItem();
 
-    // And QoL Features at the bottom of it: your own userscripts on one tab,
-    // ours on the other.
+    // The Settings Library at the bottom of it, whole sets of Krunker
+    // settings to switch between. Before QoL Features, so it sits just above.
+    installSettingsLibrary({
+      getProfiles: () => cfg.presets.profiles,
+      saveProfiles: (next) => {
+        cfg.presets.profiles = next;
+        void ipcRenderer.invoke(IPC.configPatch, 'presets', { profiles: next });
+      },
+      getKeep,
+      setKeep,
+    });
+
+    // And QoL Features under it: your own userscripts on one tab, ours on the
+    // other.
     installQol({
       getFeatures: () => cfg.features,
       patchFeatures: (partial) => {

@@ -684,6 +684,78 @@ export const KRUNKER_SETTINGS = {
   ],
 } as const;
 
+/**
+ * Krunker's own Import and Export, which the settings library rides on.
+ *
+ * Read out of the same deobfuscated game.js as KRUNKER_SETTINGS. The header's
+ * Import button runs `importSettingsPopup()`, a popup holding a textarea with
+ * the id below, and its Import button runs `importSettings()`, which hands
+ * that field's text to the settings manager's `import` and closes the popup.
+ * `exportSettings(true)` returns the same text Export would save, as a string.
+ *
+ * WHAT THE TEXT IS. A JSON object: one entry per setting that is not at its
+ * default, keyed by setting id, plus `controls` (keybinds) and `customize`
+ * (loadouts, custom reticles and scopes, images, favourites) when there are
+ * any of those.
+ *
+ * WHAT IMPORT DOES WITH IT, which is the part that matters. Every setting the
+ * game has is set to the value in the text, or to its default when the text
+ * leaves it out: a setting missing from an import is reset, not kept. So
+ * keeping one through an import means writing its current value into the
+ * text, not taking it out. `controls` is the exception. It is only applied
+ * when present, so leaving it out keeps the keybinds exactly as they are.
+ *
+ * Importing with the text passed in, which is what the popup does, never
+ * rebuilds the settings window by itself. The `setSetting` it calls switches
+ * the game's preset picker to Custom, though, and that switch rebuilds it for
+ * anyone not already on Custom.
+ */
+export const KRUNKER_IMPORT = {
+  popup: 'importSettingsPopup',
+  apply: 'importSettings',
+  /** The popup's textarea, which `importSettings` reads by id. */
+  field: 'importTxt',
+  exportSettings: 'exportSettings',
+  /** Keybinds, as a nested object in the text. */
+  controlsKey: 'controls',
+  /** Loadouts and the rest of the Customize window, as a nested object. */
+  customizeKey: 'customize',
+  /**
+   * Sensitivity is every id with this in it: hip fire and ADS on both axes,
+   * the per-weapon copies (`sensitivityX_3`), and the controller and mobile
+   * versions (`sensitivityXCntrl`, `aimSensitivityYMbl`).
+   */
+  sensitivityPattern: /sensitivity/i,
+  /**
+   * Whether those are per weapon or one for all, `KRUNKER_SETTINGS.sensitivityMode`.
+   * Kept with them: the mode decides which of the values is in force, so
+   * keeping the values and not the mode could still change your sensitivity.
+   */
+  sensitivityModeKey: 'gpSetts',
+  /**
+   * Every setting in the game's Audio category, in its own order: the master
+   * volume, each volume after it, the microphone and voice chat options, and
+   * Mute Spectators.
+   */
+  audio: [
+    'sound',
+    'ambientVolume',
+    'dialogueVolume',
+    'audioInput',
+    'micQuality',
+    'micVolume',
+    'voiceVolume',
+    'voiceChatType',
+    'voiceDistance',
+    'gunsVolume',
+    'playerVolume',
+    'skinVolume',
+    'uiVolume',
+    'assetVolume',
+    'muteSpec',
+  ],
+} as const;
+
 /*
  * ---------------------------------------------------------------------------
  * Restyling Krunker: what its CSS does, and what that costs you

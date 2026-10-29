@@ -86,12 +86,16 @@ beforeEach(() => {
       replacedKillPacks: join(dir, 'killstreak-replaced'),
       soundpacks: join(dir, 'soundpacks'),
       screenshots: join(dir, 'shots'),
+      clientContentCache: join(dir, 'client-content.json'),
+      contentImages: join(dir, 'content-images'),
     },
     getWindow: () => null,
     log: () => {},
     rescanSwap: () => 0,
     refreshRequestFilter: () => {},
     updater: { check: () => {}, download: () => {}, install: () => {} },
+    clientContent: () => Promise.resolve({ players: [], clans: [], settings: [] }),
+    contentImage: () => Promise.resolve(null),
   });
 });
 
