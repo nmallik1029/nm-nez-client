@@ -16,13 +16,6 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: readonly ChangelogEntry[] = [
   {
-    version: '0.2.1',
-    date: '2026-11-05',
-    changes: [
-      { kind: 'fixed', text: "Userscripts marked @run-at document-start now run before the game starts loading, as they would in Tampermonkey. They used to run only once the page had finished building, by which point the game was already set up and a script hooking it as it boots had nothing left to catch. Every other userscript still runs when the page is ready, and none run twice." },
-    ],
-  },
-  {
     version: '0.2.0',
     date: '2026-10-29',
     changes: [
