@@ -39,6 +39,7 @@ const { registerHandlers } = await import('./handlers');
 
 type AppConfig = import('../../shared/config').AppConfig;
 type InvokeEventLike = import('./registry').InvokeEventLike;
+type SyncEventLike = import('./registry').SyncEventLike;
 type UserscriptInfo = import('../../shared/ipc').UserscriptInfo;
 type UserscriptSaveResult = import('../../shared/ipc').UserscriptSaveResult;
 
@@ -46,10 +47,18 @@ let dir: string;
 let scripts: string;
 let config: InstanceType<typeof ConfigStore<AppConfig>>;
 let handlers: Map<string, (event: InvokeEventLike, ...args: unknown[]) => unknown>;
+let syncHandlers: Map<string, (event: SyncEventLike, ...args: unknown[]) => void>;
 
 const FROM_GAME: InvokeEventLike = { senderFrame: { url: 'https://krunker.io/' } };
 
+/** Calls a channel the way the renderer would, invoke or sendSync, whichever it is. */
 function call(channel: string, ...args: unknown[]): unknown {
+  const sync = syncHandlers.get(channel);
+  if (sync) {
+    const event: SyncEventLike = { ...FROM_GAME, returnValue: undefined };
+    sync(event, ...args);
+    return event.returnValue;
+  }
   const handler = handlers.get(channel);
   if (!handler) throw new Error(`no handler for ${channel}`);
   return handler(FROM_GAME, ...args);
@@ -67,10 +76,13 @@ beforeEach(() => {
   });
 
   handlers = new Map();
+  syncHandlers = new Map();
   registerHandlers({
     ipcMain: {
       handle: (channel, listener) => handlers.set(channel, listener),
       removeHandler: (channel) => void handlers.delete(channel),
+      on: (channel, listener) => void syncHandlers.set(channel, listener),
+      removeAllListeners: (channel) => void syncHandlers.delete(channel),
     },
     config,
     paths: {
@@ -107,6 +119,22 @@ describe('userscript handlers', () => {
   it('loads nothing while the feature is off', () => {
     writeFileSync(join(scripts, 'one.js'), 'console.log(1)');
     expect(call(IPC.userscriptsGet)).toEqual([]);
+  });
+
+  it('answers the preload synchronously, with when each script wants to run', () => {
+    // The preload splits on runAt and runs the early half before Krunker's
+    // own script, so it has to arrive on the sync channel, not as an invoke.
+    expect(syncHandlers.has(IPC.userscriptsGet)).toBe(true);
+    expect(handlers.has(IPC.userscriptsGet)).toBe(false);
+
+    config.patch('features', { userscripts: true });
+    writeFileSync(join(scripts, 'early.js'), '// @run-at document-start\nx()');
+    writeFileSync(join(scripts, 'late.js'), 'x()');
+    const got = call(IPC.userscriptsGet) as { name: string; runAt: string }[];
+    expect(got.map((s) => [s.name, s.runAt])).toEqual([
+      ['early.js', 'start'],
+      ['late.js', 'ready'],
+    ]);
   });
 
   it('loads the folder once the feature is on', () => {

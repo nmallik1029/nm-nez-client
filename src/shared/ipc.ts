@@ -122,7 +122,13 @@ export const IPC = {
   /** Main -> renderer. Where the update is up to; see UpdateState. */
   updateState: 'update:state',
 
-  /** Renderer -> main. Userscript sources from the scripts folder. */
+  /**
+   * Renderer -> main, **sync**. The enabled userscripts, sources and all, as
+   * `Userscript[]`. Synchronous because the preload has to run the
+   * `@run-at document-start` ones before Krunker's own script, and an invoke
+   * resolves too late for that. Asked once per page load; the preload holds
+   * the rest for DOM ready.
+   */
   userscriptsGet: 'userscripts:get',
   /**
    * Renderer -> main. Every kill streak pack: the ones on disk with their
@@ -185,6 +191,26 @@ export const IPC = {
 } as const;
 
 /** One file in the scripts folder, as the QoL panel lists them. */
+/**
+ * When a userscript runs, from its `@run-at` header.
+ *
+ * `start` is `document-start`: before any of the page's own script, which is
+ * what a script that hooks the game as it boots is asking for. Everything
+ * else, `document-end` and `document-idle` included and a script with no
+ * header at all, is `ready`: once the page is built and the client's own UI
+ * is in.
+ */
+export type UserscriptRunAt = 'start' | 'ready';
+
+/** One enabled userscript, as `userscriptsGet` hands it to the page. */
+export interface Userscript {
+  readonly name: string;
+  readonly source: string;
+  /** From a Tampermonkey-style `@name` header, falling back to the filename. */
+  readonly title: string;
+  readonly runAt: UserscriptRunAt;
+}
+
 export interface UserscriptInfo {
   /** Filename, which is also its id: the folder cannot hold two. */
   readonly name: string;

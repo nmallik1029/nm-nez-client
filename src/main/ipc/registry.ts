@@ -16,6 +16,11 @@ export interface InvokeEventLike {
   readonly senderFrame: { readonly url: string } | null;
 }
 
+/** Structural view of Electron's IpcMainEvent, which is what a `sendSync` arrives as. */
+export interface SyncEventLike extends InvokeEventLike {
+  returnValue: unknown;
+}
+
 /** Structural view of the parts of `ipcMain` we use. */
 export interface IpcMainLike {
   handle(
@@ -23,6 +28,8 @@ export interface IpcMainLike {
     listener: (event: InvokeEventLike, ...args: unknown[]) => unknown,
   ): void;
   removeHandler(channel: string): void;
+  on(channel: string, listener: (event: SyncEventLike, ...args: unknown[]) => void): void;
+  removeAllListeners(channel: string): void;
 }
 
 export interface IpcRegistryOptions {
@@ -37,6 +44,23 @@ export interface IpcRegistry {
   handle<TArgs extends unknown[], TResult>(
     channel: string,
     handler: (event: InvokeEventLike, ...args: TArgs) => TResult,
+  ): void;
+  /**
+   * Register an origin-checked handler for `ipcRenderer.sendSync`.
+   *
+   * For the few things the page needs before it can afford an await: a sync
+   * call blocks the renderer until main answers, so it is only worth it when
+   * being a turn late is the same as not running at all.
+   *
+   * A sync call has no way to throw back to the renderer, and one whose
+   * returnValue is never set leaves the page frozen for good. So a rejected
+   * frame, or a handler that throws, gets `fallback` instead, and nothing
+   * else reaches the page.
+   */
+  handleSync<TArgs extends unknown[], TResult>(
+    channel: string,
+    handler: (event: InvokeEventLike, ...args: TArgs) => TResult,
+    fallback: TResult,
   ): void;
   /** Unregister a channel. */
   remove(channel: string): void;
@@ -53,16 +77,21 @@ export class IpcOriginError extends Error {
 }
 
 export function createIpcRegistry(ipcMain: IpcMainLike, options: IpcRegistryOptions): IpcRegistry {
-  const registered = new Set<string>();
+  /** Channel -> whether it was registered sync, which decides how it is removed. */
+  const registered = new Map<string, boolean>();
+
+  function claim(channel: string, sync: boolean): void {
+    if (registered.has(channel)) {
+      // Electron replaces an existing handler without a word, and that is a
+      // miserable bug to go looking for.
+      throw new Error(`IPC channel "${channel}" is already registered`);
+    }
+    registered.set(channel, sync);
+  }
 
   return {
     handle(channel, handler) {
-      if (registered.has(channel)) {
-        // Electron replaces an existing handler without a word, and that is a
-        // miserable bug to go looking for.
-        throw new Error(`IPC channel "${channel}" is already registered`);
-      }
-      registered.add(channel);
+      claim(channel, false);
 
       ipcMain.handle(channel, (event, ...args) => {
         const url = event.senderFrame?.url ?? null;
@@ -75,13 +104,38 @@ export function createIpcRegistry(ipcMain: IpcMainLike, options: IpcRegistryOpti
       });
     },
 
+    handleSync(channel, handler, fallback) {
+      claim(channel, true);
+
+      ipcMain.on(channel, (event, ...args) => {
+        const url = event.senderFrame?.url ?? null;
+        if (url === null || !options.isTrustedOrigin(url)) {
+          options.onRejected?.(channel, url);
+          event.returnValue = fallback;
+          return;
+        }
+        try {
+          event.returnValue = (handler as (event: InvokeEventLike, ...a: unknown[]) => unknown)(
+            event,
+            ...args,
+          );
+        } catch (err) {
+          event.returnValue = fallback;
+          console.error(`[ipc] sync handler "${channel}" threw:`, err);
+        }
+      });
+    },
+
     remove(channel) {
-      if (!registered.delete(channel)) return;
-      ipcMain.removeHandler(channel);
+      const sync = registered.get(channel);
+      if (sync === undefined) return;
+      registered.delete(channel);
+      if (sync) ipcMain.removeAllListeners(channel);
+      else ipcMain.removeHandler(channel);
     },
 
     get channels() {
-      return [...registered];
+      return [...registered.keys()];
     },
   };
 }

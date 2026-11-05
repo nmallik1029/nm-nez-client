@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
-import type { UserscriptInfo } from '../shared/ipc';
+import type { Userscript, UserscriptInfo, UserscriptRunAt } from '../shared/ipc';
 
 /**
  * Userscripts. CSS themes are in `themes.ts` instead, because those can be
@@ -12,13 +12,6 @@ import type { UserscriptInfo } from '../shared/ipc';
  */
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_FILES = 64;
-
-export interface Userscript {
-  readonly name: string;
-  readonly source: string;
-  /** From a Tampermonkey-style `@name` header, falling back to the filename. */
-  readonly title: string;
-}
 
 /**
  * The sound played when the ranked queue finds a match.
@@ -269,7 +262,12 @@ export function loadUserscripts(scriptsDir: string): Userscript[] {
   for (const file of scriptFiles(scriptsDir)) {
     try {
       const source = readFileSync(file.full, 'utf8');
-      out.push({ name: file.name, source, title: parseScriptName(source) ?? file.name });
+      out.push({
+        name: file.name,
+        source,
+        title: parseScriptName(source) ?? file.name,
+        runAt: parseRunAt(source),
+      });
     } catch {
       // Readable a moment ago, not now. Skip it rather than fail the load.
     }
@@ -373,4 +371,14 @@ function parseScriptName(source: string): string | null {
   const head = source.slice(0, 2000);
   const match = /^\s*\/\/\s*@name\s+(.+)$/m.exec(head);
   return match?.[1]?.trim() || null;
+}
+
+/**
+ * Pull `@run-at` out of a metadata block. Only `document-start` changes
+ * anything: the other values Tampermonkey knows all land after the page's
+ * own script has started, and DOM ready is as close to those as we get.
+ */
+function parseRunAt(source: string): UserscriptRunAt {
+  const match = /^\s*\/\/\s*@run-at\s+(\S+)/m.exec(source.slice(0, 2000));
+  return match?.[1]?.toLowerCase() === 'document-start' ? 'start' : 'ready';
 }

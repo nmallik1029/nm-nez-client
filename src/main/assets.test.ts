@@ -140,6 +140,35 @@ describe('listUserscripts', () => {
   });
 });
 
+describe('loadUserscripts: @run-at', () => {
+  const runAt = (name: string): string | undefined =>
+    loadUserscripts(dir).find((s) => s.name === name)?.runAt;
+
+  it('runs a document-start script early', () => {
+    write(
+      'early.js',
+      '// ==UserScript==\n// @name Early\n// @run-at   document-start\n// ==/UserScript==\nx()',
+    );
+    expect(runAt('early.js')).toBe('start');
+  });
+
+  it('leaves everything else for DOM ready', () => {
+    write('none.js', '// @name None\nx()');
+    write('end.js', '// @run-at document-end\nx()');
+    write('idle.js', '// @run-at document-idle\nx()');
+    expect([runAt('none.js'), runAt('end.js'), runAt('idle.js')]).toEqual([
+      'ready',
+      'ready',
+      'ready',
+    ]);
+  });
+
+  it('reads the header only, not a mention further down the file', () => {
+    write('late.js', `x()\n${' '.repeat(3000)}\n// @run-at document-start\n`);
+    expect(runAt('late.js')).toBe('ready');
+  });
+});
+
 describe('removeUserscript', () => {
   it('deletes the file', () => {
     write('gone.js', 'x');
