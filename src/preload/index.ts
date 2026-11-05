@@ -1,7 +1,13 @@
 import { ipcRenderer } from 'electron';
 import { BRANDING } from '../shared/branding';
 import type { AppConfig, HotkeyAction, HotkeyConfig, HudCorner } from '../shared/config';
-import { IPC, type Capabilities, type OpenableFolder, type ThemeFile } from '../shared/ipc';
+import {
+  IPC,
+  type Capabilities,
+  type OpenableFolder,
+  type ThemeFile,
+  type Userscript,
+} from '../shared/ipc';
 import { initChat, setChatOptions } from './chat';
 import {
   installFixes,
@@ -72,6 +78,23 @@ const log = (...args: unknown[]): void => console.log(BRANDING.logPrefix, ...arg
 // tab in its settings window. The settings redesign ignores it now and we
 // inject that tab ourselves, but other parts of the game still read the flag.
 (window as unknown as { OffCliV: boolean }).OffCliV = true;
+
+/*
+ * Userscripts, fetched once, synchronously, before anything else here.
+ *
+ * `@run-at document-start` means before the page's own script, and Krunker
+ * starts building the game the moment its script runs. Anything behind an
+ * await, let alone DOM ready, finds the game already set up and the thing it
+ * meant to hook already taken. So this is a sendSync, and the early ones run
+ * on the spot, in the main world like every other script here.
+ *
+ * The rest wait for DOM ready, as they always have. Every script is in exactly
+ * one of the two lists and each list is run once, which is what keeps an early
+ * script from running a second time with the others.
+ */
+const userscripts = fetchUserscripts();
+runUserscripts(userscripts.filter((s) => s.runAt === 'start'));
+const lateUserscripts = userscripts.filter((s) => s.runAt !== 'start');
 
 // Design tokens go in first and synchronously, before anything that references
 // them. Doing it inside bootstrap would be too late: that function starts with
@@ -345,7 +368,7 @@ async function bootstrap(): Promise<void> {
     installChatPlacement();
 
     void applyThemes();
-    void runUserscripts();
+    runUserscripts(lateUserscripts);
 
     // Last, so everything it can switch on is already installed: the skin,
     // the script runner and the theme list are all reachable from here and
@@ -522,32 +545,32 @@ async function applyThemes(): Promise<void> {
   }
 }
 
-async function runUserscripts(): Promise<void> {
+function fetchUserscripts(): Userscript[] {
   try {
-    const scripts = (await ipcRenderer.invoke(IPC.userscriptsGet)) as {
-      name: string;
-      title: string;
-      source: string;
-    }[];
-
-    for (const script of scripts) {
-      try {
-        // Running user JavaScript is the whole feature, so implied-eval isn't
-        // telling us anything. What actually keeps this sane: the feature is
-        // off by default, source only comes from a local folder the user
-        // controls, and main still origin-checks any IPC a script attempts.
-        //
-        // One function scope each, so a `const` collision between two scripts
-        // doesn't take both of them down.
-        // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-        new Function(script.source)();
-        log(`userscript: ${script.title}`);
-      } catch (err) {
-        console.error(BRANDING.logPrefix, `userscript "${script.name}" threw:`, err);
-      }
-    }
+    const scripts: unknown = ipcRenderer.sendSync(IPC.userscriptsGet);
+    return Array.isArray(scripts) ? (scripts as Userscript[]) : [];
   } catch (err) {
     console.error(BRANDING.logPrefix, 'userscript load failed:', err);
+    return [];
+  }
+}
+
+function runUserscripts(scripts: readonly Userscript[]): void {
+  for (const script of scripts) {
+    try {
+      // Running user JavaScript is the whole feature, so implied-eval isn't
+      // telling us anything. What actually keeps this sane: the feature is
+      // off by default, source only comes from a local folder the user
+      // controls, and main still origin-checks any IPC a script attempts.
+      //
+      // One function scope each, so a `const` collision between two scripts
+      // doesn't take both of them down.
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
+      new Function(script.source)();
+      log(`userscript${script.runAt === 'start' ? ' (document-start)' : ''}: ${script.title}`);
+    } catch (err) {
+      console.error(BRANDING.logPrefix, `userscript "${script.name}" threw:`, err);
+    }
   }
 }
 

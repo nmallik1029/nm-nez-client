@@ -10,6 +10,7 @@ import {
   type Capabilities,
   type OpenableFolder,
   type ScanResult,
+  type Userscript,
   type UserscriptSaveResult,
 } from '../../shared/ipc';
 import { clampFrameCap } from '../platform/flags';
@@ -338,12 +339,21 @@ export function registerHandlers(deps: HandlerDeps): IpcRegistry {
    * the user to open.
    */
   function registerUserscriptHandlers(): void {
-    registry.handle(IPC.userscriptsGet, () => {
-      const features = config.get('features');
-      if (!features.userscripts) return [];
-      const off = new Set(features.disabledUserscripts);
-      return loadUserscripts(paths.scripts).filter((script) => !off.has(script.name));
-    });
+    // Sync, and asked at the very top of the preload, so the page is held
+    // until this returns: with the feature off it returns before touching
+    // the disk. Empty is also what a refused or failed call gets, which
+    // reads to the page as no scripts rather than a frozen window.
+    const none: Userscript[] = [];
+    registry.handleSync(
+      IPC.userscriptsGet,
+      (): Userscript[] => {
+        const features = config.get('features');
+        if (!features.userscripts) return none;
+        const off = new Set(features.disabledUserscripts);
+        return loadUserscripts(paths.scripts).filter((script) => !off.has(script.name));
+      },
+      none,
+    );
 
     registry.handle(IPC.userscriptsList, () => listUserscripts(paths.scripts));
 
